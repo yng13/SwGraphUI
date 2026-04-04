@@ -89,7 +89,7 @@ import Testing
     state.hover.hoveredNodeID = "n1"
     state.drag.startDrag(nodes: [GraphNode(id: "n1", position: .zero, data: EmptyPayload())], pointer: .zero)
     state.drag.updateDrag(to: .init(x: 5, y: 5))
-    state.connection = ConnectionRuntimeState(active: .init(fromNodeID: "n1", fromHandleType: .source, currentPointer: .init(x: 10, y: 10)))
+    state.connection = ConnectionRuntimeState(active: .init(fromNodeID: "n1", fromHandleType: .source, fromPosition: .zero, currentPointer: .init(x: 10, y: 10)))
     state.viewport.setViewport(.init(x: 10, y: -5, zoom: 2))
 
     #expect(state.selection.selectedNodeIDs == ["n1"])

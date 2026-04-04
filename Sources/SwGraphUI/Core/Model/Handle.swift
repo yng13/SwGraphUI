@@ -1,6 +1,10 @@
 public enum HandleType: String, Sendable {
     case source
     case target
+    
+    public var opposite: HandleType {
+        self == .source ? .target : .source
+    }
 }
 
 public struct Handle: Sendable, Equatable {
@@ -10,6 +14,7 @@ public struct Handle: Sendable, Equatable {
     public var placement: Position
     public var type: HandleType
     public var dimensions: Dimensions
+    public var isConnectable: Bool
 
     public init(
         id: String? = nil,
@@ -17,7 +22,8 @@ public struct Handle: Sendable, Equatable {
         position: XYPosition,
         placement: Position,
         type: HandleType,
-        dimensions: Dimensions
+        dimensions: Dimensions,
+        isConnectable: Bool = true
     ) {
         self.id = id
         self.nodeID = nodeID
@@ -25,6 +31,7 @@ public struct Handle: Sendable, Equatable {
         self.placement = placement
         self.type = type
         self.dimensions = dimensions
+        self.isConnectable = isConnectable
     }
 }
 
@@ -32,10 +39,17 @@ public struct NodeHandle: Sendable, Equatable {
     public var id: String?
     public var placement: Position
     public var type: HandleType
+    public var isConnectable: Bool
 
-    public init(id: String? = nil, placement: Position, type: HandleType) {
+    public init(
+        id: String? = nil,
+        placement: Position,
+        type: HandleType,
+        isConnectable: Bool = true
+    ) {
         self.id = id
         self.placement = placement
         self.type = type
+        self.isConnectable = isConnectable
     }
 }

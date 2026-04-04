@@ -96,6 +96,7 @@ public final class ExampleAppStore {
             let c = BaseNode(id: "child", position: XYPosition(x: 50, y: 50), data: "Child", parentID: "parent", width: 300, height: 250)
             let g = BaseNode(id: "grandchild", position: XYPosition(x: 50, y: 50), data: "Grandchild", parentID: "child", width: 150, height: 50)
             newNodes = [p, c, g]
+            appendLog(kind: "hint", payload: "Try connecting Parent -> Child in hierarchy")
         case .overlap:
             newNodes = (1...5).map { i in
                 BaseNode(id: "Node\(i)", position: XYPosition(x: Double(i * 40), y: Double(i * 40)), data: "Overlapping \(i)", width: 150, height: 50)
@@ -103,9 +104,10 @@ public final class ExampleAppStore {
         case .custom:
             newNodes = [
                 BaseNode(id: "Short", position: XYPosition(x: 50, y: 50), data: "Short", kind: "custom"),
-                BaseNode(id: "Long", position: XYPosition(x: 250, y: 50), data: "This is a much longer text to test the measurement engine", kind: "custom"),
-                BaseNode(id: "Default", position: XYPosition(x: 150, y: 300), data: "Standard Node")
+                BaseNode(id: "CPU-Node", position: XYPosition(x: 450, y: 150), data: "CPU Logic Node", kind: "custom"),
+                BaseNode(id: "Default", position: XYPosition(x: 150, y: 350), data: "Standard Node")
             ]
+            appendLog(kind: "hint", payload: "Custom nodes have purple handles")
         }
         
         graphStore.nodes = newNodes
@@ -113,6 +115,33 @@ public final class ExampleAppStore {
         
         // 切り替え時に自動で fitView を実行
         graphStore.fitView(in: currentGraphSize)
+    }
+
+    // MARK: - Connection
+
+    /// 接続ドラッグが成功した際に呼ばれ、グラフに新しいエッジを追加します。
+    public func addEdge(connection: Connection, in graphStore: GraphStore<String>) {
+        appendLog(kind: "onConnect", payload: "\(connection.source) -> \(connection.target)")
+        
+        // 簡易的な重複チェック
+        if graphStore.edges.contains(where: { $0.source == connection.source && $0.target == connection.target }) {
+            appendLog(kind: "skip", payload: "Edge already exists")
+            return
+        }
+        
+        let id = "e-\(connection.source)-\(connection.target)-\(Int(Date().timeIntervalSince1970))"
+        let newEdge = BaseEdge<String>(
+            id: id,
+            source: connection.source,
+            target: connection.target,
+            sourceHandle: connection.sourceHandle,
+            targetHandle: connection.targetHandle,
+            sourcePosition: connection.sourcePosition,
+            targetPosition: connection.targetPosition,
+            markerEnd: EdgeMarker(type: .arrowClosed)
+        )
+        
+        graphStore.edges.append(newEdge)
     }
     
     // MARK: - Initializer

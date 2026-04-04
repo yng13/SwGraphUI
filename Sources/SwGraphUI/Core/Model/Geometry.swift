@@ -1,3 +1,5 @@
+import Foundation
+
 public enum Position: String, CaseIterable, Sendable {
     case left
     case top
@@ -32,8 +34,35 @@ public struct XYPosition: Sendable, Equatable {
         XYPosition(x: lhs.x + rhs.x, y: lhs.y + rhs.y)
     }
 
+    public func toAbsolute(parent: Rect?) -> XYPosition {
+        guard let parent = parent else { return self }
+        return XYPosition(x: x + parent.x, y: y + parent.y)
+    }
+
+    /// グラフ空間の座標をスクリーン（UI）空間の座標に変換します。
+    public func toScreen(viewport: Viewport) -> XYPosition {
+        XYPosition(
+            x: x * viewport.zoom + viewport.x,
+            y: y * viewport.zoom + viewport.y
+        )
+    }
+
+    /// スクリーン（UI）空間の座標をグラフ空間の座標に逆変換します。
+    public func fromScreen(viewport: Viewport) -> XYPosition {
+        XYPosition(
+            x: (x - viewport.x) / viewport.zoom,
+            y: (y - viewport.y) / viewport.zoom
+        )
+    }
+
     public static func - (lhs: XYPosition, rhs: XYPosition) -> XYPosition {
         XYPosition(x: lhs.x - rhs.x, y: lhs.y - rhs.y)
+    }
+
+    public func distance(to other: XYPosition) -> Double {
+        let dx = x - other.x
+        let dy = y - other.y
+        return sqrt(dx * dx + dy * dy)
     }
 }
 

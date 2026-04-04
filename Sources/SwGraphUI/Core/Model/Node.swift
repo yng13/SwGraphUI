@@ -27,6 +27,7 @@ public struct BaseNode<Data: Sendable>: Sendable, Identifiable {
     public var ariaLabel: String?
     public var origin: NodeOrigin?
     public var handles: [NodeHandle]
+    public var connectable: Bool
 
     // MARK: - Library-managed/Interaction state
     public var hidden: Bool
@@ -34,7 +35,6 @@ public struct BaseNode<Data: Sendable>: Sendable, Identifiable {
     public var dragging: Bool
     public var draggable: Bool
     public var selectable: Bool
-    public var connectable: Bool
     public var deletable: Bool
     public var dragHandle: String?
     public var width: Double?
@@ -57,12 +57,12 @@ public struct BaseNode<Data: Sendable>: Sendable, Identifiable {
         ariaLabel: String? = nil,
         origin: NodeOrigin? = nil,
         handles: [NodeHandle] = [],
+        connectable: Bool = true,
         hidden: Bool = false,
         selected: Bool = false,
         dragging: Bool = false,
         draggable: Bool = true,
         selectable: Bool = true,
-        connectable: Bool = true,
         deletable: Bool = true,
         dragHandle: String? = nil,
         width: Double? = nil,

@@ -1,0 +1,100 @@
+import SwiftUI
+
+/// ノードの接続端点（ハンドル）を表示し、ドラッグによる接続操作を提供するコンポーネント。
+/// カスタムノード内でも自由に配置可能です。
+public struct HandleView<Data: Sendable>: View {
+    public let nodeID: String
+    public let handleID: String?
+    public let type: HandleType
+    public let placement: Position
+    public let store: GraphStore<Data>
+    public let onConnect: ((Connection) -> Void)?
+    
+    // ヒットエリア拡大用の定数
+    private let hitAreaPadding: CGFloat = 8
+    private let handleSize: CGFloat = 6
+    
+    public init(
+        nodeID: String,
+        handleID: String? = nil,
+        type: HandleType,
+        placement: Position,
+        store: GraphStore<Data>,
+        onConnect: ((Connection) -> Void)? = nil
+    ) {
+        self.nodeID = nodeID
+        self.handleID = handleID
+        self.type = type
+        self.placement = placement
+        self.store = store
+        self.onConnect = onConnect
+    }
+    
+    public var body: some View {
+        Circle()
+            .fill(Color.gray.opacity(0.8))
+            .frame(width: handleSize, height: handleSize)
+            .padding(hitAreaPadding) // ヒットエリアを拡大
+            .contentShape(Circle())
+            .overlay(
+                Circle()
+                    .stroke(Color.white, lineWidth: 1)
+                    .frame(width: handleSize, height: handleSize)
+            )
+            .background(
+                GeometryReader { geometry in
+                    let frame = geometry.frame(in: .named("viewport_container"))
+                    let viewportCenter = XYPosition(
+                        x: frame.midX,
+                        y: frame.midY
+                    )
+                    Color.clear
+                        .preference(
+                            key: HandlePositionPreferenceKey.self,
+                            value: [
+                                HandleMeasurementEntry(
+                                    key: HandleKey(nodeID: nodeID, handleID: handleID, type: type, placement: placement),
+                                    viewportCenter: viewportCenter
+                                )
+                            ]
+                        )
+                }
+            )
+            .gesture(
+                DragGesture(minimumDistance: 0, coordinateSpace: .named("viewport_container"))
+                    .onChanged { value in
+                        let viewport = store.runtimeState.viewport.viewport
+                        let pointerInGraph = XYPosition(x: value.location.x, y: value.location.y).fromScreen(viewport: viewport)
+                        
+                        if !store.runtimeState.connection.isConnecting {
+                            // 開始時にハンドルのグラフ絶対座標を解決して開始
+                            // 測定値がある場合はそれを優先し、なければ推測値（Fallback）を使用
+                            let key = HandleKey(nodeID: nodeID, handleID: handleID, type: type, placement: placement)
+                            let handlePos = store.resolvedHandlePosition(for: key)
+                            
+                            store.startConnecting(
+                                fromNodeID: nodeID,
+                                fromHandleID: handleID,
+                                fromHandleType: type,
+                                fromHandlePosition: placement,
+                                fromPosition: handlePos,
+                                at: pointerInGraph
+                            )
+                        } else {
+                            let targetKey = store.findHandle(near: pointerInGraph)
+                            store.updateConnecting(
+                                to: pointerInGraph,
+                                targetNodeID: targetKey?.nodeID,
+                                targetHandleID: targetKey?.handleID,
+                                targetHandlePosition: targetKey?.placement
+                            )
+                        }
+                    }
+                    .onEnded { _ in
+                        if let connection = store.stopConnecting() {
+                            onConnect?(connection)
+                        }
+                    }
+            )
+    }
+}

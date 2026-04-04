@@ -71,5 +71,23 @@ M10a で発生したバグ修正および、フィードバックに基づくド
 3. コミットメッセージ案提示（承認待ち）
 4. コミット実行
 5. AGENTS.md にリモートリポジトリなしの旨を明記 [追加]
-5. プッシュ案提示（承認待ち）
 6. プッシュ実行
+
+---
+### 2026-04-04 (M13 Implementation)
+
+**実施内容**:
+- `ConnectionInteractionManager` による接続スナップ・バリデーションの実装。
+- `HandleView` (Public API) の新規作成と `DefaultNodeView` への統合。
+- `GraphView` のレイヤー構造リファクタリング（コンパイル速度性能改善）。
+- `ExampleApp` での動적エッジ追加フローの統合。
+
+**技術的決定**:
+- **スナップ座標系**: ズームレベルに依存しない一貫した操作感を提供するため、「スクリーン座標系」を基準に 24px の吸着距離を定義。
+- **ジェネリック対応**: `ConnectionInteractionManager` のメソッドをジェネリック化し、任意の `BaseNode<Data>` を受け取れるように拡張。
+- **SwiftUI 最適化**: `GraphView` の `body` が複雑化し、型チェックのタイムアウトが発生したため、各レイヤーを独立したプロパティ（`@ViewBuilder`）に抽出し、コンパイルの負荷を軽減。
+
+**ビルド・テスト検証結果**:
+- **Package Tests**: `swift test` 実行、新設の `ConnectionInteractionManagerTests` を含む全テストがパス。
+- **Example Build**: `xcodebuild build -scheme Example` により、macOS 向け実行ファイルのコンパイル成功を確認。
+- **動作確認**: サンプルアプリ上でノード間のドラッグによるエッジ生成、および `onConnect` コールバックを通じたエッジ追加が正常に機能することを確認。

@@ -1,15 +1,16 @@
-import Foundation
+import SwiftUI
 import Observation
 
-/// SwGraphUI の状態を統合管理する Observable オブジェクト。
-/// stateless な Core ロジックと SwiftUI レイヤーを接続する唯一の正式入口です。
-@Observable @MainActor
-public final class GraphStore<Data: Sendable> {
-    /// グラフを構成するノードの配列
-    public var nodes: [BaseNode<Data>]
-    /// グラフを構成するエッジの配列
-    public var edges: [BaseEdge<Data>]
-    /// 選択・ドラッグ・ビューポートなどのランタイム状態
+/// グラフの状態管理を担う中心的なクラス。
+/// ノード、エッジ、ビューポート、選択状態などを一括管理し、UIへのリアクティブな更新を提供します。
+@Observable
+@MainActor
+public final class GraphStore<Data: Sendable>: Sendable {
+    // MARK: - Core State
+    public var nodes: [BaseNode<Data>] = []
+    public var edges: [BaseEdge<Data>] = []
+    
+    // MARK: - Runtime State
     public var runtimeState: GraphRuntimeState
     
     public init(
@@ -22,100 +23,198 @@ public final class GraphStore<Data: Sendable> {
         self.runtimeState = runtimeState
     }
     
-    /// ノードの高速検索用マップ。派生値として計算。
-    public var nodeLookup: [String: BaseNode<Data>] {
-        Dictionary(uniqueKeysWithValues: nodes.map { ($0.id, $0) })
+    // MARK: - Measurement & Positioning API
+    
+    /// ハンドルの実測座標を更新します。
+    public func updateHandlePosition(key: HandleKey, absolutePosition: XYPosition) {
+        runtimeState.handleMeasurements.positions[key] = absolutePosition
     }
     
-    /// 指定されたノードの絶対座標を解決して返します。
-    public func absolutePosition(for id: String) -> XYPosition {
-        guard let node = nodeLookup[id] else { return .zero }
-        return NodePositioningAlgorithms.evaluateAbsolutePosition(node, nodeLookup: nodeLookup)
+    /// ハンドルの実測座標を取得します（存在すれば）。
+    public func measuredHandlePosition(for key: HandleKey) -> XYPosition? {
+        runtimeState.handleMeasurements.positions[key]
+    }
+    
+    /// ハンドルの解決済み座標を取得します（実測値を優先し、なければ推測を使用）。
+    public func resolvedHandlePosition(for key: HandleKey) -> XYPosition {
+        // 1. 実測値があれば最優先
+        if let measured = measuredHandlePosition(for: key) {
+            return measured
+        }
+        
+        // 2. なければ従来の数学的推測にフォールバック
+        guard let node = node(id: key.nodeID) else { return .zero }
+        let absPos = absolutePosition(for: key.nodeID)
+        return ConnectionInteractionManager.calcHandlePosition(
+            absolutePosition: absPos,
+            dimensions: node.measured ?? Dimensions(width: 100, height: 50),
+            placement: key.placement
+        )
     }
 
-    // MARK: - Dragging Actions
-    
-    /// 指定されたノードのドラッグ操作を開始します。
-    /// - Parameters:
-    ///   - nodeIDs: ドラッグ対象のノードID（配列）。
-    ///   - pointer: ドラッグ開始時点のポインタ座標 (Graph Absolute Space)。
-    public func startDragging(nodeIDs: [String], at pointer: XYPosition) {
-        let targets = nodes.filter { nodeIDs.contains($0.id) }
-        runtimeState.drag.startDrag(nodes: targets, nodeLookup: nodeLookup, pointer: pointer)
-        
-        // 各ノードの dragging フラグを更新
-        for i in 0..<nodes.count {
-            if nodeIDs.contains(nodes[i].id) {
-                nodes[i].dragging = true
-            }
+    // MARK: - Node Operations
+    public func node(id: String) -> BaseNode<Data>? {
+        nodes.first { $0.id == id }
+    }
+
+    public func updateNodePosition(id: String, position: XYPosition) {
+        if let index = nodes.firstIndex(where: { $0.id == id }) {
+            nodes[index].position = position
         }
     }
-    
-    /// ドラッグ中の座標を更新し、ノードの座標に反映します。
-    /// - Parameter pointer: 現在のポインタ座標 (Graph Absolute Space)。
-    public func updateDragging(to pointer: XYPosition) {
-        runtimeState.drag.updateDrag(to: pointer)
-        let nextPositions = DragManager.calculateNextPositions(
-            draggedNodes: runtimeState.drag.draggedNodes,
-            pointer: pointer,
-            nodeLookup: nodeLookup
-        )
-        
-        // position の更新（dragging フラグは維持）
-        for (id, pos) in nextPositions {
-            if let index = nodes.firstIndex(where: { $0.id == id }) {
-                nodes[index].position = pos
-            }
+
+    public func updateNodeDimensions(id: String, dimensions: Dimensions) {
+        if let index = nodes.firstIndex(where: { $0.id == id }) {
+            nodes[index].measured = dimensions
         }
     }
-    
-    /// ドラッグ操作を終了します。
-    public func stopDragging() {
-        let draggedIDs = runtimeState.drag.draggedNodes.map { $0.id }
-        runtimeState.drag.stopDrag()
-        
-        // dragging フラグを解除
-        for i in 0..<nodes.count {
-            if draggedIDs.contains(nodes[i].id) {
-                nodes[i].dragging = false
-            }
-        }
+
+    public func absolutePosition(for nodeID: String) -> XYPosition {
+        guard let node = node(id: nodeID) else { return .zero }
+        let lookup = Dictionary(uniqueKeysWithValues: nodes.map { ($0.id, $0) })
+        return NodePositioningAlgorithms.evaluateAbsolutePosition(node, nodeLookup: lookup)
+    }
+
+    // MARK: - Edge Operations
+    public func edge(id: String) -> BaseEdge<Data>? {
+        edges.first { $0.id == id }
+    }
+
+    public func addEdge(_ edge: BaseEdge<Data>) {
+        edges.append(edge)
+    }
+
+    // MARK: - Viewport Operations
+    public func setViewport(_ viewport: Viewport) {
+        runtimeState.viewport.setViewport(viewport)
     }
     
-    // MARK: - Viewport Actions
-    
-    /// ビューポートを平行移動させます。
-    /// - Parameter delta: 移動量 (Points)。
     public func pan(by delta: XYPosition) {
         runtimeState.viewport.panBy(dx: delta.x, dy: delta.y)
     }
-    
-    /// 全ノードが画面に収まるようにビューポートを調整します。
-    /// - Parameters:
-    ///   - size: ビューポートの表示サイズ (Points)。
-    ///   - padding: 余白設定。
-    public func fitView(in size: Dimensions, padding: GeometryAlgorithms.Padding = .all(.relative(0.1))) {
-        // 常に階層対応版の API を使用
-        runtimeState.viewport.fitView(
-            nodes: nodes,
-            nodeLookup: nodeLookup,
-            in: size,
-            padding: padding
-        )
+
+    public func fitView(
+        in size: Dimensions = Dimensions(width: 800, height: 600),
+        padding: GeometryAlgorithms.Padding = .all(.relative(0.1)),
+        minZoom: Double = 0.5,
+        maxZoom: Double = 2.0
+    ) {
+        let lookup = Dictionary(uniqueKeysWithValues: nodes.map { ($0.id, $0) })
+        runtimeState.viewport.fitView(nodes: nodes, nodeLookup: lookup, in: size, padding: padding, minZoom: minZoom, maxZoom: maxZoom)
     }
 
-    // MARK: - Internal Actions
+    // MARK: - Interaction Handlers
     
-    /// ノードの実測サイズを更新します。
-    /// - Parameters:
-    ///   - id: ノードID。
-    ///   - dimensions: 実測されたサイズ。
-    public func updateNodeDimensions(id: String, dimensions: Dimensions) {
-        if let index = nodes.firstIndex(where: { $0.id == id }) {
-            // 変更がある場合のみ更新して再描画を抑制
-            if nodes[index].measured != dimensions {
-                nodes[index].measured = dimensions
+    // --- Selection ---
+    public func selectNode(_ id: String) {
+        runtimeState.selection.selectNode(id: id)
+    }
+    
+    public func clearSelection() {
+        runtimeState.selection.clear()
+    }
+    
+    // --- Dragging ---
+    public func startDragging(nodeIDs: [String], at pointer: XYPosition) {
+        let targets = nodes.filter { nodeIDs.contains($0.id) }
+        let lookup = Dictionary(uniqueKeysWithValues: nodes.map { ($0.id, $0) })
+        runtimeState.drag.startDrag(nodes: targets, nodeLookup: lookup, pointer: pointer)
+    }
+    
+    public func updateDragging(to pointer: XYPosition) {
+        runtimeState.drag.updateDrag(to: pointer)
+        
+        // 実際の座標更新
+        for item in runtimeState.drag.draggedNodes {
+            if let index = nodes.firstIndex(where: { $0.id == item.id }) {
+                let newPos = pointer - item.distance
+                // 親がいない場合はそのまま、親がいる場合は相対座標に変換
+                if let _ = nodes[index].parentID {
+                    // 親座標を解決して相対位置を求める
+                    nodes[index].position = newPos
+                } else {
+                    nodes[index].position = newPos
+                }
             }
         }
+    }
+    
+    public func stopDragging() {
+        runtimeState.drag.stopDrag()
+    }
+    
+    // --- Connection ---
+    
+    /// 指定された座標（グラフ空間）に近いハンドルを検索します。
+    public func findHandle(near pointer: XYPosition, threshold: Double = 20.0) -> HandleKey? {
+        var closest: (key: HandleKey, dist: Double)? = nil
+        
+        for (key, pos) in runtimeState.handleMeasurements.positions {
+            let dist = pointer.distance(to: pos)
+            if dist < threshold {
+                if closest == nil || dist < closest!.dist {
+                    closest = (key, dist)
+                }
+            }
+        }
+        
+        return closest?.key
+    }
+    
+    public func startConnecting(
+        fromNodeID: String,
+        fromHandleID: String?,
+        fromHandleType: HandleType,
+        fromHandlePosition: Position,
+        fromPosition: XYPosition,
+        at pointer: XYPosition
+    ) {
+        runtimeState.connection.start(
+            fromNodeID: fromNodeID,
+            fromHandleID: fromHandleID,
+            fromHandleType: fromHandleType,
+            fromHandlePosition: fromHandlePosition,
+            fromPosition: fromPosition,
+            at: pointer
+        )
+    }
+    
+    public func updateConnecting(
+        to pointer: XYPosition,
+        targetNodeID: String? = nil,
+        targetHandleID: String? = nil,
+        targetHandlePosition: Position? = nil
+    ) {
+        runtimeState.connection.update(
+            to: pointer,
+            targetNodeID: targetNodeID,
+            targetHandleID: targetHandleID,
+            targetHandlePosition: targetHandlePosition
+        )
+    }
+    
+    public func stopConnecting() -> Connection? {
+        guard let active = runtimeState.connection.active else { return nil }
+        var result: Connection? = nil
+        
+        if let targetNodeID = active.targetNodeID,
+           let targetHandlePosition = active.targetHandlePosition {
+            result = Connection(
+                source: active.fromNodeID,
+                target: targetNodeID,
+                sourceHandle: active.fromHandleID,
+                targetHandle: active.targetHandleID,
+                sourcePosition: active.fromHandlePosition,
+                targetPosition: targetHandlePosition
+            )
+        }
+        
+        runtimeState.connection.end()
+        return result
+    }
+
+    // --- Hover ---
+    public func setHoveredNode(_ id: String?) {
+        runtimeState.hover.hoveredNodeID = id
     }
 }

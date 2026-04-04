@@ -3,12 +3,23 @@ public struct Connection: Sendable, Equatable {
     public var target: String
     public var sourceHandle: String?
     public var targetHandle: String?
+    public var sourcePosition: Position?
+    public var targetPosition: Position?
 
-    public init(source: String, target: String, sourceHandle: String? = nil, targetHandle: String? = nil) {
+    public init(
+        source: String,
+        target: String,
+        sourceHandle: String? = nil,
+        targetHandle: String? = nil,
+        sourcePosition: Position? = nil,
+        targetPosition: Position? = nil
+    ) {
         self.source = source
         self.target = target
         self.sourceHandle = sourceHandle
         self.targetHandle = targetHandle
+        self.sourcePosition = sourcePosition
+        self.targetPosition = targetPosition
     }
 }
 

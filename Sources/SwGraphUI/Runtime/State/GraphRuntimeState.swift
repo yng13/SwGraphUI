@@ -1,5 +1,11 @@
 import Foundation
+import Observation
 
+/// 
+/// グラフの実行時状態（一時的な状態）を一括管理するクラス。
+/// 
+
+/// ノードの選択状態
 public struct SelectionState: Sendable, Equatable {
     public private(set) var selectedNodeIDs: Set<String>
     public private(set) var selectedEdgeIDs: Set<String>
@@ -47,6 +53,7 @@ public struct SelectionState: Sendable, Equatable {
     }
 }
 
+/// ホバー状態
 public struct HoverState: Sendable, Equatable {
     public var hoveredNodeID: String?
     public var hoveredEdgeID: String?
@@ -62,6 +69,7 @@ public struct HoverState: Sendable, Equatable {
     }
 }
 
+/// ドラッグ状態
 public struct DragState: Sendable, Equatable {
     public var draggedNodes: [NodeDragItem]
     public var currentPointer: XYPosition?
@@ -75,18 +83,12 @@ public struct DragState: Sendable, Equatable {
         !draggedNodes.isEmpty
     }
 
-    /// ドラッグを開始します（階層構造対応）。
-    /// - Parameters:
-    ///   - nodes: ドラッグ対象のノード。
-    ///   - nodeLookup: 親チェーンを解決するための全ノードマップ。
-    ///   - pointer: グラフ空間におけるポインタ座標。
     public mutating func startDrag<Data>(
         nodes: [BaseNode<Data>],
         nodeLookup: [String: BaseNode<Data>],
         pointer: XYPosition
     ) {
         self.draggedNodes = nodes.map { node in
-            // 絶対座標を解決した上でオフセットを記録
             let absoluteTopLeft = NodePositioningAlgorithms.evaluateAbsolutePosition(node, nodeLookup: nodeLookup)
             let distance = pointer - absoluteTopLeft
             return NodeDragItem(id: node.id, lastPosition: absoluteTopLeft, distance: distance)
@@ -94,14 +96,6 @@ public struct DragState: Sendable, Equatable {
         self.currentPointer = pointer
     }
     
-    /// ドラッグを開始します（既存互換・単一階層用）。
-    /// - Warning: 階層構造を持つノードが含まれる場合、このメソッドでは正確なドラッグオフセットが計算されません。
-    @available(*, deprecated, message: "Use startDrag(nodes:nodeLookup:pointer:) for hierarchical graphs.")
-    public mutating func startDrag<Data>(nodes: [BaseNode<Data>], pointer: XYPosition) {
-        let lookup = Dictionary(uniqueKeysWithValues: nodes.map { ($0.id, $0) })
-        startDrag(nodes: nodes, nodeLookup: lookup, pointer: pointer)
-    }
-
     public mutating func updateDrag(to pointer: XYPosition) {
         self.currentPointer = pointer
     }
@@ -112,32 +106,43 @@ public struct DragState: Sendable, Equatable {
     }
 }
 
+/// 進行中の接続状態
 public struct ConnectionInProgressState: Sendable, Equatable {
     public var fromNodeID: String
     public var fromHandleID: String?
     public var fromHandleType: HandleType
+    public var fromHandlePosition: Position
+    public var fromPosition: XYPosition
     public var currentPointer: XYPosition
     public var targetNodeID: String?
     public var targetHandleID: String?
+    public var targetHandlePosition: Position?
 
     public init(
         fromNodeID: String,
         fromHandleID: String? = nil,
         fromHandleType: HandleType,
+        fromHandlePosition: Position,
+        fromPosition: XYPosition,
         currentPointer: XYPosition,
         targetNodeID: String? = nil,
-        targetHandleID: String? = nil
+        targetHandleID: String? = nil,
+        targetHandlePosition: Position? = nil
     ) {
         self.fromNodeID = fromNodeID
         self.fromHandleID = fromHandleID
         self.fromHandleType = fromHandleType
+        self.fromHandlePosition = fromHandlePosition
+        self.fromPosition = fromPosition
         self.currentPointer = currentPointer
         self.targetNodeID = targetNodeID
         self.targetHandleID = targetHandleID
+        self.targetHandlePosition = targetHandlePosition
     }
 }
 
-public struct ConnectionRuntimeState: Sendable, Equatable {
+/// 接続操作の実行時状態
+public struct ConnectionState: Sendable, Equatable {
     public var active: ConnectionInProgressState?
 
     public init(active: ConnectionInProgressState? = nil) {
@@ -148,14 +153,29 @@ public struct ConnectionRuntimeState: Sendable, Equatable {
         active != nil
     }
 
-    public mutating func start(fromNodeID: String, fromHandleID: String?, fromHandleType: HandleType, at position: XYPosition) {
-        self.active = .init(fromNodeID: fromNodeID, fromHandleID: fromHandleID, fromHandleType: fromHandleType, currentPointer: position)
+    public mutating func start(
+        fromNodeID: String,
+        fromHandleID: String?,
+        fromHandleType: HandleType,
+        fromHandlePosition: Position,
+        fromPosition: XYPosition,
+        at pointer: XYPosition
+    ) {
+        self.active = .init(
+            fromNodeID: fromNodeID,
+            fromHandleID: fromHandleID,
+            fromHandleType: fromHandleType,
+            fromHandlePosition: fromHandlePosition,
+            fromPosition: fromPosition,
+            currentPointer: pointer
+        )
     }
 
-    public mutating func update(to position: XYPosition, targetNodeID: String? = nil, targetHandleID: String? = nil) {
-        active?.currentPointer = position
+    public mutating func update(to pointer: XYPosition, targetNodeID: String? = nil, targetHandleID: String? = nil, targetHandlePosition: Position? = nil) {
+        active?.currentPointer = pointer
         active?.targetNodeID = targetNodeID
         active?.targetHandleID = targetHandleID
+        active?.targetHandlePosition = targetHandlePosition
     }
 
     public mutating func end() {
@@ -163,6 +183,7 @@ public struct ConnectionRuntimeState: Sendable, Equatable {
     }
 }
 
+/// ビューポート状態
 public struct ViewportState: Sendable, Equatable {
     public private(set) var viewport: Viewport
 
@@ -188,7 +209,6 @@ public struct ViewportState: Sendable, Equatable {
         )
     }
     
-    /// 指定された要素が画面内に収まるようにビューポートを調整します（階層構造対応）。
     public mutating func fitView<Data>(
         nodes: [BaseNode<Data>],
         nodeLookup: [String: BaseNode<Data>],
@@ -206,40 +226,41 @@ public struct ViewportState: Sendable, Equatable {
             padding: padding
         )
     }
+}
+
+/// ハンドルの実測座標を保持する状態
+public struct HandleMeasurementState: Sendable, Equatable {
+    public internal(set) var positions: [HandleKey: XYPosition] = [:]
     
-    /// 指定された要素が画面内に収まるようにビューポートを調整します（既存互換用）。
-    /// - Warning: 階層構造を持つノードが含まれる場合、このメソッドでは正確な Bounds が計算されません。
-    @available(*, deprecated, message: "Use fitView(nodes:nodeLookup:in:...) for hierarchical graphs.")
-    public mutating func fitView<Data>(
-        nodes: [BaseNode<Data>],
-        in size: Dimensions,
-        padding: GeometryAlgorithms.Padding = .all(.relative(0.1)),
-        minZoom: Double = 0.5,
-        maxZoom: Double = 2.0
-    ) {
-        let lookup = Dictionary(uniqueKeysWithValues: nodes.map { ($0.id, $0) })
-        fitView(nodes: nodes, nodeLookup: lookup, in: size, padding: padding, minZoom: minZoom, maxZoom: maxZoom)
+    public init(positions: [HandleKey: XYPosition] = [:]) {
+        self.positions = positions
     }
 }
 
-public struct GraphRuntimeState: Sendable, Equatable {
+/// グラフの実行時状態（一時的な状態）を一括管理するクラス。
+@Observable
+@MainActor
+public final class GraphRuntimeState: Sendable {
     public var selection: SelectionState
     public var hover: HoverState
     public var drag: DragState
-    public var connection: ConnectionRuntimeState
+    public var connection: ConnectionState
     public var viewport: ViewportState
-
+    public var handleMeasurements: HandleMeasurementState
+    
     public init(
         selection: SelectionState = .init(),
         hover: HoverState = .init(),
         drag: DragState = .init(),
-        connection: ConnectionRuntimeState = .init(),
-        viewport: ViewportState = .init()
+        connection: ConnectionState = .init(),
+        viewport: ViewportState = .init(),
+        handleMeasurements: HandleMeasurementState = .init()
     ) {
         self.selection = selection
         self.hover = hover
         self.drag = drag
         self.connection = connection
         self.viewport = viewport
+        self.handleMeasurements = handleMeasurements
     }
 }
