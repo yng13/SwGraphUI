@@ -84,6 +84,12 @@ public final class GraphStore<Data: Sendable> {
     
     // MARK: - Viewport Actions
     
+    /// ビューポートを平行移動させます。
+    /// - Parameter delta: 移動量 (Points)。
+    public func pan(by delta: XYPosition) {
+        runtimeState.viewport.panBy(dx: delta.x, dy: delta.y)
+    }
+    
     /// 全ノードが画面に収まるようにビューポートを調整します。
     /// - Parameters:
     ///   - size: ビューポートの表示サイズ (Points)。
