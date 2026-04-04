@@ -170,14 +170,39 @@
 - d3 / DOM 依存を後回しにできる
 - Core Model を先に確定できるので、後から SwiftUI 実装で public API がぶれにくい
 
-## 実装順の提案
+### Tier 0: 依存なしの pure core [完了]
+- [x] Foundation (Types, Geometry, Bounds)
+- [x] Edge Path Core Logic
 
-1. 座標・矩形・変更差分の型
-2. Node / Edge / Handle の core model
-3. graph / connection の pure utility
-4. edge path / bounds 計算
-5. viewport model
-6. その後に interaction engine
+### Tier 1: 軽依存の core-adjacent [完了]
+- [x] Node / Edge Models
+- [x] Viewport Transform Logic
+
+### Tier 2: DOM 依存 [SwiftUI Adapter で代替完了]
+- [x] Canvas Container (`GraphView`)
+- [ ] Measurement Engine (実測値の Core へのフィードバックのみ未完了)
+
+### Tier 3: d3 / interaction 依存 [着手 / M10a 改修中]
+- [x] Viewport Pan Interaction (`GraphStore`)
+- [ ] Viewport Zoom / Wheel Interaction
+- [x] Node Drag Interaction (`DragManager`)
+- [ ] Connection Interaction
+- [ ] Resizer Interaction
+
+## 現在のフェーズ: Tier 3 Refinement & Adaptive UI
+
+M10a を経て、Viewport の安定性と IDE スタイルのハーネスが構築された。
+次の焦点は、Tier 2 の残りである **Measurement Engine** と、Tier 3 の **Connection Interaction** である。
+
+## 実装順の履歴
+
+1. [x] 座標・矩形・変更差分の型
+2. [x] Node / Edge / Handle の core model
+3. [x] graph / connection の pure utility
+4. [x] edge path / bounds 計算
+5. [x] viewport model
+6. [x] GraphStore による Interaction 統制 (M9-M10a)
+7. [ ] Measurement Engine (M10b/11)
 
 ## コミット単位
 

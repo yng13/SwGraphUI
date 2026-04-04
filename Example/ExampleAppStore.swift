@@ -31,6 +31,7 @@ public final class ExampleAppStore {
     
     #if os(macOS)
     public var columnVisibility: NavigationSplitViewVisibility = .all
+    public var isSidebarVisible: Bool = true
     #endif
     
     public var isCodeViewVisible: Bool = true

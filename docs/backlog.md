@@ -43,9 +43,11 @@
 - [ ] ノード選択
 - [x] ノードドラッグ (Core logic only in M8)
 - [ ] ハンドル接続
-- [ ] **M10b/11: Measurement Engine**
+- [ ] **M10b/11: Measurement Engine & View Customization**
     - [ ] 実際のノード描画サイズを内部で測定し `BaseNode.measured` に同期する仕組み
-    - [ ] `fitView` およびドラッグの境界計算に実測値を適用 (現在は暫定的に定数を使用)
+    - [ ] `fitView` およびドラッグの境界計算に実測値を適用
+    - [ ] `@ViewBuilder` を用いたカスタムノードビューの外部注入 API 設計
+    - [ ] `NodeView` の軽量化と ViewFactory パターンの導入
 
 ## Epic 4: 受け入れ用 examples
 
@@ -53,8 +55,9 @@
     - [x] 3カラムレイアウト (NavigationSplitView)
     - [x] 座標変換領域の固定 (viewport_container)
     - [x] 背景ドラッグによるパン操作の実装
-    - [x] サンプルデータへの暫定寸法付与による `fitView` 精度向上
-- [ ] Feature Overview
+    - [x] サンプルデータへの暫定寸法付与による `fitView` の動作確認
+- [x] **M10a-fix: Stability & Coordinate Fixes**
+- [ ] Feature Overview (Refinement)
 - [ ] Basic interaction 相当 example 群
 - [ ] Custom Node / Edge 系 example 群
 - [ ] Layout 系 example 群

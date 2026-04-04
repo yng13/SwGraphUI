@@ -24,15 +24,13 @@ public struct GraphView<Data: Sendable>: View {
     public var body: some View {
         ZStack {
             GeometryReader { geometry in
-                // グラフ内容を表示するコンテナ
                 ZStack(alignment: .topLeading) {
-                    // 背景 (パン操作用)
+                    // 背景 (パン操作用) - 固定レイヤーに配置して追従を防ぐ
                     Color.clear
                         .contentShape(Rectangle())
                         .gesture(
-                            DragGesture(minimumDistance: 10, coordinateSpace: .named("viewport_container"))
+                            DragGesture(minimumDistance: 5, coordinateSpace: .named("viewport_container"))
                                 .onChanged { value in
-                                    // 前回のイベント位置からの増分を計算 (delta)
                                     let deltaX = value.translation.width - lastPanTranslation.width
                                     let deltaY = value.translation.height - lastPanTranslation.height
                                     
@@ -43,43 +41,42 @@ public struct GraphView<Data: Sendable>: View {
                                     lastPanTranslation = .zero
                                 }
                         )
-                    
-                    // ノードレイヤー
-                    ForEach(store.nodes) { node in
-                        NodeView<Data>(node: node)
-                            .offset(
-                                x: store.absolutePosition(for: node.id).x,
-                                y: store.absolutePosition(for: node.id).y
-                            )
-                            .gesture(
-                                DragGesture(minimumDistance: 0, coordinateSpace: .named("viewport_container"))
-                                    .onChanged { value in
-                                        // viewport_container は変形「外側」の空間なので
-                                        // location は画面上のポイントとして正しく screenToGraph に渡せる
-                                        let graphPointer = CoordinateAdapter.screenToGraph(
-                                            XYPosition(x: value.location.x, y: value.location.y),
-                                            viewport: store.runtimeState.viewport.viewport
-                                        )
-                                        
-                                        if !store.runtimeState.drag.isDragging {
-                                            store.startDragging(nodeIDs: [node.id], at: graphPointer)
-                                            onEvent?(.dragStart(nodeIDs: [node.id]))
-                                        } else {
-                                            store.updateDragging(to: graphPointer)
-                                            onEvent?(.dragUpdate(nodeIDs: [node.id]))
+
+                    // 変形がかかるコンテンツレイヤー
+                    ZStack(alignment: .topLeading) {
+                        // ノードレイヤー
+                        ForEach(store.nodes) { node in
+                            NodeView<Data>(node: node)
+                                .offset(
+                                    x: store.absolutePosition(for: node.id).x,
+                                    y: store.absolutePosition(for: node.id).y
+                                )
+                                .gesture(
+                                    DragGesture(minimumDistance: 0, coordinateSpace: .named("viewport_container"))
+                                        .onChanged { value in
+                                            let graphPointer = CoordinateAdapter.screenToGraph(
+                                                XYPosition(x: value.location.x, y: value.location.y),
+                                                viewport: store.runtimeState.viewport.viewport
+                                            )
+                                            
+                                            if !store.runtimeState.drag.isDragging {
+                                                store.startDragging(nodeIDs: [node.id], at: graphPointer)
+                                                onEvent?(.dragStart(nodeIDs: [node.id]))
+                                            } else {
+                                                store.updateDragging(to: graphPointer)
+                                                onEvent?(.dragUpdate(nodeIDs: [node.id]))
+                                            }
                                         }
-                                    }
-                                    .onEnded { _ in
-                                        store.stopDragging()
-                                        onEvent?(.dragStop(nodeIDs: [node.id]))
-                                    }
-                            )
+                                        .onEnded { _ in
+                                            store.stopDragging()
+                                            onEvent?(.dragStop(nodeIDs: [node.id]))
+                                        }
+                                )
+                        }
                     }
+                    .scaleEffect(store.runtimeState.viewport.viewport.zoom, anchor: .topLeading)
+                    .offset(x: store.runtimeState.viewport.viewport.x, y: store.runtimeState.viewport.viewport.y)
                 }
-                // ビューポート変形の適用 (Scale -> Offset の順)
-                // この変形は「内側」の ZStack にのみかかる
-                .scaleEffect(store.runtimeState.viewport.viewport.zoom, anchor: .topLeading)
-                .offset(x: store.runtimeState.viewport.viewport.x, y: store.runtimeState.viewport.viewport.y)
             }
         }
         // 座標空間定義を「変形の外側」に配置

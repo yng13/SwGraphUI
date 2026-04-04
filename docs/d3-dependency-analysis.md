@@ -162,40 +162,37 @@ SwGraphUI での分解先:
 
 ## d3 依存の実体別整理
 
-### 1. pure Swift に落とせるもの
+### 1. pure Swift に落とせるもの [移行済み]
 
-- `Viewport` と `Transform` の型
-- scale / translate の制約
-- fit bounds
-- snap to grid
-- pointer 座標から graph 座標への変換
-- 補間関数
-- auto pan の計算
+- [x] `Viewport` と `Transform` の型
+- [x] scale / translate の制約 (`ViewportManager`)
+- [x] fit bounds (`ViewportManager`)
+- [x] snap to grid (`DragManager`)
+- [x] pointer 座標から graph 座標への変換 (`CoordinateAdapter`)
+- [ ] 補間関数 (SwiftUI Animation で代用中)
+- [ ] auto pan の計算
 
-### 2. state machine として持つべきもの
+### 2. state machine として持つべきもの [一部移行済み]
 
-- pan 開始 / 更新 / 終了
-- zoom 開始 / 更新 / 終了
-- node drag 開始 / 更新 / 終了
-- resize 開始 / 更新 / 終了
-- connection drag 開始 / 更新 / 終了
+- [x] pan 開始 / 更新 / 終了 (`GraphStore.pan(by:)`)
+- [ ] zoom 開始 / 更新 / 終了 (SwiftUI `MagnificationGesture` 直接連動)
+- [x] node drag 開始 / 更新 / 終了 (`DragManager`)
+- [ ] resize 開始 / 更新 / 終了
+- [ ] connection drag 開始 / 更新 / 終了
 
-### 3. SwiftUI / platform に寄せるべきもの
+### 3. SwiftUI / platform に寄せるべきもの [移行済み]
 
-- gesture 入力の取得
-- wheel / trackpad / pinch の OS 差分
-- pointer style
-- ネイティブ event bridging
+- [x] gesture 入力の取得 (`GraphView`)
+- [ ] wheel / trackpad / pinch の OS 差分 (現在 DragGesture による 1:1 pan のみ)
+- [ ] pointer style
+- [x] ネイティブ event bridging (macOS 3-pane IDE 化完了)
 
 ## 重要な設計判断
 
-### AppKit / UIKit は d3 代替ではない
-
-- `d3-*` は主にアルゴリズムと event abstraction
-- `AppKit / UIKit` は OS のネイティブ UI / event API
-- したがって置換関係は 1 対 1 ではない
-
 ### 置換単位は「依存」ではなく「責務」
+
+- [x] **Viewport 座標系**: 階層的な View 変形の影響を受けない `viewport_container` を導入し、d3-selection の DOM 位置計算依存を排除した。
+- [x] **入力の統制**: View からの生入力を `CoordinateAdapter` で正規化してから Store に送る流れを確立。
 
 避けるべきこと:
 

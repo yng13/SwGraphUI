@@ -37,11 +37,18 @@ struct ContentView: View {
     #if os(macOS)
     @ViewBuilder
     private var desktopLayout: some View {
-        NavigationSplitView(columnVisibility: $appStore.columnVisibility) {
+        HSplitView {
             // Sidebar: Sample Selection
-            SidebarView(appStore: appStore, graphStore: graphStore)
-                .navigationTitle("Samples")
-        } content: {
+            if appStore.isSidebarVisible {
+                SidebarView(appStore: appStore, graphStore: graphStore)
+                    .frame(minWidth: 200, idealWidth: 250, maxWidth: 400)
+                    .overlay(alignment: .trailing) {
+                        Rectangle()
+                            .fill(Color.secondary.opacity(0.2))
+                            .frame(width: 1)
+                    }
+            }
+            
             // Content: Main Graph Canvas & Code
             VStack(spacing: 0) {
                 mainCanvasView
@@ -53,35 +60,52 @@ struct ContentView: View {
                         .frame(height: 200)
                 }
             }
-            .navigationTitle("Graph Canvas")
-            .toolbar {
-                ToolbarItemGroup {
-                    Button(action: { appStore.isCodeViewVisible.toggle() }) {
-                        Label("Toggle Code", systemImage: "chevron.left.slash.chevron.right")
-                    }
-                    .help("Toggle JSON Code View")
-                }
-            }
-        } detail: {
+            .frame(minWidth: 400)
+            .layoutPriority(1) // 中央ペインを優先的に広げる
+            
             // Detail/Inspector: Properties & Logs
-            VStack(spacing: 0) {
-                InspectorView(appStore: appStore, graphStore: graphStore)
-                    .frame(minHeight: 200)
-                
-                if appStore.isLogVisible {
-                    Divider()
-                    LogView(appStore: appStore)
-                        .frame(height: 250)
+            if appStore.isInspectorVisible {
+                VStack(spacing: 0) {
+                    InspectorView(appStore: appStore, graphStore: graphStore)
+                        .frame(minHeight: 200)
+                    
+                    if appStore.isLogVisible {
+                        Divider()
+                        LogView(appStore: appStore)
+                            .frame(height: 250)
+                    }
+                }
+                .frame(minWidth: 250, idealWidth: 300, maxWidth: 500)
+                .overlay(alignment: .leading) {
+                    Rectangle()
+                        .fill(Color.secondary.opacity(0.2))
+                        .frame(width: 1)
                 }
             }
-            .navigationTitle("Inspector")
-            .toolbar {
-                ToolbarItemGroup {
-                    Button(action: { appStore.isLogVisible.toggle() }) {
-                        Label("Toggle Logs", systemImage: "terminal")
-                    }
-                    .help("Toggle Debug Logs")
+        }
+        .toolbar {
+            ToolbarItemGroup(placement: .navigation) {
+                Button(action: { appStore.isSidebarVisible.toggle() }) {
+                    Label("Toggle Sidebar", systemImage: "sidebar.left")
                 }
+                .help("Toggle Sidebar")
+            }
+            
+            ToolbarItemGroup(placement: .primaryAction) {
+                Button(action: { appStore.isCodeViewVisible.toggle() }) {
+                    Label("Toggle Code", systemImage: "chevron.left.slash.chevron.right")
+                }
+                .help("Toggle JSON Code View")
+
+                Button(action: { appStore.isInspectorVisible.toggle() }) {
+                    Label("Toggle Inspector", systemImage: "sidebar.right")
+                }
+                .help("Toggle Inspector")
+
+                Button(action: { appStore.isLogVisible.toggle() }) {
+                    Label("Toggle Logs", systemImage: "terminal")
+                }
+                .help("Toggle Debug Logs")
             }
         }
     }
@@ -208,7 +232,16 @@ struct CodeView: View {
     let graphStore: GraphStore<String>
     
     private var jsonString: String {
-        let nodesPart = graphStore.nodes.map { "  { \"id\": \"\($0.id)\", \"pos\": [\(Int($0.position.x)), \(Int($0.position.y))] }" }.joined(separator: ",\n")
+        let nodesPart = graphStore.nodes.map { node in
+            let absPos = graphStore.absolutePosition(for: node.id)
+            return """
+              {
+                "id": "\(node.id)",
+                "pos": [\(Int(node.position.x)), \(Int(node.position.y))],
+                "absPos": [\(Int(absPos.x)), \(Int(absPos.y))]
+              }
+            """
+        }.joined(separator: ",\n")
         return "{\n \"nodes\": [\n\(nodesPart)\n ]\n}"
     }
     

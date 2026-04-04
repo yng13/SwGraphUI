@@ -148,19 +148,21 @@
 
 - Core / Interaction Engine / Rendering Contract を SwiftUI に接続する
 - gesture, layout, preference, animation を SwiftUI で実現する
+- GraphStore (MainActor Observable) を介した状態の統制
 
 含むもの:
 
-- `GraphView`
-- `NodeView`
-- `EdgeView`
-- overlay layers
-- SwiftUI gestures
+- `GraphStore`: 全ての Interaction の公式入口。Core State への副作用をカプセル化する。
+- `GraphView`: スケール、オフセット、背景ドラッグの管理。
+- `NodeView`: 個別ノードの描画と選択、個別ドラッグの開始。
+- `EdgeView`: 算出済みパスの描画。
+- SwiftUI gestures: 座標変換 (`CoordinateAdapter`) を経由した入力の正規化。
 
 含めないもの:
 
 - graph algorithm 本体
 - 永続化ロジック
+- View から Core State への直接的な破壊的代入 (必ず Store API を介す)
 
 ### 7. Platform Adapter
 
