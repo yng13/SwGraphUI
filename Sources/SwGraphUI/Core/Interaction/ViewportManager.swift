@@ -25,7 +25,7 @@ public enum ViewportManager {
         }
         
         // 1. 親子関係を解決した正確な Bounds を算出
-        let bounds = NodePositioningAlgorithms.getNodesBounds(nodes, nodeLookup: nodeLookup)
+        let bounds = NodePositioningAlgorithms.getNodesBounds(nodes, nodeLookup: nodeLookup ?? [:])
         
         // 2. GeometryAlgorithms.getViewportForBounds を使用して、Padding 込みの Viewport を算出
         return GeometryAlgorithms.getViewportForBounds(

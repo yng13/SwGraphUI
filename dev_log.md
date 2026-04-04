@@ -1,4 +1,23 @@
 ---
+## [M12] Edge Rendering & Customization (2026-04-05) [DONE]
+
+### 概要
+エッジ（接続線）の全系レンダリング基盤と、パスの幾何情報を中間形式で扱う `PathSegment` 方式を導入。ノードの計測・階層・ドラッグに完全追従する描画を実現。
+
+### 実装ノーツ
+- **幾何中間表現**: `PathSegment` enum を導入し、Core のパス計算結果 (`bezier`, `straight`, `smoothStep`) を SwiftUI の `Path` へ変換する `EdgeRenderer` を実装。
+- **測位の高度化**: `NodePositioningAlgorithms` を新設。実測値 (`measured`) -> 指定値 (`width`) -> 初期値 の優先順位でノードサイズを解決し、ハンドル座標を絶対座標で算出。
+- **プロフェッショナル配置（Refined）**: 
+    - **先端固定 (Apex-fixed) 回転**: 矢印の先端を不動点とした幾何計算 (`rotatedPoint`) により、サイズに関わらずノード境界に密着する描画を実現。
+    - **ベクトルベース Backoff**: パス終端の接線ベクトルに沿って端点を短縮。曲線侵入時の隙間や突き抜けを完全に解消。
+    - **Reactive Animation**: `.task(id: animated)` により、インスペクター操作に即座に反応する Dash アニメーションを実装。
+- **データクリーンアップ**: サンプルデータからハードコードされたアニメーションフラグを削除し、一貫性を確保。
+
+### 検証結果
+- `swift test`: **全 31 テストパス**。
+- `swift build`: 正常終了。
+- Example：`Edges` サンプルにおいて、最大マーカーサイズでもズレや突き抜けがないことを確認。また、グローバルスイッチによるアニメーションの全エッジ即時同期を確認。
+
 ## [M10b/11] Measurement Engine & View Customization (2026-04-04) [DONE]
 
 ### 概要

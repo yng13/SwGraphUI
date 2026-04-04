@@ -1,18 +1,45 @@
 import Foundation
 
 public struct EdgePathResult: Sendable, Equatable {
-    public var path: String
+    public var segments: [PathSegment]
     public var labelX: Double
     public var labelY: Double
     public var offsetX: Double
     public var offsetY: Double
 
-    public init(path: String, labelX: Double, labelY: Double, offsetX: Double, offsetY: Double) {
-        self.path = path
+    /// SVG 互換のパス文字列。segments から動的に生成します。
+    public var path: String {
+        segments.toSVGString()
+    }
+
+    /// ターゲット地点におけるパスの接線角度（ラジアン）。マーカーの向きに使用。
+    public var targetTangentAngle: Double?
+
+    public init(segments: [PathSegment], labelX: Double, labelY: Double, offsetX: Double, offsetY: Double, targetTangentAngle: Double? = nil) {
+        self.segments = segments
         self.labelX = labelX
         self.labelY = labelY
         self.offsetX = offsetX
         self.offsetY = offsetY
+        self.targetTangentAngle = targetTangentAngle
+    }
+}
+
+extension Array where Element == PathSegment {
+    /// SVG 互換のパス文字列に変換します。
+    public func toSVGString() -> String {
+        self.map { segment in
+            switch segment {
+            case .move(let to):
+                return "M\(to.x),\(to.y)"
+            case .line(let to):
+                return "L\(to.x),\(to.y)"
+            case .bezier(let to, let c1, let c2):
+                return "C\(c1.x),\(c1.y) \(c2.x),\(c2.y) \(to.x),\(to.y)"
+            case .quadratic(let to, let c):
+                return "Q\(c.x),\(c.y) \(to.x),\(to.y)"
+            }
+        }.joined(separator: " ")
     }
 }
 
@@ -38,11 +65,15 @@ public enum EdgePathAlgorithms {
     ) -> EdgePathResult {
         let center = edgeCenter(sourceX: sourceX, sourceY: sourceY, targetX: targetX, targetY: targetY)
         return EdgePathResult(
-            path: "M \(sourceX),\(sourceY)L \(targetX),\(targetY)",
+            segments: [
+                .move(to: XYPosition(x: sourceX, y: sourceY)),
+                .line(to: XYPosition(x: targetX, y: targetY))
+            ],
             labelX: center.x,
             labelY: center.y,
             offsetX: center.offsetX,
-            offsetY: center.offsetY
+            offsetY: center.offsetY,
+            targetTangentAngle: atan2(targetY - sourceY, targetX - sourceX)
         )
     }
 
@@ -83,14 +114,26 @@ public enum EdgePathAlgorithms {
         )
 
         return EdgePathResult(
-            path: "M\(sourceX),\(sourceY) C\(sourceControl.x),\(sourceControl.y) \(targetControl.x),\(targetControl.y) \(targetX),\(targetY)",
+            segments: [
+                .move(to: XYPosition(x: sourceX, y: sourceY)),
+                .bezier(to: XYPosition(x: targetX, y: targetY), control1: sourceControl, control2: targetControl)
+            ],
             labelX: center.x,
             labelY: center.y,
             offsetX: center.offsetX,
-            offsetY: center.offsetY
+            offsetY: center.offsetY,
+            targetTangentAngle: bezierTangentAngle(t: 1.0, p0: XYPosition(x: sourceX, y: sourceY), p1: sourceControl, p2: targetControl, p3: XYPosition(x: targetX, y: targetY))
         )
     }
 
+    private static func bezierTangentAngle(t: Double, p0: XYPosition, p1: XYPosition, p2: XYPosition, p3: XYPosition) -> Double {
+        let t1 = 1.0 - t
+        // B'(t) = 3(1-t)^2(P1-P0) + 6(1-t)t(P2-P1) + 3t^2(P3-P2)
+        let dx = 3 * t1 * t1 * (p1.x - p0.x) + 6 * t1 * t * (p2.x - p1.x) + 3 * t * t * (p3.x - p2.x)
+        let dy = 3 * t1 * t1 * (p1.y - p0.y) + 6 * t1 * t * (p2.y - p1.y) + 3 * t * t * (p3.y - p2.y)
+        return atan2(dy, dx)
+    }
+    
     public static func smoothStepPath(
         sourceX: Double,
         sourceY: Double,
@@ -114,18 +157,24 @@ public enum EdgePathAlgorithms {
             stepPosition: stepPosition
         )
 
-        var path = "M\(result.points[0].x) \(result.points[0].y)"
+        var segments: [PathSegment] = [.move(to: result.points[0])]
         for index in 1..<(result.points.count - 1) {
-            path += bend(from: result.points[index - 1], via: result.points[index], to: result.points[index + 1], size: borderRadius)
+            segments.append(contentsOf: bendSegments(from: result.points[index - 1], via: result.points[index], to: result.points[index + 1], size: borderRadius))
         }
-        path += "L\(result.points[result.points.count - 1].x) \(result.points[result.points.count - 1].y)"
+        segments.append(.line(to: result.points[result.points.count - 1]))
+
+        // 接線角度: 最後のセグメントの方向
+        let lastPoint = result.points[result.points.count - 1]
+        let prevPoint = result.points[result.points.count - 2]
+        let tangent = atan2(lastPoint.y - prevPoint.y, lastPoint.x - prevPoint.x)
 
         return EdgePathResult(
-            path: path,
+            segments: segments,
             labelX: result.labelX,
             labelY: result.labelY,
             offsetX: result.offsetX,
-            offsetY: result.offsetY
+            offsetY: result.offsetY,
+            targetTangentAngle: tangent
         )
     }
 
@@ -303,23 +352,29 @@ public enum EdgePathAlgorithms {
         return (pathPoints, centerX, centerY, defaultOffsetX, defaultOffsetY)
     }
 
-    private static func bend(from first: XYPosition, via middle: XYPosition, to third: XYPosition, size: Double) -> String {
+    private static func bendSegments(from first: XYPosition, via middle: XYPosition, to third: XYPosition, size: Double) -> [PathSegment] {
         let bendSize = min(distance(first, middle) / 2, distance(middle, third) / 2, size)
         let x = middle.x
         let y = middle.y
 
         if (first.x == x && x == third.x) || (first.y == y && y == third.y) {
-            return "L\(x) \(y)"
+            return [.line(to: XYPosition(x: x, y: y))]
         }
 
         if first.y == y {
             let xDirection = first.x < third.x ? -1.0 : 1.0
             let yDirection = first.y < third.y ? 1.0 : -1.0
-            return "L \(x + bendSize * xDirection),\(y)Q \(x),\(y) \(x),\(y + bendSize * yDirection)"
+            return [
+                .line(to: XYPosition(x: x + bendSize * xDirection, y: y)),
+                .quadratic(to: XYPosition(x: x, y: y + bendSize * yDirection), control: XYPosition(x: x, y: y))
+            ]
         }
 
         let xDirection = first.x < third.x ? 1.0 : -1.0
         let yDirection = first.y < third.y ? -1.0 : 1.0
-        return "L \(x),\(y + bendSize * yDirection)Q \(x),\(y) \(x + bendSize * xDirection),\(y)"
+        return [
+            .line(to: XYPosition(x: x, y: y + bendSize * yDirection)),
+            .quadratic(to: XYPosition(x: x + bendSize * xDirection, y: y), control: XYPosition(x: x, y: y))
+        ]
     }
 }

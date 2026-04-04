@@ -145,5 +145,12 @@ public struct CoordinateExtent: Sendable, Equatable {
         self.max = XYPosition(x: maxX, y: maxY)
     }
 }
-
+/// パス描画用の中間幾何表現。
+/// プラットフォームに依存せず、線の構成要素（セグメント）を定義します。
+public enum PathSegment: Sendable, Equatable {
+    case move(to: XYPosition)
+    case line(to: XYPosition)
+    case bezier(to: XYPosition, control1: XYPosition, control2: XYPosition)
+    case quadratic(to: XYPosition, control: XYPosition)
+}
 

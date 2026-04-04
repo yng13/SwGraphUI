@@ -43,10 +43,16 @@
 - [ ] ノード選択
 - [x] ノードドラッグ (Core logic only in M8)
 - [ ] ハンドル接続
-- [x] **M10b/11: Measurement Engine & View Customization [完了]**
-    - [x] 実際のノード描画サイズを内部で測定し `BaseNode.measured` に同期する仕組み
-    - [x] `fitView` およびドラッグの境界計算に実測値を適用
-    - [x] `@ViewBuilder` を用いたカスタムノードビューの外部注入 API 設計
+- [x] **Milestone 12: Edge Rendering & Customization (CORE) [Done]**
+
+- **Status**: 完了
+- **Goal**: ノードに追従するエッジ描画とカスタム描写。
+- **Scope**:
+  - `PathSegment`: 中間幾何表現
+  - `DefaultEdgeView`: 標準エッジ
+  - `EdgeRenderer`: 内部描画エンジン
+  - `NodePositioningAlgorithms`: 測位ロジック
+- **Validation**: `Edges` サンプルでのドラッグ追従確認。
     - [x] `NodeView` の軽量化と `DefaultNodeView` への移行
     - [x] 初回実測後の自動 fitView 連携（Example App）
 
@@ -57,8 +63,12 @@
     - [x] 座標変換領域の固定 (viewport_container)
     - [x] 背景ドラッグによるパン操作の実装
     - [x] サンプルデータへの暫定寸法付与による `fitView` の動作確認
-- [x] **M10a-fix: Stability & Coordinate Fixes**
-- [ ] Feature Overview (Refinement)
+- [x] **M12: Edge Rendering & Customization** (Done)
+  - [x] NodePositioningAlgorithms による階層・実測・Origin考慮の測位
+  - [x] PathSegment / EdgeGeometry による中間幾何表現の導入
+  - [x] DefaultEdgeView (Bezier / Straight / SmoothStep 追従)
+  - [x] Arrow Marker サポート
+  - [x] GraphView の階層的初期化サポート
 - [ ] Basic interaction 相当 example 群
 - [ ] Custom Node / Edge 系 example 群
 - [ ] Layout 系 example 群

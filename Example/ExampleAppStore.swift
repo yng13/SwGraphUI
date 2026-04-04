@@ -80,11 +80,16 @@ public final class ExampleAppStore {
         
         var newNodes: [BaseNode<String>] = []
         
+        var newEdges: [BaseEdge<String>] = []
+        
         switch category {
         case .basic:
             newNodes = [
                 BaseNode(id: "A", position: XYPosition(x: 100, y: 100), data: "Node A", width: 150, height: 50),
                 BaseNode(id: "B", position: XYPosition(x: 400, y: 200), data: "Node B", width: 150, height: 50)
+            ]
+            newEdges = [
+                BaseEdge(id: "eA-B", source: "A", target: "B", markerEnd: EdgeMarker(type: .arrowClosed))
             ]
         case .hierarchy:
             let p = BaseNode(id: "parent", position: XYPosition(x: 50, y: 50), data: "Parent", width: 400, height: 350)
@@ -104,7 +109,7 @@ public final class ExampleAppStore {
         }
         
         graphStore.nodes = newNodes
-        graphStore.edges = [] // 今回は Edge 未実装のためクリア
+        graphStore.edges = newEdges
         
         // 切り替え時に自動で fitView を実行
         graphStore.fitView(in: currentGraphSize)

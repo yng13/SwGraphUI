@@ -77,12 +77,15 @@ public struct BaseEdge<Data: Sendable>: Sendable, Identifiable {
     public var kind: String?
     public var sourceHandle: String?
     public var targetHandle: String?
+    public var sourcePosition: Position?
+    public var targetPosition: Position?
     public var animated: Bool
     public var markerStart: EdgeMarker?
     public var markerEnd: EdgeMarker?
     public var zIndex: Int?
     public var ariaLabel: String?
     public var interactionWidth: Double?
+    public var curvature: Double?
 
     // MARK: - Library-managed/Interaction state
     public var hidden: Bool
@@ -98,12 +101,15 @@ public struct BaseEdge<Data: Sendable>: Sendable, Identifiable {
         kind: String? = nil,
         sourceHandle: String? = nil,
         targetHandle: String? = nil,
+        sourcePosition: Position? = nil,
+        targetPosition: Position? = nil,
         animated: Bool = false,
         markerStart: EdgeMarker? = nil,
         markerEnd: EdgeMarker? = nil,
         zIndex: Int? = nil,
         ariaLabel: String? = nil,
         interactionWidth: Double? = nil,
+        curvature: Double? = nil,
         hidden: Bool = false,
         deletable: Bool = true,
         selectable: Bool = true,
@@ -116,12 +122,15 @@ public struct BaseEdge<Data: Sendable>: Sendable, Identifiable {
         self.kind = kind
         self.sourceHandle = sourceHandle
         self.targetHandle = targetHandle
+        self.sourcePosition = sourcePosition
+        self.targetPosition = targetPosition
         self.animated = animated
         self.markerStart = markerStart
         self.markerEnd = markerEnd
         self.zIndex = zIndex
         self.ariaLabel = ariaLabel
         self.interactionWidth = interactionWidth
+        self.curvature = curvature
         self.hidden = hidden
         self.deletable = deletable
         self.selectable = selectable
