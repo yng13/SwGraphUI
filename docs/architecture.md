@@ -14,6 +14,8 @@
 - `system` には `d3-zoom` を含む外部依存が多く含まれる想定であり、SwiftUI gesture, transform, layout, animation でどう再現するかを別途整理する
 
 `d3-*` 依存の分解結果は `d3-dependency-analysis.md` に分離して管理する。
+`system / react / svelte` の責務整理は `framework-responsibility-analysis.md` に分離して管理する。
+package の将来構成案は `package-layout.md` に分離して管理する。
 
 ## 設計原則
 
@@ -23,6 +25,13 @@
 - examples の再現を通じて API を育てる
 - React 固有の仕組みではなく、SwiftUI の state, binding, gesture, layout に寄せる
 - 責務境界を先に固定し、状態管理と描画を混線させない
+- 実装単位ごとに未実装を宙に浮かせず、その場で閉じるか後続責務へ明示的に送る
+
+## マイルストーン運用
+
+- 各マイルストーンでは、対象範囲の未実装をなるべく残さない
+- 今回で閉じない項目は、`後でやる` ではなく、次のどの責務として送るかを明示する
+- `残課題` という表現だけで曖昧に終わらせず、`今回で閉じたこと` と `後続へ送る責務` に分けて管理する
 
 ## 初期モジュール案
 

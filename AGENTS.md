@@ -22,6 +22,8 @@
 - `responsibility-boundaries.md`: コンポーネント責務境界
 - `d3-dependency-analysis.md`: d3 依存の責務分解
 - `system-migration-order.md`: core-first の移植順
+- `framework-responsibility-analysis.md`: system / react / svelte の責務整理
+- `package-layout.md`: package ディレクトリ構成案
 - `examples-inventory.md`: React Flow examples の棚卸し
 - `backlog.md`: 実装バックログと優先順位
 
@@ -44,6 +46,9 @@ Also use these role playbooks when relevant:
 - EasyCompose 固有 field を public model に入れない
 - 一度に大きく実装しない
 - backlog から 1 マイルストーンずつ進める
+- 宙に浮く未実装を残さない
+- 今回で閉じない項目は、後続マイルストーンの責務として明示してから送る
+- `残課題` は単なる TODO リストではなく、`今回で閉じる項目` か `後続へ送る責務` に必ず分解する
 - docs 更新だけでは停止しない
 - 停止してよいのは `実装タスク` `レビュー` `コミット` の直前だけ
 
@@ -55,7 +60,7 @@ Also use these role playbooks when relevant:
   - 変更ファイル
   - 変更理由
   - テスト結果
-  - 残課題
+  - 今回で閉じたこと / 後続へ送る責務
   - backlog/current-plan の更新内容
   - 次の自然なタスク
 

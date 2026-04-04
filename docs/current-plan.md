@@ -2,33 +2,41 @@
 
 ## 現在のマイルストーン
 
-M4: core-first 移植順の固定
+M8: pure core の初回完了
 
 ## Scope summary
 
-- `@xyflow/system` を依存強度で分類する
-- 初回マイルストーンとして移す pure core 範囲を固定する
-- まだ Swift 実装そのものには入らない
+- `Sources/SwGraphUI` の最小ディレクトリ構成を実際に切る
+- pure core の最初の型を追加する
+- utility と runtime state の placeholder を実体化する
+- 宙に浮く未実装を作らず、送るものは後続責務として明示する
 
 ## Included
 
-- `docs/system-migration-order.md` の追加
-- `docs/architecture.md` の更新
-- `docs/backlog.md` の更新
+- `Sources/SwGraphUI/Core/Model/*`
+- `Sources/SwGraphUI/Core/Algorithms/*`
+- `Sources/SwGraphUI/Runtime/State/*`
+- `Sources/SwGraphUI/Public/API/*`
+- `Sources/SwGraphUI/Public/Types/*`
+- `Tests/SwGraphUITests/*`
 
 ## Excluded
 
 - `system` 外部依存全体の Swift 置換設計
-- `svelte` 優先参照の妥当性評価
-- Swift Package の public API 追加
+- interaction engine の実装
 - examples 実装そのもの
+
+## Exit rule
+
+- このマイルストーンの範囲で生じた未実装は、可能な限りこのマイルストーン内で閉じる
+- 次へ送る場合は、`次の責務` と `受け入れ条件` を backlog に追加してから送る
 
 ## Risks
 
-- Tier 0 と Tier 1 の境界を雑に切ると後で型が揺れる
-- `types/nodes.ts` のような mixed file をそのまま移すと DOM 型が混ざる
-- pure utility を広く取りすぎると初回マイルストーンが肥大化する
+- `GraphNode / GraphEdge` の generic public surface は今後も微調整余地がある
+- interaction engine に入ると Runtime/State の再分割が必要になる可能性がある
+- viewport fit や transform utility はまだ拡張余地がある
 
 ## Recommended next implementation step
 
-`system-migration-order.md` を基準に、初回マイルストーンの core model / pure utility を実際の Swift 型へ落とし込む
+`Core/Interaction` の責務境界を定義し、interaction engine に着手する

@@ -9,19 +9,27 @@
 - [x] 公開 examples とローカル `xyflow` route の対応表を作成
 - [x] 参照 commit を `docs/reference-lock.md` に固定
 - [x] コンポーネント責務境界の初版を定義
-- [ ] `system / react / svelte` の責務分割を整理
-- [ ] `svelte` を優先参照にする妥当性を評価
+- [x] `system / react / svelte` の責務分割を整理
+- [x] `svelte` を優先参照にする妥当性を評価
 - [x] `system` の d3 依存と責務分解を整理
 - [x] `system` の core-first 移植順を整理
 - [ ] `system` の外部依存全体と SwiftUI 置換方針を整理
+- [x] 将来の package directory 構成案を定義
 
 ## Epic 2: コアモデル設計
 
-- [ ] ノードモデルの型設計
-- [ ] エッジモデルの型設計
-- [ ] ハンドルと接続ルールの型設計
-- [ ] ビューポート座標変換モデルの設計
-- [ ] 選択状態とドラッグ状態の設計
+- [x] `Sources/SwGraphUI` の最小ディレクトリ構成を作成
+- [x] 座標・矩形・接続・変更差分の初期型を追加
+- [x] ノードモデルの初期型設計
+- [x] エッジモデルの初期型設計
+- [x] ハンドルと接続ルールの初期型設計
+- [x] ビューポート座標変換モデルの初期型設計
+- [x] 選択状態とビューポート状態の初期設計
+- [x] `GraphNode / GraphEdge` を正規 public 名として固定
+- [x] graph / connection / edge path / bounds / viewport utility を追加
+- [x] drag / connection / hover を含む runtime state を追加
+- [ ] `Core/Interaction` の責務境界を定義
+- [ ] `Runtime/State` と `Interaction` の境界を整理
 
 ## Epic 3: 最小ランタイム実装
 
@@ -43,6 +51,6 @@
 
 ## 直近の次アクション
 
-1. 公開ページの各 example と `.reference/xyflow` 内 source の対応表を作る
-2. 初回マイルストーンの core model / pure utility 範囲を Swift 型へ落とす
-3. examples を実現するための最小機能集合を抽出する
+1. `Core/Interaction` の責務と対象 state を定義する
+2. `Runtime/State` と `Interaction` の境界を切る
+3. interaction engine の最小実装に入る
