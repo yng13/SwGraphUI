@@ -13,7 +13,7 @@
 - [x] `svelte` を優先参照にする妥当性を評価
 - [x] `system` の d3 依存と責務分解を整理
 - [x] `system` の core-first 移植順を整理
-- [ ] `system` の外部依存全体と SwiftUI 置換方針を整理
+- [x] `system` の外部依存全体と SwiftUI 置換方針を整理
 - [x] 将来の package directory 構成案を定義
 
 ## Epic 2: コアモデル設計
@@ -28,16 +28,16 @@
 - [x] `GraphNode / GraphEdge` を正規 public 名として固定
 - [x] graph / connection / edge path / bounds / viewport utility を追加
 - [x] drag / connection / hover を含む runtime state を追加
-- [ ] `Core/Interaction` の責務境界を定義
-- [ ] `Runtime/State` と `Interaction` の境界を整理
+- [/] `Core/Interaction` の責務境界を定義 (M8)
+- [/] `Runtime/State` と `Interaction` の境界を整理 (M8)
 
 ## Epic 3: 最小ランタイム実装
 
 - [ ] 基本的なノード表示
 - [ ] 基本的なエッジ表示
-- [ ] pan / zoom
+- [/] pan / zoom (Core logic only in M8)
 - [ ] ノード選択
-- [ ] ノードドラッグ
+- [/] ノードドラッグ (Core logic only in M8)
 - [ ] ハンドル接続
 
 ## Epic 4: 受け入れ用 examples
@@ -49,8 +49,18 @@
 - [ ] Whiteboard 系 example 群
 - [ ] UI components 系 example 群
 
-## 直近の次アクション
+## Epic 5: 拡張機能
 
-1. `Core/Interaction` の責務と対象 state を定義する
-2. `Runtime/State` と `Interaction` の境界を切る
-3. interaction engine の最小実装に入る
+- [x] 印刷/PDF エクスポートの要件定義 (`docs/export-strategy.md`)
+- [x] PNG エクスポートの要件定義 (`docs/export-strategy.md`)
+- [ ] export 用レイアウト計算の責務境界を定義
+- [ ] PDF/印刷をベクタ優先で出力する backend 方針を定義
+- [ ] PNG を指定 scale で再レンダリングする backend 方針を定義
+- [ ] 文字ぼやけ回避の品質基準を定義
+- [ ] Example app に export 検証ハーネスを追加
+
+## 直近の次アクション (M8: Core Interaction)
+
+1. `Core/Interaction` における Drag/Zoom/Pan の状態遷移エンジンを設計する
+2. `GraphRuntimeState` から Interaction ロジックを分離し、副作用（座標更新）の適用タイミングを整理する
+3. `fitView` / `centerView` の Core アルゴリズムを完成させる

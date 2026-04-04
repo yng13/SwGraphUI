@@ -26,6 +26,8 @@ package の将来構成案は `package-layout.md` に分離して管理する。
 - React 固有の仕組みではなく、SwiftUI の state, binding, gesture, layout に寄せる
 - 責務境界を先に固定し、状態管理と描画を混線させない
 - 実装単位ごとに未実装を宙に浮かせず、その場で閉じるか後続責務へ明示的に送る
+- エクスポート系機能は画面描画の副産物として扱わず、出力用レイアウト計算と出力 backend を分離する
+- 出力品質は `PDF/印刷はベクタ優先`、`PNG は指定 scale で再レンダリング` を原則とし、拡大時にラスタ文字を引き伸ばさない
 
 ## マイルストーン運用
 
@@ -41,6 +43,7 @@ package の将来構成案は `package-layout.md` に分離して管理する。
 - `Connection`: ハンドル接続、検証、プレビュー線
 - `Nodes`: 組み込みノード、カスタムノード拡張
 - `Edges`: 組み込みエッジ、カスタムエッジ拡張
+- `Export`: 印刷、PDF、PNG 出力。viewport 切り出し、全体 fit、出力 scale、背景、余白を管理
 - `Examples`: 受け入れ検証用サンプル群
 - `Example App`: examples を手元で確認するための SwiftUI 実行 target
 

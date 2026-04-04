@@ -17,6 +17,7 @@ SwGraphUI の最終目標は、[React Flow Examples](https://reactflow.dev/examp
 - 同ページの UI セクションにある再利用可能コンポーネント群についても、SwiftUI 向け API として表現方針を定義する
 - 各 example に対して、対応する SwGraphUI サンプルまたはテストハーネスが存在する
 - ライブラリ利用者が React Flow の主要ユースケースを SwiftUI 上で置き換えられる
+- 拡張フェーズとして、印刷/PDF・PNG エクスポートを提供し、拡大時の文字ぼやけに配慮した出力品質要件を満たす
 
 ## ソース・オブ・トゥルース
 
