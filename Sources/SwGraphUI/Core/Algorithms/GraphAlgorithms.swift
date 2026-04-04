@@ -37,7 +37,7 @@ public enum GraphAlgorithms {
 
     public static func nodeBounds<Data>(
         for nodes: [GraphNode<Data>],
-        defaultOrigin: NodeOrigin = (x: 0, y: 0)
+        defaultOrigin: NodeOrigin = .topLeft
     ) -> Rect where Data: Sendable {
         let rects = nodes.map { nodeRect(for: $0, defaultOrigin: defaultOrigin) }
         return GeometryAlgorithms.union(of: rects) ?? Rect(x: 0, y: 0, width: 0, height: 0)
@@ -45,7 +45,7 @@ public enum GraphAlgorithms {
 
     public static func nodeRect<Data>(
         for node: GraphNode<Data>,
-        defaultOrigin: NodeOrigin = (x: 0, y: 0)
+        defaultOrigin: NodeOrigin = .topLeft
     ) -> Rect where Data: Sendable {
         let size = nodeDimensions(for: node)
         let origin = node.origin ?? defaultOrigin

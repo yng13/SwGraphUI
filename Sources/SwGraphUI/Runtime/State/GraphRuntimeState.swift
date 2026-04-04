@@ -15,12 +15,28 @@ public struct SelectionState: Sendable, Equatable {
         selectedNodeIDs.remove(id)
     }
 
+    public mutating func toggleNode(id: String) {
+        if selectedNodeIDs.contains(id) {
+            selectedNodeIDs.remove(id)
+        } else {
+            selectedNodeIDs.insert(id)
+        }
+    }
+
     public mutating func selectEdge(id: String) {
         selectedEdgeIDs.insert(id)
     }
 
     public mutating func deselectEdge(id: String) {
         selectedEdgeIDs.remove(id)
+    }
+
+    public mutating func toggleEdge(id: String) {
+        if selectedEdgeIDs.contains(id) {
+            selectedEdgeIDs.remove(id)
+        } else {
+            selectedEdgeIDs.insert(id)
+        }
     }
 
     public mutating func clear() {
@@ -37,6 +53,11 @@ public struct HoverState: Sendable, Equatable {
         self.hoveredNodeID = hoveredNodeID
         self.hoveredEdgeID = hoveredEdgeID
     }
+
+    public mutating func clear() {
+        hoveredNodeID = nil
+        hoveredEdgeID = nil
+    }
 }
 
 public struct DragState: Sendable, Equatable {
@@ -52,6 +73,22 @@ public struct DragState: Sendable, Equatable {
 
     public var isDragging: Bool {
         !draggedNodeIDs.isEmpty
+    }
+
+    public mutating func startDrag(ids: [String], origin: XYPosition) {
+        self.draggedNodeIDs = ids
+        self.dragOrigin = origin
+        self.currentPosition = origin
+    }
+
+    public mutating func updateDrag(to position: XYPosition) {
+        self.currentPosition = position
+    }
+
+    public mutating func stopDrag() {
+        self.draggedNodeIDs.removeAll()
+        self.dragOrigin = nil
+        self.currentPosition = nil
     }
 }
 
@@ -90,6 +127,20 @@ public struct ConnectionRuntimeState: Sendable, Equatable {
     public var isConnecting: Bool {
         active != nil
     }
+
+    public mutating func start(fromNodeID: String, fromHandleID: String?, fromHandleType: HandleType, at position: XYPosition) {
+        self.active = .init(fromNodeID: fromNodeID, fromHandleID: fromHandleID, fromHandleType: fromHandleType, currentPointer: position)
+    }
+
+    public mutating func update(to position: XYPosition, targetNodeID: String? = nil, targetHandleID: String? = nil) {
+        active?.currentPointer = position
+        active?.targetNodeID = targetNodeID
+        active?.targetHandleID = targetHandleID
+    }
+
+    public mutating func end() {
+        self.active = nil
+    }
 }
 
 public struct ViewportState: Sendable, Equatable {
@@ -103,9 +154,9 @@ public struct ViewportState: Sendable, Equatable {
         self.viewport = viewport
     }
 
-    public mutating func panBy(x: Double, y: Double) {
-        viewport.x += x
-        viewport.y += y
+    public mutating func panBy(dx: Double, dy: Double) {
+        viewport.x += dx
+        viewport.y += dy
     }
 
     public mutating func zoomTo(_ zoom: Double) {
@@ -134,3 +185,4 @@ public struct GraphRuntimeState: Sendable, Equatable {
         self.viewport = viewport
     }
 }
+

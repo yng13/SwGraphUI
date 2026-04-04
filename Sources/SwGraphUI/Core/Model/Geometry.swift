@@ -123,4 +123,4 @@ public struct CoordinateExtent: Sendable, Equatable {
     }
 }
 
-public typealias NodeOrigin = (x: Double, y: Double)
+

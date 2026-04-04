@@ -68,62 +68,66 @@ public struct EdgePosition: Sendable, Equatable {
     }
 }
 
-public struct BaseEdge<Data: Sendable>: Sendable {
+public struct BaseEdge<Data: Sendable>: Sendable, Identifiable {
+    // MARK: - User-defined properties
     public var id: String
-    public var kind: String?
     public var source: String
     public var target: String
+    public var data: Data?
+    public var kind: String?
     public var sourceHandle: String?
     public var targetHandle: String?
     public var animated: Bool
-    public var hidden: Bool
-    public var deletable: Bool
-    public var selectable: Bool
-    public var data: Data?
-    public var selected: Bool
     public var markerStart: EdgeMarker?
     public var markerEnd: EdgeMarker?
     public var zIndex: Int?
     public var ariaLabel: String?
     public var interactionWidth: Double?
 
+    // MARK: - Library-managed/Interaction state
+    public var hidden: Bool
+    public var deletable: Bool
+    public var selectable: Bool
+    public var selected: Bool
+
     public init(
         id: String,
-        kind: String? = nil,
         source: String,
         target: String,
+        data: Data? = nil,
+        kind: String? = nil,
         sourceHandle: String? = nil,
         targetHandle: String? = nil,
         animated: Bool = false,
-        hidden: Bool = false,
-        deletable: Bool = true,
-        selectable: Bool = true,
-        data: Data? = nil,
-        selected: Bool = false,
         markerStart: EdgeMarker? = nil,
         markerEnd: EdgeMarker? = nil,
         zIndex: Int? = nil,
         ariaLabel: String? = nil,
-        interactionWidth: Double? = nil
+        interactionWidth: Double? = nil,
+        hidden: Bool = false,
+        deletable: Bool = true,
+        selectable: Bool = true,
+        selected: Bool = false
     ) {
         self.id = id
-        self.kind = kind
         self.source = source
         self.target = target
+        self.data = data
+        self.kind = kind
         self.sourceHandle = sourceHandle
         self.targetHandle = targetHandle
         self.animated = animated
-        self.hidden = hidden
-        self.deletable = deletable
-        self.selectable = selectable
-        self.data = data
-        self.selected = selected
         self.markerStart = markerStart
         self.markerEnd = markerEnd
         self.zIndex = zIndex
         self.ariaLabel = ariaLabel
         self.interactionWidth = interactionWidth
+        self.hidden = hidden
+        self.deletable = deletable
+        self.selectable = selectable
+        self.selected = selected
     }
 }
 
 public typealias Edge = BaseEdge<EmptyPayload>
+

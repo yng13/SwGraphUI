@@ -57,12 +57,12 @@ public enum ConnectionsAlgorithms {
 
         let edge = GraphEdge<Data>(
             id: edgeID(for: connection),
-            kind: kind,
             source: connection.source,
             target: connection.target,
+            data: data,
+            kind: kind,
             sourceHandle: connection.sourceHandle,
-            targetHandle: connection.targetHandle,
-            data: data
+            targetHandle: connection.targetHandle
         )
 
         return addEdge(edge, to: edges)
@@ -79,26 +79,27 @@ public enum ConnectionsAlgorithms {
 
         let replacement = GraphEdge<Data>(
             id: shouldReplaceID ? edgeID(for: connection) : edge.id,
-            kind: edge.kind,
             source: connection.source,
             target: connection.target,
+            data: edge.data,
+            kind: edge.kind,
             sourceHandle: connection.sourceHandle,
             targetHandle: connection.targetHandle,
             animated: edge.animated,
-            hidden: edge.hidden,
-            deletable: edge.deletable,
-            selectable: edge.selectable,
-            data: edge.data,
-            selected: edge.selected,
             markerStart: edge.markerStart,
             markerEnd: edge.markerEnd,
             zIndex: edge.zIndex,
             ariaLabel: edge.ariaLabel,
-            interactionWidth: edge.interactionWidth
+            interactionWidth: edge.interactionWidth,
+            hidden: edge.hidden,
+            deletable: edge.deletable,
+            selectable: edge.selectable,
+            selected: edge.selected
         )
 
         return edges.filter { $0.id != edge.id } + [replacement]
     }
+
 
     private static func containsDuplicate<Data>(
         _ edge: GraphEdge<Data>,
