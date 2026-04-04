@@ -27,8 +27,12 @@
 - [x] 選択状態とビューポート状態の初期設計
 - [x] `GraphNode / GraphEdge` を正規 public 名として固定
 - [x] graph / connection / edge path / bounds / viewport utility を追加
-- [x] drag / connection / hover を含む runtime state を追加
-- [x] `Core/Interaction` の責務境界を定義 (M8)
+- [x] drag / connection / hover
+- [x] M9: Platform Adapters & UI State Synchronization
+    - [x] `@Observable @MainActor GraphStore` の導入
+    - [x] Coordinate conversion adapter (Screen <-> Graph)
+    - [x] Viewport Transform & Node Interaction bridge (SwiftUI)
+- [x] M8: Core Interaction & Viewport Commands
 - [x] `Runtime/State` と `Interaction` の境界を整理 (M8)
 
 ## Epic 3: 最小ランタイム実装

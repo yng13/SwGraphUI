@@ -18,10 +18,11 @@ UI非依存なインタラクションエンジン（Drag, Zoom, Pan）の核と
 - 宙に浮く未実装を排除し、後続への送り責務（例：プラットフォームアダプタへの通知）が明確であること。
 
 ## 完了したマイルストーン
+- [x] M9: Platform Adapters & UI State Synchronization
+    - [x] `@Observable @MainActor GraphStore` の導入
+    - [x] Coordinate conversion adapter (Screen <-> Graph)
+    - [x] Viewport Transform & Node Interaction bridge (SwiftUI)
 - [x] M8: Core Interaction & Viewport Commands
-    - [x] 階層構造（Subflows）の座標解決（再帰・循環ガード）
-    - [x] 親子ドラッグのオフセット不整合修正
-    - [x] Viewport Commands (`fitView`) の階層対応アルゴリズム
 - [x] M7: pure coreの実体化 (Base models, Geometry Algorithms, Runtime State helpers)
 
 ## 後続に固定した拡張テーマ

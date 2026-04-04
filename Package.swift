@@ -7,6 +7,7 @@ let package = Package(
     name: "SwGraphUI",
     platforms: [
         .macOS(.v14),
+        .iOS(.v17),
     ],
     products: [
         .library(
