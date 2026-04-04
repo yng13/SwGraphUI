@@ -120,6 +120,15 @@ public enum GeometryAlgorithms {
         }
     }
 
+    internal static func calculateAppliedPaddings(bounds: Rect, x: Double, y: Double, zoom: Double, width: Double, height: Double) -> (top: Double, left: Double, bottom: Double, right: Double) {
+        let left = (bounds.x * zoom) + x
+        let top = (bounds.y * zoom) + y
+        let right = width - (bounds.x + bounds.width) * zoom - x
+        let bottom = height - (bounds.y + bounds.height) * zoom - y
+
+        return (top: floor(top), left: floor(left), bottom: floor(bottom), right: floor(right))
+    }
+
     public static func getViewportForBounds(
         _ bounds: Rect,
         in size: Dimensions,
@@ -140,24 +149,22 @@ public enum GeometryAlgorithms {
         let boundsCenterX = bounds.x + bounds.width / 2
         let boundsCenterY = bounds.y + bounds.height / 2
         
-        var x = size.width / 2 - boundsCenterX * zoom
-        var y = size.height / 2 - boundsCenterY * zoom
+        let x = size.width / 2 - boundsCenterX * zoom
+        let y = size.height / 2 - boundsCenterY * zoom
 
         // xyflow's logic: re-calculate applied paddings and offset to respect asymmetric padding
-        let left = (bounds.x * zoom) + x
-        let top = (bounds.y * zoom) + y
-        let right = size.width - (bounds.x + bounds.width) * zoom - x
-        let bottom = size.height - (bounds.y + bounds.height) * zoom - y
+        let applied = calculateAppliedPaddings(bounds: bounds, x: x, y: y, zoom: zoom, width: size.width, height: size.height)
 
-        let offsetLeft = Swift.min(left - pLeft, 0)
-        let offsetTop = Swift.min(top - pTop, 0)
-        let offsetRight = Swift.min(right - pRight, 0)
-        let offsetBottom = Swift.min(bottom - pBottom, 0)
+        let offsetLeft = Swift.min(applied.left - pLeft, 0)
+        let offsetTop = Swift.min(applied.top - pTop, 0)
+        let offsetRight = Swift.min(applied.right - pRight, 0)
+        let offsetBottom = Swift.min(applied.bottom - pBottom, 0)
 
-        x = x - offsetLeft + offsetRight
-        y = y - offsetTop + offsetBottom
-        
-        return Viewport(x: x, y: y, zoom: zoom)
+        return Viewport(
+            x: x - offsetLeft + offsetRight,
+            y: y - offsetTop + offsetBottom,
+            zoom: zoom
+        )
     }
 
     public static func union(of rects: [Rect]) -> Rect? {
