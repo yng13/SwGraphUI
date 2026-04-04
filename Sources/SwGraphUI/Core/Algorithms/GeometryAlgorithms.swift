@@ -57,26 +57,107 @@ public enum GeometryAlgorithms {
         )
     }
 
-    public static func viewportForBounds(
+    public static func getNodePositionWithOrigin<Data: Sendable>(node: BaseNode<Data>, nodeOrigin: NodeOrigin = .init(x: 0, y: 0)) -> XYPosition {
+        let width = node.width ?? node.measured?.width ?? node.initialWidth ?? 0
+        let height = node.height ?? node.measured?.height ?? node.initialHeight ?? 0
+        let origin = node.origin ?? nodeOrigin
+
+        return XYPosition(
+            x: node.position.x - width * origin.x,
+            y: node.position.y - height * origin.y
+        )
+    }
+
+    public static func getBounds<Data: Sendable>(nodes: [BaseNode<Data>], nodeOrigin: NodeOrigin = .init(x: 0, y: 0)) -> Rect {
+        if nodes.isEmpty {
+            return Rect(x: 0, y: 0, width: 0, height: 0)
+        }
+
+        let rects = nodes.map { node in
+            let pos = getNodePositionWithOrigin(node: node, nodeOrigin: nodeOrigin)
+            return Rect(
+                x: pos.x,
+                y: pos.y,
+                width: node.width ?? node.measured?.width ?? node.initialWidth ?? 0,
+                height: node.height ?? node.measured?.height ?? node.initialHeight ?? 0
+            )
+        }
+
+        return union(of: rects) ?? Rect(x: 0, y: 0, width: 0, height: 0)
+    }
+
+    public enum PaddingValue: Sendable, Equatable {
+        case relative(Double)
+        case points(Double)
+
+        public func resolve(for axis: Double) -> Double {
+            switch self {
+            case .relative(let val): axis * val
+            case .points(let val): val
+            }
+        }
+    }
+
+    public struct Padding: Sendable, Equatable {
+        public var top: PaddingValue
+        public var left: PaddingValue
+        public var bottom: PaddingValue
+        public var right: PaddingValue
+
+        public init(top: PaddingValue, left: PaddingValue, bottom: PaddingValue, right: PaddingValue) {
+            self.top = top
+            self.left = left
+            self.bottom = bottom
+            self.right = right
+        }
+
+        public static func all(_ value: PaddingValue) -> Padding {
+            .init(top: value, left: value, bottom: value, right: value)
+        }
+
+        public static func symmetric(vertical: PaddingValue, horizontal: PaddingValue) -> Padding {
+            .init(top: vertical, left: horizontal, bottom: vertical, right: horizontal)
+        }
+    }
+
+    public static func getViewportForBounds(
         _ bounds: Rect,
         in size: Dimensions,
         minZoom: Double,
         maxZoom: Double,
-        padding: Double = 0.1
+        padding: Padding = .all(.relative(0.1))
     ) -> Viewport {
-        let paddingX = Foundation.floor((size.width - size.width / (1 + padding)) * 0.5)
-        let paddingY = Foundation.floor((size.height - size.height / (1 + padding)) * 0.5)
-        let xZoom = (size.width - paddingX * 2) / bounds.width
-        let yZoom = (size.height - paddingY * 2) / bounds.height
-        let zoom = clamp(Swift.min(xZoom, yZoom), min: minZoom, max: maxZoom)
-        let centerX = bounds.x + bounds.width / 2
-        let centerY = bounds.y + bounds.height / 2
+        let pTop = padding.top.resolve(for: size.height)
+        let pLeft = padding.left.resolve(for: size.width)
+        let pBottom = padding.bottom.resolve(for: size.height)
+        let pRight = padding.right.resolve(for: size.width)
 
-        return Viewport(
-            x: size.width / 2 - centerX * zoom,
-            y: size.height / 2 - centerY * zoom,
-            zoom: zoom
-        )
+        let xZoom = (size.width - (pLeft + pRight)) / bounds.width
+        let yZoom = (size.height - (pTop + pBottom)) / bounds.height
+        
+        let zoom = clamp(Swift.min(xZoom, yZoom), min: minZoom, max: maxZoom)
+        
+        let boundsCenterX = bounds.x + bounds.width / 2
+        let boundsCenterY = bounds.y + bounds.height / 2
+        
+        var x = size.width / 2 - boundsCenterX * zoom
+        var y = size.height / 2 - boundsCenterY * zoom
+
+        // xyflow's logic: re-calculate applied paddings and offset to respect asymmetric padding
+        let left = (bounds.x * zoom) + x
+        let top = (bounds.y * zoom) + y
+        let right = size.width - (bounds.x + bounds.width) * zoom - x
+        let bottom = size.height - (bounds.y + bounds.height) * zoom - y
+
+        let offsetLeft = Swift.min(left - pLeft, 0)
+        let offsetTop = Swift.min(top - pTop, 0)
+        let offsetRight = Swift.min(right - pRight, 0)
+        let offsetBottom = Swift.min(bottom - pBottom, 0)
+
+        x = x - offsetLeft + offsetRight
+        y = y - offsetTop + offsetBottom
+        
+        return Viewport(x: x, y: y, zoom: zoom)
     }
 
     public static func union(of rects: [Rect]) -> Rect? {
@@ -92,3 +173,5 @@ public enum GeometryAlgorithms {
         return Rect(x: minX, y: minY, width: maxX - minX, height: maxY - minY)
     }
 }
+
+

@@ -189,7 +189,7 @@ public enum EdgePathAlgorithms {
         sqrt(pow(second.x - first.x, 2) + pow(second.y - first.y, 2))
     }
 
-    private static func smoothStepPoints(
+    internal static func smoothStepPoints(
         source: XYPosition,
         sourcePosition: Position,
         target: XYPosition,
@@ -205,55 +205,102 @@ public enum EdgePathAlgorithms {
         let direction = edgeDirection(source: sourceGapped, sourcePosition: sourcePosition, target: targetGapped)
         let primaryIsX = direction.x != 0
         let currentDirection = primaryIsX ? direction.x : direction.y
-        let baseCenter = edgeCenter(sourceX: source.x, sourceY: source.y, targetX: target.x, targetY: target.y)
+        
+        var points: [XYPosition] = []
+        var centerX: Double
+        var centerY: Double
+        
+        var sourceGapOffset = XYPosition(x: 0, y: 0)
+        var targetGapOffset = XYPosition(x: 0, y: 0)
 
-        var points: [XYPosition]
-        var labelX: Double
-        var labelY: Double
+        let (_, _, defaultOffsetX, defaultOffsetY) = edgeCenter(sourceX: source.x, sourceY: source.y, targetX: target.x, targetY: target.y)
 
+        // opposite handle positions, default case
         if (primaryIsX ? sourceDir.x : sourceDir.y) * (primaryIsX ? targetDir.x : targetDir.y) == -1 {
-            let bendX = center.x ?? (primaryIsX ? sourceGapped.x + (targetGapped.x - sourceGapped.x) * stepPosition : (sourceGapped.x + targetGapped.x) / 2)
-            let bendY = center.y ?? (primaryIsX ? (sourceGapped.y + targetGapped.y) / 2 : sourceGapped.y + (targetGapped.y - sourceGapped.y) * stepPosition)
-            let verticalSplit = [XYPosition(x: bendX, y: sourceGapped.y), XYPosition(x: bendX, y: targetGapped.y)]
-            let horizontalSplit = [XYPosition(x: sourceGapped.x, y: bendY), XYPosition(x: targetGapped.x, y: bendY)]
+            if primaryIsX {
+                centerX = center.x ?? sourceGapped.x + (targetGapped.x - sourceGapped.x) * stepPosition
+                centerY = center.y ?? (sourceGapped.y + targetGapped.y) / 2
+            } else {
+                centerX = center.x ?? (sourceGapped.x + targetGapped.x) / 2
+                centerY = center.y ?? sourceGapped.y + (targetGapped.y - sourceGapped.y) * stepPosition
+            }
+
+            let verticalSplit = [XYPosition(x: centerX, y: sourceGapped.y), XYPosition(x: centerX, y: targetGapped.y)]
+            let horizontalSplit = [XYPosition(x: sourceGapped.x, y: centerY), XYPosition(x: targetGapped.x, y: centerY)]
 
             if (primaryIsX ? sourceDir.x : sourceDir.y) == currentDirection {
                 points = primaryIsX ? verticalSplit : horizontalSplit
             } else {
                 points = primaryIsX ? horizontalSplit : verticalSplit
             }
-
-            labelX = bendX
-            labelY = bendY
         } else {
-            let corner = primaryIsX
-                ? (sourceDir.x == currentDirection ? XYPosition(x: targetGapped.x, y: sourceGapped.y) : XYPosition(x: sourceGapped.x, y: targetGapped.y))
-                : (sourceDir.y == currentDirection ? XYPosition(x: sourceGapped.x, y: targetGapped.y) : XYPosition(x: targetGapped.x, y: sourceGapped.y))
-            points = [corner]
+            let sourceTarget = [XYPosition(x: sourceGapped.x, y: targetGapped.y)]
+            let targetSource = [XYPosition(x: targetGapped.x, y: sourceGapped.y)]
 
-            let sourceGapPoint = sourceGapped
-            let targetGapPoint = targetGapped
-            let maxXDistance = max(abs(sourceGapPoint.x - corner.x), abs(targetGapPoint.x - corner.x))
-            let maxYDistance = max(abs(sourceGapPoint.y - corner.y), abs(targetGapPoint.y - corner.y))
+            if primaryIsX {
+                points = sourceDir.x == currentDirection ? targetSource : sourceTarget
+            } else {
+                points = sourceDir.y == currentDirection ? sourceTarget : targetSource
+            }
+
+            if sourcePosition == targetPosition {
+                let diff = abs(primaryIsX ? (source.x - target.x) : (source.y - target.y))
+                if diff <= offset {
+                    let gapOffsetVal = min(offset - 1, offset - diff)
+                    if (primaryIsX ? sourceDir.x : sourceDir.y) == currentDirection {
+                        if primaryIsX {
+                            sourceGapOffset.x = (sourceGapped.x > source.x ? -1 : 1) * gapOffsetVal
+                        } else {
+                            sourceGapOffset.y = (sourceGapped.y > source.y ? -1 : 1) * gapOffsetVal
+                        }
+                    } else {
+                        if primaryIsX {
+                            targetGapOffset.x = (targetGapped.x > target.x ? -1 : 1) * gapOffsetVal
+                        } else {
+                            targetGapOffset.y = (targetGapped.y > target.y ? -1 : 1) * gapOffsetVal
+                        }
+                    }
+                }
+            }
+
+            if sourcePosition != targetPosition {
+                let isSameDir = primaryIsX ? (sourceDir.x == targetDir.y) : (sourceDir.y == targetDir.x)
+                let sourceGtTargetOppo = primaryIsX ? (sourceGapped.y > targetGapped.y) : (sourceGapped.x > targetGapped.x)
+                let sourceLtTargetOppo = primaryIsX ? (sourceGapped.y < targetGapped.y) : (sourceGapped.x < targetGapped.x)
+                
+                let flipSourceTarget = (primaryIsX ? (sourceDir.x == 1) : (sourceDir.y == 1))
+                    ? ((!isSameDir && sourceGtTargetOppo) || (isSameDir && sourceLtTargetOppo))
+                    : ((!isSameDir && sourceLtTargetOppo) || (isSameDir && sourceGtTargetOppo))
+
+                if flipSourceTarget {
+                    points = primaryIsX ? sourceTarget : targetSource
+                }
+            }
+
+            let sourceGapPoint = XYPosition(x: sourceGapped.x + sourceGapOffset.x, y: sourceGapped.y + sourceGapOffset.y)
+            let targetGapPoint = XYPosition(x: targetGapped.x + targetGapOffset.x, y: targetGapped.y + targetGapOffset.y)
+            let maxXDistance = max(abs(sourceGapPoint.x - points[0].x), abs(targetGapPoint.x - points[0].x))
+            let maxYDistance = max(abs(sourceGapPoint.y - points[0].y), abs(targetGapPoint.y - points[0].y))
 
             if maxXDistance >= maxYDistance {
-                labelX = (sourceGapPoint.x + targetGapPoint.x) / 2
-                labelY = corner.y
+                centerX = (sourceGapPoint.x + targetGapPoint.x) / 2
+                centerY = points[0].y
             } else {
-                labelX = corner.x
-                labelY = (sourceGapPoint.y + targetGapPoint.y) / 2
+                centerX = points[0].x
+                centerY = (sourceGapPoint.y + targetGapPoint.y) / 2
             }
         }
 
-        let pathPoints = [source, sourceGapped] + points + [targetGapped, target]
-        let compacted: [XYPosition] = pathPoints.enumerated().compactMap { entry in
-            let index = entry.offset
-            let point = entry.element
-            guard index == 0 || pathPoints[index - 1] != point else { return nil }
-            return point
-        }
+        let gappedSource = XYPosition(x: sourceGapped.x + sourceGapOffset.x, y: sourceGapped.y + sourceGapOffset.y)
+        let gappedTarget = XYPosition(x: targetGapped.x + targetGapOffset.x, y: targetGapped.y + targetGapOffset.y)
 
-        return (compacted, labelX, labelY, baseCenter.offsetX, baseCenter.offsetY)
+        let pathPoints = [source] +
+            (gappedSource != points[0] ? [gappedSource] : []) +
+            points +
+            (gappedTarget != points[points.count - 1] ? [gappedTarget] : []) +
+            [target]
+
+        return (pathPoints, centerX, centerY, defaultOffsetX, defaultOffsetY)
     }
 
     private static func bend(from first: XYPosition, via middle: XYPosition, to third: XYPosition, size: Double) -> String {

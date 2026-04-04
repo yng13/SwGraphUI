@@ -89,7 +89,7 @@ import Testing
     state.hover.hoveredNodeID = "n1"
     state.drag = DragState(draggedNodeIDs: ["n1"], dragOrigin: .init(x: 0, y: 0), currentPosition: .init(x: 5, y: 5))
     state.connection = ConnectionRuntimeState(active: .init(fromNodeID: "n1", fromHandleType: .source, currentPointer: .init(x: 10, y: 10)))
-    state.viewport.panBy(x: 10, y: -5)
+    state.viewport.panBy(dx: 10, dy: -5)
     state.viewport.zoomTo(2)
 
     #expect(state.selection.selectedNodeIDs == ["n1"])
@@ -101,12 +101,12 @@ import Testing
 }
 
 @Test func viewportForBoundsCentersContent() async throws {
-    let viewport = GeometryAlgorithms.viewportForBounds(
+    let viewport = GeometryAlgorithms.getViewportForBounds(
         Rect(x: 0, y: 0, width: 100, height: 100),
-        in: .init(width: 200, height: 100),
+        in: Dimensions(width: 200, height: 100),
         minZoom: 0.5,
         maxZoom: 2,
-        padding: 0
+        padding: .all(.points(0))
     )
 
     #expect(viewport.zoom == 1)
