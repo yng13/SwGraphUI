@@ -9,6 +9,7 @@ public struct NodeOrigin: Sendable, Equatable {
 
     public static let center = NodeOrigin(x: 0.5, y: 0.5)
     public static let topLeft = NodeOrigin(x: 0, y: 0)
+    public static let zero = topLeft
 }
 
 public struct BaseNode<Data: Sendable>: Sendable, Identifiable {
@@ -100,4 +101,3 @@ public struct BaseNode<Data: Sendable>: Sendable, Identifiable {
 }
 
 public typealias Node = BaseNode<EmptyPayload>
-

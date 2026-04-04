@@ -87,10 +87,10 @@ import Testing
     state.selection.selectNode(id: "n1")
     state.selection.selectEdge(id: "e1")
     state.hover.hoveredNodeID = "n1"
-    state.drag = DragState(draggedNodeIDs: ["n1"], dragOrigin: .init(x: 0, y: 0), currentPosition: .init(x: 5, y: 5))
+    state.drag.startDrag(nodes: [GraphNode(id: "n1", position: .zero, data: EmptyPayload())], pointer: .zero)
+    state.drag.updateDrag(to: .init(x: 5, y: 5))
     state.connection = ConnectionRuntimeState(active: .init(fromNodeID: "n1", fromHandleType: .source, currentPointer: .init(x: 10, y: 10)))
-    state.viewport.panBy(dx: 10, dy: -5)
-    state.viewport.zoomTo(2)
+    state.viewport.setViewport(.init(x: 10, y: -5, zoom: 2))
 
     #expect(state.selection.selectedNodeIDs == ["n1"])
     #expect(state.selection.selectedEdgeIDs == ["e1"])

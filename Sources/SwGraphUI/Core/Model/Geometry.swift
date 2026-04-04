@@ -26,6 +26,15 @@ public struct XYPosition: Sendable, Equatable {
         self.x = x
         self.y = y
     }
+    public static let zero = XYPosition(x: 0, y: 0)
+
+    public static func + (lhs: XYPosition, rhs: XYPosition) -> XYPosition {
+        XYPosition(x: lhs.x + rhs.x, y: lhs.y + rhs.y)
+    }
+
+    public static func - (lhs: XYPosition, rhs: XYPosition) -> XYPosition {
+        XYPosition(x: lhs.x - rhs.x, y: lhs.y - rhs.y)
+    }
 }
 
 public struct XYZPosition: Sendable, Equatable {
@@ -48,6 +57,8 @@ public struct Dimensions: Sendable, Equatable {
         self.width = width
         self.height = height
     }
+    
+    public static let zero = Dimensions(width: 0, height: 0)
 }
 
 public struct Rect: Sendable, Equatable {
@@ -68,6 +79,8 @@ public struct Rect: Sendable, Equatable {
     public var y: Double { origin.y }
     public var width: Double { size.width }
     public var height: Double { size.height }
+
+    public static let zero = Rect(origin: .zero, size: .zero)
 }
 
 public struct Box: Sendable, Equatable {
@@ -81,6 +94,16 @@ public struct Box: Sendable, Equatable {
         self.y = y
         self.x2 = x2
         self.y2 = y2
+    }
+}
+
+public struct SnapGrid: Sendable, Equatable {
+    public var width: Double
+    public var height: Double
+    
+    public init(width: Double, height: Double) {
+        self.width = width
+        self.height = height
     }
 }
 
@@ -109,17 +132,17 @@ public struct Transform: Sendable, Equatable {
 }
 
 public struct CoordinateExtent: Sendable, Equatable {
-    public var minimum: XYPosition
-    public var maximum: XYPosition
+    public var min: XYPosition
+    public var max: XYPosition
 
-    public init(minimum: XYPosition, maximum: XYPosition) {
-        self.minimum = minimum
-        self.maximum = maximum
+    public init(min: XYPosition, max: XYPosition) {
+        self.min = min
+        self.max = max
     }
 
     public init(minX: Double, minY: Double, maxX: Double, maxY: Double) {
-        self.minimum = XYPosition(x: minX, y: minY)
-        self.maximum = XYPosition(x: maxX, y: maxY)
+        self.min = XYPosition(x: minX, y: minY)
+        self.max = XYPosition(x: maxX, y: maxY)
     }
 }
 

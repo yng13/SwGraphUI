@@ -28,16 +28,16 @@
 - [x] `GraphNode / GraphEdge` を正規 public 名として固定
 - [x] graph / connection / edge path / bounds / viewport utility を追加
 - [x] drag / connection / hover を含む runtime state を追加
-- [/] `Core/Interaction` の責務境界を定義 (M8)
-- [/] `Runtime/State` と `Interaction` の境界を整理 (M8)
+- [x] `Core/Interaction` の責務境界を定義 (M8)
+- [x] `Runtime/State` と `Interaction` の境界を整理 (M8)
 
 ## Epic 3: 最小ランタイム実装
 
 - [ ] 基本的なノード表示
 - [ ] 基本的なエッジ表示
-- [/] pan / zoom (Core logic only in M8)
+- [x] pan / zoom (Core logic only in M8)
 - [ ] ノード選択
-- [/] ノードドラッグ (Core logic only in M8)
+- [x] ノードドラッグ (Core logic only in M8)
 - [ ] ハンドル接続
 
 ## Epic 4: 受け入れ用 examples

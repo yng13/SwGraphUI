@@ -1,3 +1,5 @@
+import Foundation
+
 public struct SelectionState: Sendable, Equatable {
     public private(set) var selectedNodeIDs: Set<String>
     public private(set) var selectedEdgeIDs: Set<String>
@@ -61,34 +63,52 @@ public struct HoverState: Sendable, Equatable {
 }
 
 public struct DragState: Sendable, Equatable {
-    public var draggedNodeIDs: [String]
-    public var dragOrigin: XYPosition?
-    public var currentPosition: XYPosition?
+    public var draggedNodes: [NodeDragItem]
+    public var currentPointer: XYPosition?
 
-    public init(draggedNodeIDs: [String] = [], dragOrigin: XYPosition? = nil, currentPosition: XYPosition? = nil) {
-        self.draggedNodeIDs = draggedNodeIDs
-        self.dragOrigin = dragOrigin
-        self.currentPosition = currentPosition
+    public init(draggedNodes: [NodeDragItem] = [], currentPointer: XYPosition? = nil) {
+        self.draggedNodes = draggedNodes
+        self.currentPointer = currentPointer
     }
 
     public var isDragging: Bool {
-        !draggedNodeIDs.isEmpty
+        !draggedNodes.isEmpty
     }
 
-    public mutating func startDrag(ids: [String], origin: XYPosition) {
-        self.draggedNodeIDs = ids
-        self.dragOrigin = origin
-        self.currentPosition = origin
+    /// ドラッグを開始します（階層構造対応）。
+    /// - Parameters:
+    ///   - nodes: ドラッグ対象のノード。
+    ///   - nodeLookup: 親チェーンを解決するための全ノードマップ。
+    ///   - pointer: グラフ空間におけるポインタ座標。
+    public mutating func startDrag<Data>(
+        nodes: [BaseNode<Data>],
+        nodeLookup: [String: BaseNode<Data>],
+        pointer: XYPosition
+    ) {
+        self.draggedNodes = nodes.map { node in
+            // 絶対座標を解決した上でオフセットを記録
+            let absoluteTopLeft = NodePositioningAlgorithms.evaluateAbsolutePosition(node, nodeLookup: nodeLookup)
+            let distance = pointer - absoluteTopLeft
+            return NodeDragItem(id: node.id, lastPosition: absoluteTopLeft, distance: distance)
+        }
+        self.currentPointer = pointer
+    }
+    
+    /// ドラッグを開始します（既存互換・単一階層用）。
+    /// - Warning: 階層構造を持つノードが含まれる場合、このメソッドでは正確なドラッグオフセットが計算されません。
+    @available(*, deprecated, message: "Use startDrag(nodes:nodeLookup:pointer:) for hierarchical graphs.")
+    public mutating func startDrag<Data>(nodes: [BaseNode<Data>], pointer: XYPosition) {
+        let lookup = Dictionary(uniqueKeysWithValues: nodes.map { ($0.id, $0) })
+        startDrag(nodes: nodes, nodeLookup: lookup, pointer: pointer)
     }
 
-    public mutating func updateDrag(to position: XYPosition) {
-        self.currentPosition = position
+    public mutating func updateDrag(to pointer: XYPosition) {
+        self.currentPointer = pointer
     }
 
     public mutating func stopDrag() {
-        self.draggedNodeIDs.removeAll()
-        self.dragOrigin = nil
-        self.currentPosition = nil
+        self.draggedNodes.removeAll()
+        self.currentPointer = nil
     }
 }
 
@@ -155,12 +175,50 @@ public struct ViewportState: Sendable, Equatable {
     }
 
     public mutating func panBy(dx: Double, dy: Double) {
-        viewport.x += dx
-        viewport.y += dy
+        self.viewport = ViewportManager.calculatePan(current: viewport, delta: .init(x: dx, y: dy))
     }
 
-    public mutating func zoomTo(_ zoom: Double) {
-        viewport.zoom = zoom
+    public mutating func zoom(at screenPoint: XYPosition, factor: Double, minZoom: Double = 0.5, maxZoom: Double = 2.0) {
+        self.viewport = ViewportManager.calculateZoomAtPoint(
+            current: viewport,
+            factor: factor,
+            at: screenPoint,
+            minZoom: minZoom,
+            maxZoom: maxZoom
+        )
+    }
+    
+    /// 指定された要素が画面内に収まるようにビューポートを調整します（階層構造対応）。
+    public mutating func fitView<Data>(
+        nodes: [BaseNode<Data>],
+        nodeLookup: [String: BaseNode<Data>],
+        in size: Dimensions,
+        padding: GeometryAlgorithms.Padding = .all(.relative(0.1)),
+        minZoom: Double = 0.5,
+        maxZoom: Double = 2.0
+    ) {
+        self.viewport = ViewportManager.calculateFitView(
+            nodes: nodes,
+            nodeLookup: nodeLookup,
+            in: size,
+            minZoom: minZoom,
+            maxZoom: maxZoom,
+            padding: padding
+        )
+    }
+    
+    /// 指定された要素が画面内に収まるようにビューポートを調整します（既存互換用）。
+    /// - Warning: 階層構造を持つノードが含まれる場合、このメソッドでは正確な Bounds が計算されません。
+    @available(*, deprecated, message: "Use fitView(nodes:nodeLookup:in:...) for hierarchical graphs.")
+    public mutating func fitView<Data>(
+        nodes: [BaseNode<Data>],
+        in size: Dimensions,
+        padding: GeometryAlgorithms.Padding = .all(.relative(0.1)),
+        minZoom: Double = 0.5,
+        maxZoom: Double = 2.0
+    ) {
+        let lookup = Dictionary(uniqueKeysWithValues: nodes.map { ($0.id, $0) })
+        fitView(nodes: nodes, nodeLookup: lookup, in: size, padding: padding, minZoom: minZoom, maxZoom: maxZoom)
     }
 }
 
@@ -185,4 +243,3 @@ public struct GraphRuntimeState: Sendable, Equatable {
         self.viewport = viewport
     }
 }
-

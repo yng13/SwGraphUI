@@ -7,8 +7,8 @@ public enum GeometryAlgorithms {
 
     public static func clamp(position: XYPosition, to extent: CoordinateExtent, dimensions: Dimensions = .init(width: 0, height: 0)) -> XYPosition {
         XYPosition(
-            x: clamp(position.x, min: extent.minimum.x, max: extent.maximum.x - dimensions.width),
-            y: clamp(position.y, min: extent.minimum.y, max: extent.maximum.y - dimensions.height)
+            x: clamp(position.x, min: extent.min.x, max: extent.max.x - dimensions.width),
+            y: clamp(position.y, min: extent.min.y, max: extent.max.y - dimensions.height)
         )
     }
 
