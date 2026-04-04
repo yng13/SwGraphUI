@@ -45,8 +45,8 @@
 
 注意:
 
-- `utils/graph.ts` は pure だが広い。初回は必要な関数だけ切り出して移すのがよい。
-- `edge-toolbar` や `node-toolbar` は pure ではあるが、初回マイルストーンの優先度は低い。
+- `utils/graph.ts` は pureだが広い。初回は必要な関数だけ切り出して移すのがよい。
+- `edge-toolbar` や `node-toolbar` は pureではあるが、初回マイルストーンの優先度は低い。
 
 ### Tier 1: 軽依存の core-adjacent
 
@@ -180,19 +180,19 @@
 
 ### Tier 2: DOM 依存 [SwiftUI Adapter で代替完了]
 - [x] Canvas Container (`GraphView`)
-- [ ] Measurement Engine (M10b/11) [着手]
+- [x] Measurement Engine (M10b/11) [完了]
 
-### Tier 3: d3 / interaction 依存 [着手 / M10a 改修中]
+### Tier 3: d3 / interaction 依存 [着手]
 - [x] Viewport Pan Interaction (`GraphStore`)
 - [ ] Viewport Zoom / Wheel Interaction
 - [x] Node Drag Interaction (`DragManager`)
 - [ ] Connection Interaction
 - [ ] Resizer Interaction
 
-## 現在のフェーズ: Tier 3 Refinement & Adaptive UI
+## 現在のフェーズ: Tier 3 Refinement & Interaction
 
-M10a を経て、Viewport の安定性と IDE スタイルのハーネスが構築された。
-次の焦点は、Tier 2 の残りである **Measurement Engine** と、Tier 3 の **Connection Interaction** である。
+M10b/11 を経て、Measurement Engine とカスタムノード基盤が構築された。
+次の焦点は、Tier 3 の **Connection Interaction (ハンドル接続)** と、インタラクションの完成度を高めるための **Zoom/Wheel Interaction** である。
 
 ## 実装順の履歴
 
@@ -202,7 +202,7 @@ M10a を経て、Viewport の安定性と IDE スタイルのハーネスが構�
 4. [x] edge path / bounds 計算
 5. [x] viewport model
 6. [x] GraphStore による Interaction 統制 (M9-M10a)
-7. [/] Measurement Engine (M10b/11)
+7. [x] Measurement Engine (M10b/11)
 
 ## コミット単位
 

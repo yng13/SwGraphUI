@@ -43,11 +43,12 @@
 - [ ] ノード選択
 - [x] ノードドラッグ (Core logic only in M8)
 - [ ] ハンドル接続
-- [ ] **M10b/11: Measurement Engine & View Customization [着手]**
-    - [ ] 実際のノード描画サイズを内部で測定し `BaseNode.measured` に同期する仕組み
-    - [ ] `fitView` およびドラッグの境界計算に実測値を適用
-    - [ ] `@ViewBuilder` を用いたカスタムノードビューの外部注入 API 設計
-    - [ ] `NodeView` の軽量化と ViewFactory パターンの導入
+- [x] **M10b/11: Measurement Engine & View Customization [完了]**
+    - [x] 実際のノード描画サイズを内部で測定し `BaseNode.measured` に同期する仕組み
+    - [x] `fitView` およびドラッグの境界計算に実測値を適用
+    - [x] `@ViewBuilder` を用いたカスタムノードビューの外部注入 API 設計
+    - [x] `NodeView` の軽量化と `DefaultNodeView` への移行
+    - [x] 初回実測後の自動 fitView 連携（Example App）
 
 ## Epic 4: 受け入れ用 examples
 

@@ -192,6 +192,17 @@ struct ContentView: View {
             .onChange(of: geometry.size) { _, newSize in
                 appStore.currentGraphSize = Dimensions(width: newSize.width, height: newSize.height)
             }
+            // 実測完了後の初回自動 fitView 調整
+            .onChange(of: graphStore.nodes.map { $0.measured != nil }) { _, measuredStatuses in
+                guard appStore.selectedCategory == .custom, !appStore.didAutoFitMeasuredSample else { return }
+                
+                let allMeasured = measuredStatuses.allSatisfy { $0 }
+                if allMeasured && !measuredStatuses.isEmpty {
+                    appStore.didAutoFitMeasuredSample = true
+                    graphStore.fitView(in: appStore.currentGraphSize)
+                    appStore.appendLog(kind: "auto.fit", payload: "measured weights applied")
+                }
+            }
         }
     }
     

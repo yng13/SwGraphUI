@@ -23,6 +23,9 @@ public final class ExampleAppStore {
     
     public var selectedCategory: SampleCategory = .basic
     
+    /// 実測が必要なサンプル（Custom等）において、初回実測後の自動 fitView が完了したか
+    public var didAutoFitMeasuredSample: Bool = false
+    
     // MARK: - Size Tracking
     
     /// 現在の GraphView の表示領域サイズ。fitView 時に使用します。
@@ -72,6 +75,7 @@ public final class ExampleAppStore {
     /// 指定したカテゴリのサンプルデータを GraphStore に適用します。
     public func switchSample(to category: SampleCategory, in graphStore: GraphStore<String>) {
         self.selectedCategory = category
+        self.didAutoFitMeasuredSample = false // リセット
         appendLog(kind: "sample.select", payload: category.rawValue)
         
         var newNodes: [BaseNode<String>] = []

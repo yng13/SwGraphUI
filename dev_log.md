@@ -17,7 +17,8 @@
 - `swift test` -> **28 tests passed** (XCTest 5 + Swift Testing 23)
   - `testUpdateNodeDimensions` (新規追加)
   - `testFitViewWithMeasuredDimensions` (新規追加)
-- 実機（Example）：カスタムノードの動的テキストに応じたサイズ変更が `CodeView` および `fitView` に正しく反映されることを確認。
+- 実機（Example）：カスタムノードの動的なサイズ変更が `CodeView` に反映されることを確認。
+- 統合（Example）：初回実測完了時に一度だけ自動で `fitView` が走るように調整（[P1] 対応）。
 
 ### 概要
 M10a で発生したバグ修正および、フィードバックに基づくドキュメントとデバッグ表示の適正化。
