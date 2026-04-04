@@ -9,16 +9,22 @@ public enum GraphEvent: Sendable {
 
 /// SwGraphUI のメインビューの骨格。
 /// ズーム・パンの適用と、ドラッグ入力の GraphStore へのブリッジを担います。
-public struct GraphView<Data: Sendable>: View {
+public struct GraphView<Data: Sendable, NodeContent: View>: View {
     public let store: GraphStore<Data>
+    public let nodeBuilder: (BaseNode<Data>) -> NodeContent
     public var onEvent: ((GraphEvent) -> Void)?
     
     // パン操作の継続的な変化量を計算するための内部用ステート
     @State private var lastPanTranslation: CGSize = .zero
     
-    public init(store: GraphStore<Data>, onEvent: ((GraphEvent) -> Void)? = nil) {
+    public init(
+        store: GraphStore<Data>,
+        onEvent: ((GraphEvent) -> Void)? = nil,
+        @ViewBuilder nodeBuilder: @escaping (BaseNode<Data>) -> NodeContent
+    ) {
         self.store = store
         self.onEvent = onEvent
+        self.nodeBuilder = nodeBuilder
     }
     
     public var body: some View {
@@ -46,7 +52,7 @@ public struct GraphView<Data: Sendable>: View {
                     ZStack(alignment: .topLeading) {
                         // ノードレイヤー
                         ForEach(store.nodes) { node in
-                            NodeView<Data>(node: node)
+                            NodeMeasurementWrapper(id: node.id, content: nodeBuilder(node))
                                 .offset(
                                     x: store.absolutePosition(for: node.id).x,
                                     y: store.absolutePosition(for: node.id).y
@@ -81,14 +87,34 @@ public struct GraphView<Data: Sendable>: View {
         }
         // 座標空間定義を「変形の外側」に配置
         .coordinateSpace(name: "viewport_container")
+        .onPreferenceChange(NodeSizePreferenceKey.self) { entries in
+            for entry in entries {
+                store.updateNodeDimensions(
+                    id: entry.id,
+                    dimensions: Dimensions(width: entry.size.width, height: entry.size.height)
+                )
+            }
+        }
     }
 }
 
-/// 開発・検証用の最小限のノード表示
-private struct NodeView<Data: Sendable>: View {
+extension GraphView where NodeContent == DefaultNodeView<Data> {
+    public init(store: GraphStore<Data>, onEvent: ((GraphEvent) -> Void)? = nil) {
+        self.init(store: store, onEvent: onEvent) { node in
+            DefaultNodeView(node: node)
+        }
+    }
+}
+
+/// グラフライブラリ標準のノード表示
+public struct DefaultNodeView<Data: Sendable>: View {
     let node: BaseNode<Data>
     
-    var body: some View {
+    public init(node: BaseNode<Data>) {
+        self.node = node
+    }
+    
+    public var body: some View {
         VStack {
             Text(node.id)
                 .font(.caption)

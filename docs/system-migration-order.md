@@ -180,7 +180,7 @@
 
 ### Tier 2: DOM 依存 [SwiftUI Adapter で代替完了]
 - [x] Canvas Container (`GraphView`)
-- [ ] Measurement Engine (実測値の Core へのフィードバックのみ未完了)
+- [ ] Measurement Engine (M10b/11) [着手]
 
 ### Tier 3: d3 / interaction 依存 [着手 / M10a 改修中]
 - [x] Viewport Pan Interaction (`GraphStore`)
@@ -202,7 +202,7 @@ M10a を経て、Viewport の安定性と IDE スタイルのハーネスが構�
 4. [x] edge path / bounds 計算
 5. [x] viewport model
 6. [x] GraphStore による Interaction 統制 (M9-M10a)
-7. [ ] Measurement Engine (M10b/11)
+7. [/] Measurement Engine (M10b/11)
 
 ## コミット単位
 

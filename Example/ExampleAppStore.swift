@@ -16,6 +16,7 @@ public final class ExampleAppStore {
         case basic = "Basic"
         case hierarchy = "Hierarchy"
         case overlap = "Overlap Test"
+        case custom = "Custom & Measure"
         
         public var id: String { rawValue }
     }
@@ -90,6 +91,12 @@ public final class ExampleAppStore {
             newNodes = (1...5).map { i in
                 BaseNode(id: "Node\(i)", position: XYPosition(x: Double(i * 40), y: Double(i * 40)), data: "Overlapping \(i)", width: 150, height: 50)
             }
+        case .custom:
+            newNodes = [
+                BaseNode(id: "Short", position: XYPosition(x: 50, y: 50), data: "Short", kind: "custom"),
+                BaseNode(id: "Long", position: XYPosition(x: 250, y: 50), data: "This is a much longer text to test the measurement engine", kind: "custom"),
+                BaseNode(id: "Default", position: XYPosition(x: 150, y: 300), data: "Standard Node")
+            ]
         }
         
         graphStore.nodes = newNodes

@@ -142,6 +142,19 @@
 
 - 実際の SwiftUI View 実装
 
+### [NEW] Measurement Engine (M10b/11 導入)
+
+ノードの「実際のサイズ」を管理する責務の境界：
+
+1.  **View (GraphView/NodeView)**:
+    - `GeometryReader` 等を用いて描画サイズを測定する。
+    - 測定結果（`Dimensions`）を `GraphStore` へ通知する。
+2.  **Store (GraphStore)**:
+    - 通知されたサイズを `BaseNode.measured` に保持する。
+    - **差分がない場合は副作用を抑制**し、再描画ループを防ぐ。
+3.  **Core (Algorithms)**:
+    - `measured` に値がある場合、それを優先して `bounds` や `fitView` の計算に使用する。
+
 ### 6. SwiftUI Adapter
 
 責務:

@@ -43,7 +43,7 @@
 - [ ] ノード選択
 - [x] ノードドラッグ (Core logic only in M8)
 - [ ] ハンドル接続
-- [ ] **M10b/11: Measurement Engine & View Customization**
+- [ ] **M10b/11: Measurement Engine & View Customization [着手]**
     - [ ] 実際のノード描画サイズを内部で測定し `BaseNode.measured` に同期する仕組み
     - [ ] `fitView` およびドラッグの境界計算に実測値を適用
     - [ ] `@ViewBuilder` を用いたカスタムノードビューの外部注入 API 設計

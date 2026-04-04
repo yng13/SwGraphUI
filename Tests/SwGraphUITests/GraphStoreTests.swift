@@ -83,4 +83,41 @@ final class GraphStoreTests: XCTestCase {
         XCTAssertEqual(roundTrip.x, 200)
         XCTAssertEqual(roundTrip.y, 200)
     }
+
+    // MARK: - Measurement Engine Tests
+    
+    @MainActor
+    func testUpdateNodeDimensions() {
+        let node = BaseNode(id: "1", position: .zero, data: "test")
+        let store = GraphStore(nodes: [node])
+        
+        let newSize = Dimensions(width: 200, height: 100)
+        store.updateNodeDimensions(id: "1", dimensions: newSize)
+        
+        XCTAssertEqual(store.nodes[0].measured, newSize)
+        
+        // 再度の同値更新でインスタンスが不必要に変更されないことを確認
+        store.updateNodeDimensions(id: "1", dimensions: newSize)
+        XCTAssertEqual(store.nodes[0].measured, newSize)
+    }
+    
+    @MainActor
+    func testFitViewWithMeasuredDimensions() {
+        // 初期状態ではサイズ不明のノード (width=0)
+        let node = BaseNode(id: "1", position: .zero, data: "test")
+        let store = GraphStore(nodes: [node])
+        
+        let containerSize = Dimensions(width: 1000, height: 1000)
+        
+        // 実測サイズを反映 (500x500の巨大なノードとする)
+        let measuredSize = Dimensions(width: 500, height: 500)
+        store.updateNodeDimensions(id: "1", dimensions: measuredSize)
+        
+        // 実測サイズ反映後の fitView
+        store.fitView(in: containerSize, padding: .all(.points(0)))
+        let zoomAfterMeasure = store.runtimeState.viewport.viewport.zoom
+        
+        // 500x500 が 1000x1000 に収まるには zoom = 1000 / 500 = 2.0
+        XCTAssertEqual(zoomAfterMeasure, 2.0, accuracy: 0.0001)
+    }
 }

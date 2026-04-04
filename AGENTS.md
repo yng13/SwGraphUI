@@ -14,6 +14,7 @@
 - 目標のソース・オブ・トゥルースは `reactflow.dev/examples` とする
 - 実装差分の調査には `.reference/xyflow` を参照実装として使う
 - examples の追加、削除、再分類が発生した場合は `examples-inventory.md` を先に更新する
+- リモートリポジトリは存在しない。`git push` は絶対に行わず、ローカルでのコミットを最終工程とする。
 
 ## Required reading
 

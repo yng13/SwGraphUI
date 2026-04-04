@@ -103,4 +103,19 @@ public final class GraphStore<Data: Sendable> {
             padding: padding
         )
     }
+
+    // MARK: - Internal Actions
+    
+    /// ノードの実測サイズを更新します。
+    /// - Parameters:
+    ///   - id: ノードID。
+    ///   - dimensions: 実測されたサイズ。
+    public func updateNodeDimensions(id: String, dimensions: Dimensions) {
+        if let index = nodes.firstIndex(where: { $0.id == id }) {
+            // 変更がある場合のみ更新して再描画を抑制
+            if nodes[index].measured != dimensions {
+                nodes[index].measured = dimensions
+            }
+        }
+    }
 }

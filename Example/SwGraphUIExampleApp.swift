@@ -177,8 +177,12 @@ struct ContentView: View {
     
     private var mainCanvasView: some View {
         GeometryReader { geometry in
-            GraphView(store: graphStore) { event in
-                handleGraphEvent(event)
+            GraphView(store: graphStore, onEvent: handleGraphEvent) { node in
+                if node.kind == "custom" {
+                    CustomNodeView(node: node)
+                } else {
+                    DefaultNodeView(node: node)
+                }
             }
             .background(Color.white)
             .border(Color.blue.opacity(0.3), width: 2) // FitView対象領域を可視化
@@ -234,11 +238,14 @@ struct CodeView: View {
     private var jsonString: String {
         let nodesPart = graphStore.nodes.map { node in
             let absPos = graphStore.absolutePosition(for: node.id)
+            let measured = node.measured.map { "[\(Int($0.width)), \(Int($0.height))]" } ?? "null"
             return """
               {
                 "id": "\(node.id)",
+                "kind": "\(node.kind ?? "default")",
                 "pos": [\(Int(node.position.x)), \(Int(node.position.y))],
-                "absPos": [\(Int(absPos.x)), \(Int(absPos.y))]
+                "absPos": [\(Int(absPos.x)), \(Int(absPos.y))],
+                "measured": \(measured)
               }
             """
         }.joined(separator: ",\n")
@@ -298,5 +305,39 @@ struct LogView: View {
             .listStyle(.plain)
         }
         .background(Color.white)
+    }
+}
+
+// MARK: - Custom Node View Example
+
+struct CustomNodeView: View {
+    let node: BaseNode<String>
+    
+    var body: some View {
+        HStack(spacing: 12) {
+            Image(systemName: "cpu")
+                .foregroundColor(.white)
+                .padding(8)
+                .background(Circle().fill(Color.purple))
+            
+            VStack(alignment: .leading, spacing: 4) {
+                Text(node.id)
+                    .font(.caption2)
+                    .foregroundColor(.secondary)
+                Text(node.data)
+                    .font(.body)
+                    .bold()
+            }
+        }
+        .padding(12)
+        .background(
+            RoundedRectangle(cornerRadius: 12)
+                .fill(Color.purple.opacity(0.1))
+        )
+        .overlay(
+            RoundedRectangle(cornerRadius: 12)
+                .stroke(node.selected ? Color.purple : Color.purple.opacity(0.3), lineWidth: node.selected ? 3 : 1)
+        )
+        .shadow(color: .purple.opacity(0.1), radius: 4, x: 0, y: 2)
     }
 }
