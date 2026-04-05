@@ -172,10 +172,12 @@ public struct ConnectionState: Sendable, Equatable {
     }
 
     public mutating func update(to pointer: XYPosition, targetNodeID: String? = nil, targetHandleID: String? = nil, targetHandlePosition: Position? = nil) {
-        active?.currentPointer = pointer
-        active?.targetNodeID = targetNodeID
-        active?.targetHandleID = targetHandleID
-        active?.targetHandlePosition = targetHandlePosition
+        guard var activeState = active else { return }
+        activeState.currentPointer = pointer
+        activeState.targetNodeID = targetNodeID
+        activeState.targetHandleID = targetHandleID
+        activeState.targetHandlePosition = targetHandlePosition
+        self.active = activeState
     }
 
     public mutating func end() {

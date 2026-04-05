@@ -39,8 +39,15 @@ public enum NodePositioningAlgorithms {
         var position = GeometryAlgorithms.getNodePositionWithOrigin(node: node)
         var currentParentID = node.parentID
         
+        // 循環参照ガード: 既に訪問したノードIDを記録
+        var visited = Set<String>([node.id])
+        
         // 親を遡りながら、各階層の Top-Left を加算
         while let parentID = currentParentID, let parent = nodeLookup[parentID] {
+            // 既に訪問した親ならループを中断
+            if visited.contains(parentID) { break }
+            visited.insert(parentID)
+            
             position = position + GeometryAlgorithms.getNodePositionWithOrigin(node: parent)
             currentParentID = parent.parentID
         }

@@ -81,15 +81,17 @@ import Testing
     #expect(result.labelX >= 0)
 }
 
+@MainActor
 @Test func runtimeStateUpdatesSelectionAndViewport() async throws {
     var state = GraphRuntimeState()
 
     state.selection.selectNode(id: "n1")
     state.selection.selectEdge(id: "e1")
     state.hover.hoveredNodeID = "n1"
-    state.drag.startDrag(nodes: [GraphNode(id: "n1", position: .zero, data: EmptyPayload())], pointer: .zero)
+    let n1 = GraphNode(id: "n1", position: .zero, data: EmptyPayload())
+    state.drag.startDrag(nodes: [n1], nodeLookup: ["n1": n1], pointer: .zero)
     state.drag.updateDrag(to: .init(x: 5, y: 5))
-    state.connection = ConnectionRuntimeState(active: .init(fromNodeID: "n1", fromHandleType: .source, fromPosition: .zero, currentPointer: .init(x: 10, y: 10)))
+    state.connection = ConnectionState(active: .init(fromNodeID: "n1", fromHandleID: nil, fromHandleType: .source, fromHandlePosition: .right, fromPosition: .zero, currentPointer: .init(x: 10, y: 10)))
     state.viewport.setViewport(.init(x: 10, y: -5, zoom: 2))
 
     #expect(state.selection.selectedNodeIDs == ["n1"])

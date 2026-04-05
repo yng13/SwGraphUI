@@ -37,13 +37,14 @@
 
 ## Epic 3: 最小ランタイム実装
 
-- [ ] 基本的なノード表示
-- [ ] 基本的なエッジ表示
-- [x] pan / zoom (Core logic only in M8)
-- [ ] ノード選択
-- [x] ノードドラッグ (Core logic only in M8)
-- [ ] ハンドル接続
+- [x] 基本的なノード表示 (M10b)
+- [x] 基本的なエッジ表示 (M12)
+- [x] pan / zoom (M8/M10a)
+- [ ] ノード選択 (M14)
+- [x] ノードドラッグ (M8/M10a)
+- [x] ハンドル接続 (M13)
 - [x] **Milestone 12: Edge Rendering & Customization (CORE) [Done]**
+- [x] **Milestone 13: Connection Interaction (Runtime) [Done]**
 
 - **Status**: 完了
 - **Goal**: ノードに追従するエッジ描画とカスタム描写。
@@ -55,6 +56,15 @@
 - **Validation**: `Edges` サンプルでのドラッグ追従確認。
     - [x] `NodeView` の軽量化と `DefaultNodeView` への移行
     - [x] 初回実測後の自動 fitView 連携（Example App）
+
+- **Milestone 13: Connection Interaction (Runtime) [Done]**
+    - [x] Connection Interaction Manager (Screen-space 24px Snap)
+    - [x] HandleView (Public API for Custom Nodes)
+    - [x] Connection Preview Line (Dashed Line Layer)
+    - [x] Validation (Self-connection, Connectable flag, Hidden node exclusion)
+    - [x] Hierarchy Support (Recursive absolute position calculation)
+    - [x] Stability (MainActor sync, Fallback for unmeasured handles)
+    - [x] Unification (Unify GraphStore snapping with manager logic)
 
 ## Epic 4: 受け入れ用 examples
 
@@ -85,8 +95,8 @@
 - [ ] 文字ぼやけ回避の品質基準を定義
 - [ ] Example app に export 検証ハーネスを追加
 
-## 直近の次アクション (M8: Core Interaction)
+## 直近の次アクション (M14: Selection & Interaction Refinement)
 
-1. `Core/Interaction` における Drag/Zoom/Pan の状態遷移エンジンを設計する
-2. `GraphRuntimeState` から Interaction ロジックを分離し、副作用（座標更新）の適用タイミングを整理する
-3. `fitView` / `centerView` の Core アルゴリズムを完成させる
+1. node / edge の単一選択を `GraphStore` に実装する
+2. background click による clear と、pan / drag / connect との競合を整理する
+3. [`m14-selection-gap.md`](/Users/kentaro/Projects/SwGraphUI/docs/m14-selection-gap.md) を基準に、M14 の対象差分だけを先に埋める

@@ -139,3 +139,30 @@ SwGraphUI での扱い:
 
 - もし `svelte` 側にしかない簡便化がある場合でも、`system` と矛盾するなら `system` を優先する
 - public API は `react` の hook surface を模倣せず、SwiftUI に自然な形へ再構成する
+
+## 現状の追従状況 (M13 時点)
+
+### `system` に対して揃ってきたもの
+
+- pure core model / geometry / graph utility
+- measured size の同期
+- edge path 計算
+- drag / pan / connection の基礎 state machine
+
+### `svelte` に対して揃ってきたもの
+
+- `GraphView` による canvas container
+- node / edge / preview line の基本レイヤー
+- handle component の基礎
+- Example app による確認用 harness
+
+### まだ差が大きいもの
+
+- selection components
+- edge label / reconnect anchor / portal / minimap
+- wheel / pinch / keyboard interaction
+- whiteboard / advanced UI plugins
+
+### 運用方針
+
+- 今後は `system` の algorithm 差分だけでなく、`svelte` の UI component 差分も [`reference-divergence.md`](/Users/kentaro/Projects/SwGraphUI/docs/reference-divergence.md) で並行管理する

@@ -38,3 +38,4 @@ M10a マイルストーンで発生した主要なインタラクションバグ
 4.  **Connection Preview Line**: 接続ドラッグ中の直線破線表示と、レイヤー順序の最適化（完了）。
 5.  **onConnect Callback**: 接続完了時に `Connection` オブジェクトを外部へ通知する仕組み（完了）。
 6.  **Hierarchy Support**: 階層化されたノード (Parent-Child) における絶対座標計算と接続対応（完了）。
+7.  **Stability & Test Graduation**: `@MainActor` への完全適応と、実測前ハンドルの推測解決によるロバストな検知（完了）。

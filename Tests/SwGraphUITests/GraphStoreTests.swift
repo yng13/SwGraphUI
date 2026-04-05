@@ -4,12 +4,13 @@ import XCTest
 @MainActor
 final class GraphStoreTests: XCTestCase {
     
+    @MainActor
     func testStoreInitialState() {
         let node = BaseNode(id: "1", position: XYPosition(x: 100, y: 100), data: "test")
         let store = GraphStore(nodes: [node])
         
         XCTAssertEqual(store.nodes.count, 1)
-        XCTAssertEqual(store.nodeLookup["1"]?.id, "1")
+        XCTAssertEqual(store.node(id: "1")?.id, "1")
     }
     
     @MainActor

@@ -182,17 +182,17 @@
 - [x] Canvas Container (`GraphView`)
 - [x] Measurement Engine (M10b/11) [完了]
 
-### Tier 3: d3 / interaction 依存 [着手]
+### Tier 3: d3 / interaction 依存 [一部完了]
 - [x] Viewport Pan Interaction (`GraphStore`)
 - [ ] Viewport Zoom / Wheel Interaction
 - [x] Node Drag Interaction (`DragManager`)
-- [ ] Connection Interaction
+- [x] Connection Interaction (`ConnectionInteractionManager`, `HandleView`, preview line)
 - [ ] Resizer Interaction
 
-## 現在のフェーズ: Tier 3 Refinement & Interaction
+## 現在のフェーズ: Tier 3 Selection / Zoom Gap の解消
 
-M10b/11 を経て、Measurement Engine とカスタムノード基盤が構築された。
-次の焦点は、Tier 3 の **Connection Interaction (ハンドル接続)** と、インタラクションの完成度を高めるための **Zoom/Wheel Interaction** である。
+M13 を経て、Connection Interaction は基礎実装まで到達した。
+次の焦点は、Tier 3 の残りである **Selection**, **Zoom/Wheel Interaction**, **Resizer** である。
 
 ## 実装順の履歴
 
@@ -203,6 +203,7 @@ M10b/11 を経て、Measurement Engine とカスタムノード基盤が構築�
 5. [x] viewport model
 6. [x] GraphStore による Interaction 統制 (M9-M10a)
 7. [x] Measurement Engine (M10b/11)
+8. [x] Connection Interaction (M13)
 
 ## コミット単位
 

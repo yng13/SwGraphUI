@@ -178,14 +178,14 @@ SwGraphUI での分解先:
 - [ ] zoom 開始 / 更新 / 終了 (SwiftUI `MagnificationGesture` 直接連動)
 - [x] node drag 開始 / 更新 / 終了 (`DragManager`)
 - [ ] resize 開始 / 更新 / 終了
-- [ ] connection drag 開始 / 更新 / 終了
+- [x] connection drag 開始 / 更新 / 終了 (`ConnectionState`, `ConnectionInteractionManager`, `HandleView`)
 
-### 3. SwiftUI / platform に寄せるべきもの [移行済み]
+### 3. SwiftUI / platform に寄せるべきもの [一部移行済み]
 
 - [x] gesture 入力の取得 (`GraphView`)
-- [ ] wheel / trackpad / pinch の OS 差分 (現在 DragGesture による 1:1 pan のみ)
+- [ ] wheel / trackpad / pinch の OS 差分 (現在 DragGesture による pan のみ)
 - [ ] pointer style
-- [x] ネイティブ event bridging (macOS 3-pane IDE 化完了)
+- [x] ネイティブ event bridging (GraphView / Example harness の最小統合)
 
 ## 重要な設計判断
 
@@ -205,6 +205,20 @@ SwGraphUI での分解先:
 - 先に `ViewportState` と `PanZoomEngine` の責務を分ける
 - drag, resize, connect を別 state machine として扱う
 - public API は d3 用語ではなく graph UI の意味で定義する
+
+## 現状メモ (M13 時点)
+
+- `d3-drag` 相当:
+  - node drag は基礎実装済み
+  - connection drag も基礎実装済み
+  - resize は未着手
+- `d3-zoom` 相当:
+  - fitView, pan, viewport transform はある
+  - wheel / pinch / trackpad は未着手
+- `d3-selection` 相当:
+  - view 参照への behavior 適用は行わず、`PreferenceKey` と `CoordinateAdapter` に分解している
+- `d3-transition` / `d3-interpolate` 相当:
+  - animation / interpolation は最小限で、まだ本格対応していない
 
 ## 初期実装への示唆
 

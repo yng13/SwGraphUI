@@ -12,26 +12,18 @@ public struct DefaultEdgeView<Data: Sendable>: View {
     
     public var body: some View {
         // Source/Target ノードの存在確認と表示状態のチェック
-        if let sourceNode = store.nodes.first(where: { $0.id == edge.source }),
-           let targetNode = store.nodes.first(where: { $0.id == edge.target }),
-           !sourceNode.hidden, !targetNode.hidden {
+        if store.node(id: edge.source) != nil,
+           store.node(id: edge.target) != nil {
             
-            let sPos = store.absolutePosition(for: edge.source)
-            let tPos = store.absolutePosition(for: edge.target)
+            let sourcePosition = edge.sourcePosition ?? .right
+            let targetPosition = edge.targetPosition ?? .left
             
-            let sourceHandlePos = NodePositioningAlgorithms.getHandlePosition(
-                node: sourceNode,
-                handlePlacement: edge.sourcePosition ?? .bottom,
-                absPos: sPos
-            )
-            let targetHandlePos = NodePositioningAlgorithms.getHandlePosition(
-                node: targetNode,
-                handlePlacement: edge.targetPosition ?? .top,
-                absPos: tPos
-            )
+            let sourceKey = HandleKey(nodeID: edge.source, handleID: edge.sourceHandle, type: .source, placement: sourcePosition)
+            let targetKey = HandleKey(nodeID: edge.target, handleID: edge.targetHandle, type: .target, placement: targetPosition)
             
-            let targetPosition = edge.targetPosition ?? .top
-            let sourcePosition = edge.sourcePosition ?? .bottom
+            let sourceHandlePos = store.resolvedHandlePosition(for: sourceKey)
+            let targetHandlePos = store.resolvedHandlePosition(for: targetKey)
+            
             let strokeWidth: CGFloat = edge.selected ? 3 : 2
 
             let baseResult: EdgePathResult = calculatePath(

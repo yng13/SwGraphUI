@@ -107,8 +107,8 @@ import Foundation
         let n1 = Node(id: "n1", position: .init(x: 100, y: 100), data: .init(), width: 50, height: 50)
         var state = DragState()
         
-        // 非推奨版 startDrag の呼び出し
-        state.startDrag(nodes: [n1], pointer: .init(x: 125, y: 125))
+        // startDrag の呼び出し (nodeLookup を追加)
+        state.startDrag(nodes: [n1], nodeLookup: ["n1": n1], pointer: .init(x: 125, y: 125))
         
         #expect(state.draggedNodes.count == 1)
         #expect(state.draggedNodes[0].distance.x == 25)

@@ -76,11 +76,13 @@ M10a で発生したバグ修正および、フィードバックに基づくド
 ---
 ### 2026-04-04 (M13 Implementation)
 
-**実施内容**:
-- `ConnectionInteractionManager` による接続スナップ・バリデーションの実装。
-- `HandleView` (Public API) の新規作成と `DefaultNodeView` への統合。
-- `GraphView` のレイヤー構造リファクタリング（コンパイル速度性能改善）。
-- `ExampleApp` での動적エッジ追加フローの統合。
+## 実装済みの機能
+
+- [x] **M13: Connection Interaction (ハンドル接続機能)**
+    - [x] 実測ベースのハンドル位置特定エンジン (`HandleMeasurementEngine`)
+    - [x] ドラッグ中のターゲットハンドル検知ロジック (`findHandle`)
+    - [x] ズーム・パンに対応したグラフ絶対座標系での座標解決
+    - [x] カスタムノードにおける複数ハンドルの正確なトラッキング
 
 **技術的決定**:
 - **スナップ座標系**: ズームレベルに依存しない一貫した操作感を提供するため、「スクリーン座標系」を基準に 24px の吸着距離を定義。
@@ -91,3 +93,22 @@ M10a で発生したバグ修正および、フィードバックに基づくド
 - **Package Tests**: `swift test` 実行、新設の `ConnectionInteractionManagerTests` を含む全テストがパス。
 - **Example Build**: `xcodebuild build -scheme Example` により、macOS 向け実行ファイルのコンパイル成功を確認。
 - **動作確認**: サンプルアプリ上でノード間のドラッグによるエッジ生成、および `onConnect` コールバックを通じたエッジ追加が正常に機能することを確認。
+
+### 2026-04-05 (M13 Stability & Graduation)
+
+## 実装済みの機能
+- [x] **M13 Stability & Fixes**
+    - [x] `@MainActor` への完全な適応と、テストスイートの同期不全解消。
+    - [x] `GraphStore.findHandle` の resolved-fallback 方式への刷新。
+    - [x] `DefaultEdgeView` の再導入による M12 描画機能（マーカー、バックオフ）の復元。
+    - [x] `struct` セマンティクスに起因するドラッグ状態同期バグの修正。
+    - [x] `updateNodeDimensions` への差分更新ガード再実装。
+
+**技術的決定**:
+- **テストの並行性対応**: `GraphRuntimeState` が `@MainActor` に隔離されたため、`XCTest` / `Testing` の双方でテストメソッド単位の `@MainActor` 指定を行い、安全なアクセスを確保。
+- **属性フィルタの強化**: 接続ターゲット探索において、ノードおよびハンドル個別の `connectable`、および `hidden` 属性を評価するように強化。
+- **プレビュー線の簡素化**: 確定エッジは複雑なパス（`bezier` 等）を描画する一方、接続ドラッグ中のプレビューは直線（`line`）を維持し、パフォーマンスと応答性を優先。
+
+**ビルド・テスト検証結果**:
+- **Package Tests**: `swift test` により、全 31 テストのパスを確認（XCTest 7 + Swift Testing 24）。
+- **Example Build**: `xcodebuild build` 成功。

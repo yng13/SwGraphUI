@@ -65,7 +65,10 @@ public final class GraphStore<Data: Sendable>: Sendable {
 
     public func updateNodeDimensions(id: String, dimensions: Dimensions) {
         if let index = nodes.firstIndex(where: { $0.id == id }) {
-            nodes[index].measured = dimensions
+            // 差分ガード：値が同じ場合は更新をスキップして再描画を抑制
+            if nodes[index].measured != dimensions {
+                nodes[index].measured = dimensions
+            }
         }
     }
 
@@ -119,21 +122,34 @@ public final class GraphStore<Data: Sendable>: Sendable {
         let targets = nodes.filter { nodeIDs.contains($0.id) }
         let lookup = Dictionary(uniqueKeysWithValues: nodes.map { ($0.id, $0) })
         runtimeState.drag.startDrag(nodes: targets, nodeLookup: lookup, pointer: pointer)
+        
+        // ストア内の実体ノードのフラグを更新
+        for i in 0..<nodes.count {
+            if nodeIDs.contains(nodes[i].id) {
+                nodes[i].dragging = true
+            }
+        }
     }
     
     public func updateDragging(to pointer: XYPosition) {
         runtimeState.drag.updateDrag(to: pointer)
         
+        let lookup = Dictionary(uniqueKeysWithValues: nodes.map { ($0.id, $0) })
+        
         // 実際の座標更新
         for item in runtimeState.drag.draggedNodes {
             if let index = nodes.firstIndex(where: { $0.id == item.id }) {
-                let newPos = pointer - item.distance
-                // 親がいない場合はそのまま、親がいる場合は相対座標に変換
-                if let _ = nodes[index].parentID {
-                    // 親座標を解決して相対位置を求める
-                    nodes[index].position = newPos
+                let absPos = pointer - item.distance
+                
+                // 親がいる場合は相対座標に変換、いない場合は絶対座標のまま
+                if let parentID = nodes[index].parentID, let parent = lookup[parentID] {
+                    nodes[index].position = NodePositioningAlgorithms.toRelativePosition(
+                        absPos,
+                        parent: parent,
+                        nodeLookup: lookup
+                    )
                 } else {
-                    nodes[index].position = newPos
+                    nodes[index].position = absPos
                 }
             }
         }
@@ -141,24 +157,52 @@ public final class GraphStore<Data: Sendable>: Sendable {
     
     public func stopDragging() {
         runtimeState.drag.stopDrag()
+        for i in 0..<nodes.count {
+            nodes[i].dragging = false
+        }
     }
     
     // --- Connection ---
     
     /// 指定された座標（グラフ空間）に近いハンドルを検索します。
-    public func findHandle(near pointer: XYPosition, threshold: Double = 20.0) -> HandleKey? {
-        var closest: (key: HandleKey, dist: Double)? = nil
+    public func findHandle(near pointer: XYPosition, threshold: Double = ConnectionInteractionManager.snapDistance) -> HandleKey? {
+        let viewport = runtimeState.viewport.viewport
+        let fromNodeID = runtimeState.connection.active?.fromNodeID
         
-        for (key, pos) in runtimeState.handleMeasurements.positions {
-            let dist = pointer.distance(to: pos)
-            if dist < threshold {
-                if closest == nil || dist < closest!.dist {
-                    closest = (key, dist)
-                }
+        var candidates: [ConnectionInteractionManager.HandleCandidate] = []
+        
+        for node in nodes {
+            // ノードが持つハンドルを特定
+            let handleTargets: [(id: String?, type: HandleType, placement: Position, connectable: Bool)]
+            if !node.handles.isEmpty {
+                handleTargets = node.handles.map { ($0.id, $0.type, $0.placement, $0.isConnectable) }
+            } else {
+                handleTargets = [
+                    (nil, .source, node.sourcePosition ?? .right, true),
+                    (nil, .target, node.targetPosition ?? .left, true)
+                ]
+            }
+            
+            for target in handleTargets {
+                let key = HandleKey(nodeID: node.id, handleID: target.id, type: target.type, placement: target.placement)
+                let pos = resolvedHandlePosition(for: key)
+                
+                candidates.append(.init(
+                    key: key,
+                    position: pos,
+                    isHidden: node.hidden,
+                    isConnectable: node.connectable && target.connectable
+                ))
             }
         }
         
-        return closest?.key
+        return ConnectionInteractionManager.findNearestHandle(
+            near: pointer,
+            candidates: candidates,
+            viewport: viewport,
+            threshold: threshold,
+            fromNodeID: fromNodeID
+        )
     }
     
     public func startConnecting(

@@ -98,28 +98,7 @@ public struct GraphView<Data: Sendable, NodeContent: View>: View {
     @ViewBuilder
     private var edgeLayer: some View {
         ForEach(store.edges) { edge in
-            if store.node(id: edge.source) != nil,
-               store.node(id: edge.target) != nil {
-                let sourceKey = HandleKey(nodeID: edge.source, handleID: edge.sourceHandle, type: .source, placement: edge.sourcePosition ?? .right)
-                let targetKey = HandleKey(nodeID: edge.target, handleID: edge.targetHandle, type: .target, placement: edge.targetPosition ?? .left)
-                
-                let sourcePos = store.resolvedHandlePosition(for: sourceKey)
-                let targetPos = store.resolvedHandlePosition(for: targetKey)
-                
-                EdgeRenderer(
-                    segments: EdgePathAlgorithms.bezierPath(
-                        sourceX: sourcePos.x,
-                        sourceY: sourcePos.y,
-                        sourcePosition: edge.sourcePosition ?? .right,
-                        targetX: targetPos.x,
-                        targetY: targetPos.y,
-                        targetPosition: edge.targetPosition ?? .left
-                    ).segments,
-                    strokeColor: edge.selected ? .blue : .gray,
-                    strokeWidth: 2,
-                    animated: edge.animated
-                )
-            }
+            DefaultEdgeView(edge: edge, store: store)
         }
     }
 
