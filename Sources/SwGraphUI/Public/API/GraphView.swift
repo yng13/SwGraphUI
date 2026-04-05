@@ -42,6 +42,8 @@ public struct GraphView<Data: Sendable, NodeContent: View>: View {
     }
     
     public var body: some View {
+        let _ = modifierKeys.isShiftPressed // Body のリアクティブ性を確保
+        
         ZStack {
             GeometryReader { geometry in
                 // ビューポート（グラフ空間）コンテナ
@@ -130,23 +132,18 @@ public struct GraphView<Data: Sendable, NodeContent: View>: View {
         // ヒットテストを確実にするため、完全に透明ではない色を使用
         Color.black.opacity(0.0001)
             .contentShape(Rectangle())
-            .onTapGesture {
-                store.clearSelection()
-            }
             .gesture(
-                DragGesture(minimumDistance: 5, coordinateSpace: .named("viewport_container"))
+                DragGesture(minimumDistance: 0, coordinateSpace: .named("viewport_container"))
                     .onChanged { value in
                         if modifierKeys.isShiftPressed {
                             if !isMarqueeMode {
                                 isMarqueeMode = true
-                                // スクリーン座標をそのまま渡す
                                 store.startMarquee(at: value.startLocation)
                             }
                             store.updateMarquee(to: value.location)
                         } else {
                             if !isMarqueeMode {
-                                // パン操作。移動量はズームによらずスクリーン基準とするため
-                                // translation をそのまま使う（delta の計算）
+                                // パン操作
                                 let deltaX = value.translation.width - lastPanTranslation.width
                                 let deltaY = value.translation.height - lastPanTranslation.height
                                 store.pan(by: XYPosition(x: deltaX, y: deltaY))
@@ -154,10 +151,16 @@ public struct GraphView<Data: Sendable, NodeContent: View>: View {
                             }
                         }
                     }
-                    .onEnded { _ in
+                    .onEnded { value in
                         if isMarqueeMode {
                             store.endMarquee(isShiftPressed: true)
                             isMarqueeMode = false
+                        } else {
+                            // 移動距離が小さい場合は背景タップとみなしてクリア
+                            let distance = sqrt(pow(value.translation.width, 2) + pow(value.translation.height, 2))
+                            if distance < 5 {
+                                store.clearSelection()
+                            }
                         }
                         lastPanTranslation = .zero
                     }

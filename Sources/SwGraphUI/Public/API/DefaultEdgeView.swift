@@ -37,28 +37,37 @@ public struct DefaultEdgeView<Data: Sendable>: View {
                 curvature: edge.curvature ?? 0.25
             )
 
-            let shortenedTarget = shortenedTargetPosition(
-                originalTarget: targetHandlePos,
-                tangentAngle: baseResult.targetTangentAngle,
-                fallbackTargetPosition: targetPosition,
-                marker: edge.markerEnd,
-                strokeWidth: strokeWidth
+            let shortenedSource = shortenedPosition(
+                at: sourceHandlePos,
+                tangentAngle: baseResult.sourceTangentAngle,
+                fallbackPosition: sourcePosition,
+                marker: edge.markerStart,
+                strokeWidth: strokeWidth,
+                isSource: true
             )
 
-            let result: EdgePathResult = calculatePath(
-                source: sourceHandlePos,
-                target: shortenedTarget,
-                sourcePosition: sourcePosition,
-                targetPosition: targetPosition,
-                kind: edge.kind,
-                curvature: edge.curvature ?? 0.25
+            let shortenedTarget = shortenedPosition(
+                at: targetHandlePos,
+                tangentAngle: baseResult.targetTangentAngle,
+                fallbackPosition: targetPosition,
+                marker: edge.markerEnd,
+                strokeWidth: strokeWidth,
+                isSource: false
+            )
+
+            // オリジナルの制御点を維持しつつ、端点のみを差し替えたパスを生成
+            let adjustedSegments = adjustSegmentsForBackoff(
+                baseResult.segments,
+                shortenedSource: shortenedSource,
+                shortenedTarget: shortenedTarget
             )
             
             return AnyView(ZStack {
                 // 1. ヒットエリア（太いパス判定）
-                segmentsToPath(result.segments)
+                let path = segmentsToPath(adjustedSegments)
+                path
                     .stroke(Color.black.opacity(0.0001), lineWidth: 20)
-                    .contentShape(segmentsToPath(result.segments).stroke(lineWidth: 20))
+                    .contentShape(path.stroke(lineWidth: 20))
                     .onTapGesture {
                         if modifierKeys.isShiftPressed {
                             store.toggleEdgeSelection(edge.id)
@@ -69,18 +78,32 @@ public struct DefaultEdgeView<Data: Sendable>: View {
 
                 // 2. 表示用エッジ
                 EdgeRenderer(
-                    segments: result.segments,
+                    segments: adjustedSegments,
                     strokeColor: edge.selected ? Color.primary : Color.gray,
                     strokeWidth: strokeWidth,
                     animated: edge.animated
                 )
                 
-                // 3. 終了マーカー（矢印）
+                // 3. 始点マーカー
+                if let marker = edge.markerStart {
+                    ArrowHead(
+                        at: CGPoint(x: sourceHandlePos.x, y: sourceHandlePos.y),
+                        angle: baseResult.sourceTangentAngle.map { Angle(radians: $0 + .pi) } ?? (
+                            sourcePosition == .top ? .degrees(270) :
+                            sourcePosition == .bottom ? .degrees(90) :
+                            sourcePosition == .left ? .degrees(180) : .degrees(0)
+                        ),
+                        color: edge.selected ? Color.primary : Color.gray,
+                        width: marker.width ?? 6.0,
+                        height: marker.height ?? 6.0
+                    )
+                }
+
+                // 4. 終了マーカー（矢印）
                 if let marker = edge.markerEnd {
                     ArrowHead(
                         at: CGPoint(x: targetHandlePos.x, y: targetHandlePos.y),
-                        angle: result.targetTangentAngle.map { Angle(radians: $0) } ?? (
-                            // 接線が取れない場合のフォールバック（ハンドルの流儀に合わせる）
+                        angle: baseResult.targetTangentAngle.map { Angle(radians: $0) } ?? (
                             targetPosition == .top ? .degrees(90) :
                             targetPosition == .bottom ? .degrees(270) :
                             targetPosition == .left ? .degrees(0) : .degrees(180)
@@ -94,6 +117,34 @@ public struct DefaultEdgeView<Data: Sendable>: View {
         } else {
             return AnyView(EmptyView())
         }
+    }
+    
+    private func adjustSegmentsForBackoff(
+        _ segments: [PathSegment],
+        shortenedSource: XYPosition,
+        shortenedTarget: XYPosition
+    ) -> [PathSegment] {
+        guard !segments.isEmpty else { return [] }
+        var result = segments
+        
+        // 最初の `.move(to:)` を差し替え
+        if case .move = result[0] {
+            result[0] = .move(to: shortenedSource)
+        }
+        
+        // 最後のセグメントの目的値を差し替え
+        let lastIndex = result.count - 1
+        switch result[lastIndex] {
+        case .line:
+            result[lastIndex] = .line(to: shortenedTarget)
+        case .bezier(_, let c1, let c2):
+            result[lastIndex] = .bezier(to: shortenedTarget, control1: c1, control2: c2)
+        case .quadratic(_, let c):
+            result[lastIndex] = .quadratic(to: shortenedTarget, control: c)
+        case .move:
+            break
+        }
+        return result
     }
     
     private func calculatePath(
@@ -121,6 +172,15 @@ public struct DefaultEdgeView<Data: Sendable>: View {
                 targetY: target.y,
                 targetPosition: targetPosition
             )
+        case "step":
+            return EdgePathAlgorithms.stepPath(
+                sourceX: source.x,
+                sourceY: source.y,
+                sourcePosition: sourcePosition,
+                targetX: target.x,
+                targetY: target.y,
+                targetPosition: targetPosition
+            )
         default: // "bezier" or nil
             return EdgePathAlgorithms.bezierPath(
                 sourceX: source.x,
@@ -134,14 +194,15 @@ public struct DefaultEdgeView<Data: Sendable>: View {
         }
     }
 
-    private func shortenedTargetPosition(
-        originalTarget: XYPosition,
+    private func shortenedPosition(
+        at original: XYPosition,
         tangentAngle: Double?,
-        fallbackTargetPosition: Position,
+        fallbackPosition: Position,
         marker: EdgeMarker?,
-        strokeWidth: CGFloat
+        strokeWidth: CGFloat,
+        isSource: Bool
     ) -> XYPosition {
-        guard let marker else { return originalTarget }
+        guard let marker else { return original }
 
         let markerLength = marker.width ?? 6.0
         let backoff = markerLength + Double(strokeWidth) / 2
@@ -150,7 +211,7 @@ public struct DefaultEdgeView<Data: Sendable>: View {
         if let tangentAngle {
             unitVector = XYPosition(x: cos(tangentAngle), y: sin(tangentAngle))
         } else {
-            switch fallbackTargetPosition {
+            switch fallbackPosition {
             case .top:
                 unitVector = XYPosition(x: 0, y: -1)
             case .bottom:
@@ -162,9 +223,12 @@ public struct DefaultEdgeView<Data: Sendable>: View {
             }
         }
 
+        // source の場合は unitVector の方向に進む（バックオフ）
+        // target の場合は unitVector の逆方向に進む（バックオフ）
+        let multiplier = isSource ? 1.0 : -1.0
         return XYPosition(
-            x: originalTarget.x - unitVector.x * backoff,
-            y: originalTarget.y - unitVector.y * backoff
+            x: original.x + unitVector.x * backoff * multiplier,
+            y: original.y + unitVector.y * backoff * multiplier
         )
     }
 

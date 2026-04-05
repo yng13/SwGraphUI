@@ -1,4 +1,53 @@
 ---
+## [Epic 4] Basic Interaction Examples (2026-04-05) [DONE]
+
+### 概要
+Example アプリに対し、`xyflow/Overview` および `xyflow/Interaction` 相当の受け入れ確認ハーネスを追加。
+
+### 実装ノーツ
+- **サンプルの追加**
+  - `ExampleAppStore.SampleCategory` に `.overview`, `.interaction` を追加。
+  - 既存のデバッグ用サンプル (`basic`, `hierarchy`, `overlap`, `custom`) は回帰確認のため維持。
+- **ドキュメント更新**
+  - `docs/examples-reference-map.md` と `docs/reference-divergence.md` を更新し、Feature Overview / Interaction / Selection を「一部一致」として現状を正確に反映。
+
+## [Epic 4-3] Marquee 復旧・対称マーカー・Inspector 最終化 (2026-04-06) [DONE]
+
+### 概要
+- `GraphView` のジェスチャ競合を解消し、矩形選択 (Marquee) を復旧。
+- `DefaultEdgeView` に `markerStart` (始点側矢印) を追加し、始点・終点両端のパス短縮 (backoff) を対称化。
+- **`Step` エッジタイプの追加**: `SmoothStep` の角の半径 0 版として実装し、インスペクタから選択可能に。
+- `InspectorView` の UI を整理し、エッジの全プロパティ（マーカーサイズ、曲率、アニメーション等）の一括更新に対応。
+- **UI 初期状態の調整**: 利便性のため、起動時のインスペクタを ON、ログビューを OFF に設定。
+
+### 技術的変更
+- `GraphView.swift`: `onTapGesture` を `DragGesture` の `onEnded` に統合し、Shift+ドラッグを最優先化。
+- `EdgePathAlgorithms.swift`: `sourceTangentAngle` および `stepPath` を追加。
+- `DefaultEdgeView.swift`: `shortenedPosition` による両端のパス計算と、両端への `ArrowHead` 描画。制御点を維持したパス短縮ロジックを実装。
+- `SwGraphUIExampleApp.swift`: `Form/Section` 形式によるインスペクタ UI のリデザイン。マーカーサイズ (2-20px) 調整対応。
+- `ExampleAppStore.swift`: `isInspectorVisible`, `isLogVisible` の初期値を変更。
+
+### 検証結果
+- `swift test`: 成功 (42件)
+- `xcodebuild build`: 成功
+- マニュアル確認: Shift+Drag での選択、両端矢印の表示、インスペクタでのサイズ変更を確認。
+
+### 概要
+Example アプリの右ペイン（InspectorView）に、選択中要素（特にエッジ）の動的編集機能を追加。
+
+### 技術的変更
+- `GraphStore` に `selectedNodes`, `selectedEdges` への参照 API を追加。
+- `GraphStore.updateSelectedEdges` による一括プロパティ更新メソッドを実装。
+- `InspectorView` に、エッジの形状 (Bezier/Straight/SmoothStep)、マーカー、アニメーションのトグルを追加。
+- 複数選択時に代表値を表示しつつ、一括適用されることを UI 上で明示。
+
+### 検証結果
+- `swift test`: 成功 (42件)
+- `xcodebuild build`: 成功
+  - `docs/examples-reference-map.md` の対応表を更新し、参照元 example との対応関係を明記。
+  - `docs/reference-divergence.md` 上の "Example Coverage" や "Selection" などのステータスを現状に適合するよう更新。
+
+---
 ## [M16 & M17] Selection Completion & Zoom Interaction (2026-04-05) [DONE]
 
 ### 概要

@@ -15,13 +15,25 @@ public struct EdgePathResult: Sendable, Equatable {
     /// ターゲット地点におけるパスの接線角度（ラジアン）。マーカーの向きに使用。
     public var targetTangentAngle: Double?
 
-    public init(segments: [PathSegment], labelX: Double, labelY: Double, offsetX: Double, offsetY: Double, targetTangentAngle: Double? = nil) {
+    /// ソース地点におけるパスの接線角度（ラジアン）。始点マーカーの向きに使用。
+    public var sourceTangentAngle: Double?
+
+    public init(
+        segments: [PathSegment],
+        labelX: Double,
+        labelY: Double,
+        offsetX: Double,
+        offsetY: Double,
+        targetTangentAngle: Double? = nil,
+        sourceTangentAngle: Double? = nil
+    ) {
         self.segments = segments
         self.labelX = labelX
         self.labelY = labelY
         self.offsetX = offsetX
         self.offsetY = offsetY
         self.targetTangentAngle = targetTangentAngle
+        self.sourceTangentAngle = sourceTangentAngle
     }
 }
 
@@ -64,6 +76,7 @@ public enum EdgePathAlgorithms {
         targetY: Double
     ) -> EdgePathResult {
         let center = edgeCenter(sourceX: sourceX, sourceY: sourceY, targetX: targetX, targetY: targetY)
+        let angle = atan2(targetY - sourceY, targetX - sourceX)
         return EdgePathResult(
             segments: [
                 .move(to: XYPosition(x: sourceX, y: sourceY)),
@@ -73,7 +86,8 @@ public enum EdgePathAlgorithms {
             labelY: center.y,
             offsetX: center.offsetX,
             offsetY: center.offsetY,
-            targetTangentAngle: atan2(targetY - sourceY, targetX - sourceX)
+            targetTangentAngle: angle,
+            sourceTangentAngle: angle
         )
     }
 
@@ -113,16 +127,20 @@ public enum EdgePathAlgorithms {
             targetControlY: targetControl.y
         )
 
+        let p0 = XYPosition(x: sourceX, y: sourceY)
+        let p3 = XYPosition(x: targetX, y: targetY)
+        
         return EdgePathResult(
             segments: [
-                .move(to: XYPosition(x: sourceX, y: sourceY)),
-                .bezier(to: XYPosition(x: targetX, y: targetY), control1: sourceControl, control2: targetControl)
+                .move(to: p0),
+                .bezier(to: p3, control1: sourceControl, control2: targetControl)
             ],
             labelX: center.x,
             labelY: center.y,
             offsetX: center.offsetX,
             offsetY: center.offsetY,
-            targetTangentAngle: bezierTangentAngle(t: 1.0, p0: XYPosition(x: sourceX, y: sourceY), p1: sourceControl, p2: targetControl, p3: XYPosition(x: targetX, y: targetY))
+            targetTangentAngle: bezierTangentAngle(t: 1.0, p0: p0, p1: sourceControl, p2: targetControl, p3: p3),
+            sourceTangentAngle: bezierTangentAngle(t: 0.0, p0: p0, p1: sourceControl, p2: targetControl, p3: p3)
         )
     }
 
@@ -166,7 +184,12 @@ public enum EdgePathAlgorithms {
         // 接線角度: 最後のセグメントの方向
         let lastPoint = result.points[result.points.count - 1]
         let prevPoint = result.points[result.points.count - 2]
-        let tangent = atan2(lastPoint.y - prevPoint.y, lastPoint.x - prevPoint.x)
+        let targetTangent = atan2(lastPoint.y - prevPoint.y, lastPoint.x - prevPoint.x)
+
+        // 始点の接線角度: 最初のセグメントの方向
+        let firstPoint = result.points[0]
+        let secondPoint = result.points[1]
+        let sourceTangent = atan2(secondPoint.y - firstPoint.y, secondPoint.x - firstPoint.x)
 
         return EdgePathResult(
             segments: segments,
@@ -174,7 +197,35 @@ public enum EdgePathAlgorithms {
             labelY: result.labelY,
             offsetX: result.offsetX,
             offsetY: result.offsetY,
-            targetTangentAngle: tangent
+            targetTangentAngle: targetTangent,
+            sourceTangentAngle: sourceTangent
+        )
+    }
+
+    public static func stepPath(
+        sourceX: Double,
+        sourceY: Double,
+        sourcePosition: Position = .bottom,
+        targetX: Double,
+        targetY: Double,
+        targetPosition: Position = .top,
+        centerX: Double? = nil,
+        centerY: Double? = nil,
+        offset: Double = 20,
+        stepPosition: Double = 0.5
+    ) -> EdgePathResult {
+        return smoothStepPath(
+            sourceX: sourceX,
+            sourceY: sourceY,
+            sourcePosition: sourcePosition,
+            targetX: targetX,
+            targetY: targetY,
+            targetPosition: targetPosition,
+            borderRadius: 0,
+            centerX: centerX,
+            centerY: centerY,
+            offset: offset,
+            stepPosition: stepPosition
         )
     }
 

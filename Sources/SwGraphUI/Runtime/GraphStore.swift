@@ -13,6 +13,15 @@ public final class GraphStore<Data: Sendable>: Sendable {
     // MARK: - Runtime State
     public var runtimeState: GraphRuntimeState
     
+    // MARK: - Selection Accessors
+    public var selectedNodes: [BaseNode<Data>] {
+        nodes.filter { $0.selected }
+    }
+    
+    public var selectedEdges: [BaseEdge<Data>] {
+        edges.filter { $0.selected }
+    }
+    
     public init(
         nodes: [BaseNode<Data>] = [],
         edges: [BaseEdge<Data>] = [],
@@ -202,6 +211,17 @@ public final class GraphStore<Data: Sendable>: Sendable {
         for i in 0..<edges.count {
             edges[i].selected = true
             runtimeState.selection.selectEdge(id: edges[i].id)
+        }
+    }
+    
+    /// 選択されているエッジを一括更新します（プロパティ変更用）。
+    /// - Parameter block: 各エッジに適用する更新処理。
+    public func updateSelectedEdges(_ block: (inout BaseEdge<Data>) -> Void) {
+        for i in 0..<edges.count {
+            if edges[i].selected {
+                block(&edges[i])
+                edges[i].selected = true // 選択状態を強制維持
+            }
         }
     }
     

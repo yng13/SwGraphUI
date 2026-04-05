@@ -1,5 +1,15 @@
 # Requirements - SwGraphUI
 
+## [Epic 4] Basic Interaction Examples (2026-04-05) [DONE]
+
+### 概要
+Example アプリに対し、`xyflow/Overview` および `xyflow/Interaction` 相当の受け入れ確認ハーネスを追加する。
+
+### 要件項目
+1.  **Overview サンプル**: 各種ノード (Default, Custom)とエッジ (Marker込み) の一覧デモ。
+2.  **Interaction サンプル**: 矩形選択、パン・ズーム、ドラッグ、Overlap、Hierarchy などの状態変化を網羅的にテストできるデモ構成。
+3.  **ドキュメントとの同期**: 各サンプルが `xyflow` のどの Example の検証ハーネスであるかを `docs/examples-reference-map.md` と `docs/reference-divergence.md` に明記。
+
 ## [M10b/11] Measurement Engine & View Customization (2026-04-04) [DONE]
 
 ### 概要

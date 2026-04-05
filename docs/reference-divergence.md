@@ -17,17 +17,17 @@
 
 ## 現状サマリ (M13 時点)
 
-### 一致
+### 一致 / 受け入れ可
 
 - pure core の型と geometry/bounds/path 計算
 - measured node size の同期
 - hierarchy を考慮した absolute position 解決
-- edge rendering の基本 3 系統
-  - bezier
-  - straight
-  - smoothstep
+- edge rendering の基本 3 系統 (bezier, straight, smoothstep)
 - handle drag による基本的な connection interaction
 - screen-space snap による接続候補探索
+- wheel / trackpad / pinch を含む zoom interaction (macOS 中心)
+- selection rectangle / marquee select
+- multi-selection (nodes & edges)
 
 ### 意図的差分
 
@@ -35,15 +35,15 @@
 - SVG path 文字列主導ではなく `PathSegment` を経由した SwiftUI `Path` 描画
 - `GraphStore` を `@Observable @MainActor` の公式入口として採用
 - `PaddingValue.relative / .points` による型安全な padding API
+- iOS pinch zoom の中心点（hover座標取得不可による (0,0) フォールバック）
 
-### 未追従
+### 未着手 / 未完
 
-- wheel / trackpad / pinch を含む zoom interaction
-- selection rectangle / multi-selection
 - reconnect anchor / edge reconnect interaction
 - edge label / toolbar / portal / minimap
 - whiteboard 系 interaction
-- keyboard interaction / a11y component 群
+- keyboard interaction / a11y component 群 (一部 bridge 実装済み)
+- auto pan
 
 ### 要再判断
 
@@ -151,13 +151,12 @@
 - `.reference/xyflow/packages/svelte/src/lib/components/Selection/Selection.svelte`
 - `.reference/xyflow/packages/svelte/src/lib/components/NodeSelection/NodeSelection.svelte`
 
-判定: `未追従`
+判定: `一部一致`
 
 内容:
 
-- runtime state 上の選択状態はある
-- しかし UI と interaction はまだ未着手で、M14 の対象
-- 詳細は [`m14-selection-gap.md`](/Users/kentaro/Projects/SwGraphUI/docs/m14-selection-gap.md) を参照
+- M14〜M16 にかけて UI と interaction が実装完了 (`selectAll`, `deleteSelection`, Shift+Drag 矩形選択, Connected Edge 選択含む)
+- **差異**: `selection on drag` (ドラッグ開始時の選択連動) や、周辺の keyboard/accessibility 連動、複数選択時のバウンディングボックス表示などは未実装。
 
 ### 6. Example Coverage
 
@@ -166,17 +165,18 @@
 - `reactflow.dev/examples`
 - `.reference/xyflow/examples/react`
 
-判定: `未追従`
+判定: `一部一致`
 
 内容:
 
-- Example app は `Basic`, `Hierarchy`, `Overlap Test`, `Custom & Measure` の確認用ハーネス段階
-- 公開 examples 全面対応にはまだ到達していない
+- Example app は `overview`, `interaction` カテゴリを追加し、基本的な受け入れ確認ハーネスを構築済み
+- `Basic`, `Hierarchy`, `Overlap Test`, `Custom & Measure` のデバッグ用テスト配置も維持
+- コア機能（Selection, Zoom, Drag, Hierarchy）の動作検証用として「受け入れ可」水準に到達
 
 ## 次に詰める優先順位
 
-1. Selection (`M14`)
-2. Zoom / wheel / pinch interaction
-3. reconnect と edge label
-4. internal cache (`positionAbsolute`, `handleBounds`) の要否再判断
-5. examples coverage の拡張
+1. reconnect と edge label (M18)
+2. internal cache (`positionAbsolute`, `handleBounds`) の要否再判断
+3. auto pan 実装
+4. examples coverage の拡張 (Stress Test, Save/Restore 等)
+5. A11y / Keyboard interaction の体系的整理
