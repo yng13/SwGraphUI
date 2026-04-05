@@ -95,6 +95,16 @@ public final class GraphStore<Data: Sendable>: Sendable {
     public func pan(by delta: XYPosition) {
         runtimeState.viewport.panBy(dx: delta.x, dy: delta.y)
     }
+    
+    /// 指定された中心点を基準に拡大・縮小します。
+    /// - Parameters:
+    ///   - screenPoint: 拡大の基準となるスクリーン上の点（デフォルトはビューポート中心）。
+    ///   - factor: 拡大係数（1.0を超える場合は拡大、1.0未満は縮小）。
+    public func zoom(at screenPoint: XYPosition? = nil, factor: Double) {
+        // デフォルトは中心（仮。本来はサイズが必要だが、一旦 (0,0) を基準にするか呼び出し側で解決）
+        let center = screenPoint ?? .zero
+        runtimeState.viewport.zoom(at: center, factor: factor)
+    }
 
     public func fitView(
         in size: Dimensions = Dimensions(width: 800, height: 600),
@@ -124,6 +134,18 @@ public final class GraphStore<Data: Sendable>: Sendable {
         }
     }
     
+    /// 指定されたノードの選択状態を反転させます（複数選択用）。
+    public func toggleNodeSelection(_ id: String) {
+        runtimeState.selection.toggleNode(id: id)
+        
+        // モデルフラグの同期
+        for i in 0..<nodes.count {
+            if nodes[i].id == id {
+                nodes[i].selected = runtimeState.selection.selectedNodeIDs.contains(id)
+            }
+        }
+    }
+    
     /// 指定されたエッジを選択状態にします（排他選択）。
     public func selectEdge(_ id: String) {
         runtimeState.selection.clear()
@@ -138,6 +160,18 @@ public final class GraphStore<Data: Sendable>: Sendable {
         }
     }
     
+    /// 指定されたエッジの選択状態を反転させます（複数選択用）。
+    public func toggleEdgeSelection(_ id: String) {
+        runtimeState.selection.toggleEdge(id: id)
+        
+        // モデルフラグの同期
+        for i in 0..<edges.count {
+            if edges[i].id == id {
+                edges[i].selected = runtimeState.selection.selectedEdgeIDs.contains(id)
+            }
+        }
+    }
+    
     /// すべての選択を解除します。
     public func clearSelection() {
         runtimeState.selection.clear()
@@ -149,6 +183,92 @@ public final class GraphStore<Data: Sendable>: Sendable {
         for i in 0..<edges.count {
             edges[i].selected = false
         }
+    }
+    
+    /// すべてを選択状態にします。
+    public func selectAll() {
+        for i in 0..<nodes.count {
+            nodes[i].selected = true
+            runtimeState.selection.selectNode(id: nodes[i].id)
+        }
+        for i in 0..<edges.count {
+            edges[i].selected = true
+            runtimeState.selection.selectEdge(id: edges[i].id)
+        }
+    }
+    
+    /// 選択されている要素を削除します。
+    public func deleteSelection() {
+        let selectedNodeIDs = runtimeState.selection.selectedNodeIDs
+        let selectedEdgeIDs = runtimeState.selection.selectedEdgeIDs
+        
+        // ノードの削除
+        nodes.removeAll { selectedNodeIDs.contains($0.id) }
+        
+        // エッジの削除：選択されているもの、または削除されたノードに紐づくもの
+        edges.removeAll { edge in
+            selectedEdgeIDs.contains(edge.id) ||
+            selectedNodeIDs.contains(edge.source) ||
+            selectedNodeIDs.contains(edge.target)
+        }
+        
+        clearSelection()
+    }
+    
+    /// 矩形選択を開始します。
+    /// - Parameter pointer: スクリーン座標系での開始位置。
+    public func startMarquee(at pointer: CGPoint) {
+        runtimeState.marquee = GraphRuntimeState.MarqueeState(startPos: pointer, currentPos: pointer)
+    }
+    
+    /// 矩形選択の範囲を更新します。
+    /// - Parameter pointer: スクリーン座標系での現在の位置。
+    public func updateMarquee(to pointer: CGPoint) {
+        runtimeState.marquee?.currentPos = pointer
+    }
+    
+    /// 矩形選択を終了し、範囲内の要素を選択します。
+    /// - Parameter isShiftPressed: Shiftキーが押されているか。
+    public func endMarquee(isShiftPressed: Bool) {
+        guard let marquee = runtimeState.marquee else { return }
+        let viewport = runtimeState.viewport.viewport
+        
+        // スクリーン矩形をグラフ空間（絶対座標）矩形に変換
+        let screenRect = marquee.rect
+        let graphMarqueeRect = CGRect(
+            x: (screenRect.origin.x - viewport.x) / viewport.zoom,
+            y: (screenRect.origin.y - viewport.y) / viewport.zoom,
+            width: screenRect.width / viewport.zoom,
+            height: screenRect.height / viewport.zoom
+        )
+        
+        if !isShiftPressed {
+            clearSelection()
+        }
+        
+        let lookup = Dictionary(uniqueKeysWithValues: nodes.map { ($0.id, $0) })
+        
+        // 1. ノードの判定
+        for i in 0..<nodes.count {
+            let node = nodes[i]
+            let absPos = NodePositioningAlgorithms.evaluateAbsolutePosition(node, nodeLookup: lookup)
+            let size = node.measured ?? Dimensions(width: 100, height: 50)
+            let nodeRect = CGRect(x: absPos.x, y: absPos.y, width: size.width, height: size.height)
+            
+            if graphMarqueeRect.contains(nodeRect) {
+                if isShiftPressed {
+                    // Shiftありの場合は既存の状態に関わらず「追加」
+                    // (XYFlowのデフォルト挙動に合わせる。トグルではなく包含されたらON)
+                    runtimeState.selection.selectNode(id: node.id)
+                    nodes[i].selected = true
+                } else {
+                    runtimeState.selection.selectNode(id: node.id)
+                    nodes[i].selected = true
+                }
+            }
+        }
+        
+        runtimeState.marquee = nil
     }
     
     // --- Dragging ---

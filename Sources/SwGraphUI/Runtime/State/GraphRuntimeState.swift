@@ -250,6 +250,24 @@ public final class GraphRuntimeState: Sendable {
     public var viewport: ViewportState
     public var handleMeasurements: HandleMeasurementState
     
+    /// 矩形選択（Marquee）の状態。
+    public struct MarqueeState: Sendable, Equatable {
+        public let startPos: CGPoint
+        public var currentPos: CGPoint
+        
+        /// ビューポート座標系での矩形領域。
+        public var rect: CGRect {
+            CGRect(
+                x: min(startPos.x, currentPos.x),
+                y: min(startPos.y, currentPos.y),
+                width: abs(startPos.x - currentPos.x),
+                height: abs(startPos.y - currentPos.y)
+            )
+        }
+    }
+    
+    public var marquee: MarqueeState?
+    
     public init(
         selection: SelectionState = .init(),
         hover: HoverState = .init(),

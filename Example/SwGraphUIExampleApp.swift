@@ -1,10 +1,19 @@
 import SwiftUI
+#if os(macOS)
+import AppKit
+#endif
 import SwGraphUI
 
 @main
 struct SwGraphUIExampleApp: App {
     @State private var appStore = ExampleAppStore()
     @State private var graphStore: GraphStore<String> = GraphStore(nodes: [])
+
+    init() {
+        #if os(macOS)
+        NSApplication.shared.setActivationPolicy(.regular)
+        #endif
+    }
     
     var body: some Scene {
         WindowGroup {
@@ -17,6 +26,27 @@ struct SwGraphUIExampleApp: App {
         .windowStyle(.titleBar)
         .windowToolbarStyle(.unified)
         #endif
+        .commands {
+            // macOSデフォルトメニューが表示されない環境でも確実に出すために明示的に "Edit" メニューを設ける
+            CommandMenu("Edit") {
+                Button("Select All") {
+                    graphStore.selectAll()
+                }
+                .keyboardShortcut("a", modifiers: .command)
+                
+                Divider()
+                
+                Button("Delete Selected") {
+                    graphStore.deleteSelection()
+                }
+                .keyboardShortcut(.delete, modifiers: [])
+                
+                Button("Forward Delete Selected") {
+                    graphStore.deleteSelection()
+                }
+                .keyboardShortcut(.deleteForward, modifiers: [])
+            }
+        }
     }
 }
 
@@ -222,6 +252,20 @@ struct ContentView: View {
                 }
             }
         }
+        #if os(macOS)
+        .overlay {
+            CanvasKeyboardBridge(
+                onSelectAll: {
+                    graphStore.selectAll()
+                    appStore.appendLog(kind: "key.selectAll", payload: "all nodes selected via canvas focus")
+                },
+                onDeleteSelection: {
+                    graphStore.deleteSelection()
+                    appStore.appendLog(kind: "key.delete", payload: "selection removed via canvas focus")
+                }
+            )
+        }
+        #endif
     }
     
     private func handleGraphEvent(_ event: GraphEvent) {
@@ -298,12 +342,38 @@ struct InspectorView: View {
     
     var body: some View {
         List {
-            Section("Actions") {
-                Button("Fit View") {
-                    graphStore.fitView(in: appStore.currentGraphSize)
-                    appStore.appendLog(kind: "action", payload: "fitView(w:\(Int(appStore.currentGraphSize.width)), h:\(Int(appStore.currentGraphSize.height)))")
+            Section("Zoom") {
+                HStack {
+                    Button(action: { 
+                        let center = XYPosition(x: appStore.currentGraphSize.width / 2, y: appStore.currentGraphSize.height / 2)
+                        graphStore.zoom(at: center, factor: 1.1) 
+                    }) {
+                        Image(systemName: "plus.magnifyingglass")
+                    }
+                    Button(action: { 
+                        let center = XYPosition(x: appStore.currentGraphSize.width / 2, y: appStore.currentGraphSize.height / 2)
+                        graphStore.zoom(at: center, factor: 0.9) 
+                    }) {
+                        Image(systemName: "minus.magnifyingglass")
+                    }
+                    Divider()
+                    Button("Fit View") {
+                        graphStore.fitView(in: appStore.currentGraphSize)
+                    }
                 }
-                .buttonStyle(.borderedProminent)
+                .buttonStyle(.bordered)
+            }
+            Section("Selection") {
+                Button("Select All") {
+                    graphStore.selectAll()
+                }
+                .keyboardShortcut("a", modifiers: .command)
+                
+                Button("Delete Selected", role: .destructive) {
+                    graphStore.deleteSelection()
+                }
+                .keyboardShortcut(.delete, modifiers: [])
+                .disabled(graphStore.nodes.filter({ $0.selected }).isEmpty && graphStore.edges.filter({ $0.selected }).isEmpty)
             }
             Section("Current Setup") {
                 LabeledContent("Category", value: appStore.selectedCategory.rawValue)
@@ -336,6 +406,107 @@ struct LogView: View {
         .background(Color.white)
     }
 }
+
+#if os(macOS)
+private struct CanvasKeyboardBridge: NSViewRepresentable {
+    let onSelectAll: () -> Void
+    let onDeleteSelection: () -> Void
+
+    func makeNSView(context: Context) -> CanvasKeyboardView {
+        let view = CanvasKeyboardView()
+        view.onSelectAll = onSelectAll
+        view.onDeleteSelection = onDeleteSelection
+        return view
+    }
+
+    func updateNSView(_ nsView: CanvasKeyboardView, context: Context) {
+        nsView.onSelectAll = onSelectAll
+        nsView.onDeleteSelection = onDeleteSelection
+    }
+}
+
+private final class CanvasKeyboardView: NSView {
+    var onSelectAll: (() -> Void)?
+    var onDeleteSelection: (() -> Void)?
+
+    private var keyMonitor: Any?
+    private var mouseMonitor: Any?
+    private var isCanvasActive = false
+
+    override var acceptsFirstResponder: Bool { true }
+
+    override func viewDidMoveToWindow() {
+        super.viewDidMoveToWindow()
+        installMonitorsIfNeeded()
+        DispatchQueue.main.async { [weak self] in
+            guard let self, let window else { return }
+            window.makeFirstResponder(self)
+        }
+    }
+
+    override func hitTest(_ point: NSPoint) -> NSView? {
+        nil
+    }
+
+    override func viewWillMove(toWindow newWindow: NSWindow?) {
+        if newWindow == nil {
+            removeMonitors()
+        }
+        super.viewWillMove(toWindow: newWindow)
+    }
+
+    private func installMonitorsIfNeeded() {
+        guard keyMonitor == nil, mouseMonitor == nil else { return }
+
+        mouseMonitor = NSEvent.addLocalMonitorForEvents(matching: [.leftMouseDown]) { [weak self] event in
+            guard let self, let window else { return event }
+            let point = convert(event.locationInWindow, from: nil)
+            if bounds.contains(point) {
+                NSApplication.shared.activate(ignoringOtherApps: true)
+                window.makeKeyAndOrderFront(nil)
+                isCanvasActive = true
+                window.makeFirstResponder(self)
+            } else {
+                isCanvasActive = false
+            }
+            return event
+        }
+
+        keyMonitor = NSEvent.addLocalMonitorForEvents(matching: [.keyDown]) { [weak self] event in
+            guard let self, let window else { return event }
+
+            let firstResponderIsInWindow = window.firstResponder != nil
+            guard isCanvasActive || window.firstResponder === self || !firstResponderIsInWindow else {
+                return event
+            }
+
+            if event.modifierFlags.intersection(.deviceIndependentFlagsMask) == [.command],
+               event.charactersIgnoringModifiers?.lowercased() == "a" {
+                onSelectAll?()
+                return nil
+            }
+
+            if event.keyCode == 51 || event.keyCode == 117 {
+                onDeleteSelection?()
+                return nil
+            }
+
+            return event
+        }
+    }
+
+    private func removeMonitors() {
+        if let keyMonitor {
+            NSEvent.removeMonitor(keyMonitor)
+            self.keyMonitor = nil
+        }
+        if let mouseMonitor {
+            NSEvent.removeMonitor(mouseMonitor)
+            self.mouseMonitor = nil
+        }
+    }
+}
+#endif
 
 struct CustomNodeView: View {
     let node: BaseNode<String>

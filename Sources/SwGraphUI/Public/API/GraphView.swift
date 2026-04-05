@@ -15,8 +15,12 @@ public struct GraphView<Data: Sendable, NodeContent: View>: View {
     public var onEvent: ((GraphEvent) -> Void)?
     public var onConnect: ((Connection) -> Void)?
     
-    // パン操作の継続的な変化量を計算するための内部用ステート
+    // 修飾キーの状態監視アダプター
+    @State private var modifierKeys = ModifierKeysProvider()
+    
+    // パンまたは Marquee 操作の継続的な変化量を計算するための内部用ステート
     @State private var lastPanTranslation: CGSize = .zero
+    @State private var isMarqueeMode: Bool = false
     
     public init(
         store: GraphStore<Data>,
@@ -33,12 +37,18 @@ public struct GraphView<Data: Sendable, NodeContent: View>: View {
     public var body: some View {
         ZStack {
             GeometryReader { geometry in
-                ZStack(alignment: .topLeading) {
-                    backgroundLayerPart
-                    viewportContainer
+                // ビューポート（グラフ空間）コンテナ
+                viewportContainer
+                
+                // 矩形選択の表示（最前面、ただし座標系は viewport_container / スクリーン座標系）
+                if let marquee = store.runtimeState.marquee {
+                    MarqueeView(marquee: marquee)
                 }
-                .coordinateSpace(name: "viewport_container")
             }
+            .coordinateSpace(name: "viewport_container")
+        }
+        .onAppear {
+            _ = modifierKeys.isShiftPressed // 初期アクセスで監視開始
         }
         #if os(macOS)
         .background(Color(nsColor: .windowBackgroundColor))
@@ -67,7 +77,8 @@ public struct GraphView<Data: Sendable, NodeContent: View>: View {
 
     @ViewBuilder
     private var backgroundLayerPart: some View {
-        Color.clear
+        // ヒットテストを確実にするため、完全に透明ではない色を使用
+        Color.black.opacity(0.0001)
             .contentShape(Rectangle())
             .onTapGesture {
                 store.clearSelection()
@@ -75,13 +86,29 @@ public struct GraphView<Data: Sendable, NodeContent: View>: View {
             .gesture(
                 DragGesture(minimumDistance: 5, coordinateSpace: .named("viewport_container"))
                     .onChanged { value in
-                        let deltaX = value.translation.width - lastPanTranslation.width
-                        let deltaY = value.translation.height - lastPanTranslation.height
-                        
-                        store.pan(by: XYPosition(x: deltaX, y: deltaY))
-                        lastPanTranslation = value.translation
+                        if modifierKeys.isShiftPressed {
+                            if !isMarqueeMode {
+                                isMarqueeMode = true
+                                // スクリーン座標をそのまま渡す
+                                store.startMarquee(at: value.startLocation)
+                            }
+                            store.updateMarquee(to: value.location)
+                        } else {
+                            if !isMarqueeMode {
+                                // パン操作。移動量はズームによらずスクリーン基準とするため
+                                // translation をそのまま使う（delta の計算）
+                                let deltaX = value.translation.width - lastPanTranslation.width
+                                let deltaY = value.translation.height - lastPanTranslation.height
+                                store.pan(by: XYPosition(x: deltaX, y: deltaY))
+                                lastPanTranslation = value.translation
+                            }
+                        }
                     }
                     .onEnded { _ in
+                        if isMarqueeMode {
+                            store.endMarquee(isShiftPressed: true)
+                            isMarqueeMode = false
+                        }
                         lastPanTranslation = .zero
                     }
             )
@@ -90,6 +117,10 @@ public struct GraphView<Data: Sendable, NodeContent: View>: View {
     @ViewBuilder
     private var viewportContainer: some View {
         ZStack(alignment: .topLeading) {
+            // 背景レイヤーを Viewport 内部に移動。
+            // これにより、背景の空きスペースをドラッグするとパン/Marqueeが動作する。
+            backgroundLayerPart
+            
             edgeLayer
             previewLayer
             nodeLayer
@@ -101,7 +132,7 @@ public struct GraphView<Data: Sendable, NodeContent: View>: View {
     @ViewBuilder
     private var edgeLayer: some View {
         ForEach(store.edges) { edge in
-            DefaultEdgeView(edge: edge, store: store)
+            DefaultEdgeView(edge: edge, store: store, modifierKeys: modifierKeys)
         }
     }
 
@@ -114,15 +145,15 @@ public struct GraphView<Data: Sendable, NodeContent: View>: View {
 
     @ViewBuilder
     private var nodeLayer: some View {
-        ForEach(store.nodes) { node in
-            NodeMeasurementWrapper(id: node.id, content: nodeBuilder(node))
+        ForEach(self.store.nodes) { (node: BaseNode<Data>) in
+            NodeMeasurementWrapper(id: node.id, content: self.nodeBuilder(node))
                 .offset(
-                    x: store.absolutePosition(for: node.id).x,
-                    y: store.absolutePosition(for: node.id).y
+                    x: self.store.absolutePosition(for: node.id).x,
+                    y: self.store.absolutePosition(for: node.id).y
                 )
                 .gesture(
                     DragGesture(minimumDistance: 0, coordinateSpace: .named("viewport_container"))
-                        .onChanged { value in
+                        .onChanged { [store = self.store, onEvent = self.onEvent] value in
                             let translation = sqrt(pow(value.translation.width, 2) + pow(value.translation.height, 2))
                             if translation > 4 {
                                 let viewport = store.runtimeState.viewport.viewport
@@ -137,14 +168,17 @@ public struct GraphView<Data: Sendable, NodeContent: View>: View {
                                 }
                             }
                         }
-                        .onEnded { value in
+                        .onEnded { [store = self.store, modifierKeys = self.modifierKeys, onEvent = self.onEvent] value in
                             if store.runtimeState.drag.isDragging {
                                 store.stopDragging()
                                 onEvent?(.dragStop(nodeIDs: [node.id]))
                             } else {
                                 // 移動距離が閾値 (4px) 未満だった場合はタップとみなして選択
-                                // minimumDistance: 0 なので、静止クリックでも確実にここへ到達する
-                                store.selectNode(node.id)
+                                if modifierKeys.isShiftPressed {
+                                    store.toggleNodeSelection(node.id)
+                                } else {
+                                    store.selectNode(node.id)
+                                }
                             }
                         }
                 )

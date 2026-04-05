@@ -1,4 +1,52 @@
 ---
+## [M16 & M17] Selection Completion & Zoom Interaction (2026-04-05) [IN PROGRESS]
+
+### 概要
+選択機能の完遂（M16）とズーム操作の実装（M17）を開始。
+M16 のキーボードショートカットの実装が完了。
+
+### 実装ノーツ
+- **M16: Selection Completion & Keyboard Shortcuts**
+  - `GraphStore`: 矩形選択後のエッジ選択ロジック（接続ノードベース）修正、`selectAll()`, `deleteSelection()` 実装済み。
+  - `Example`: `ContentView` に `@FocusState` を導入し、`.onKeyPress` にて `Delete` / `Cmd+A` イベントを直接ハンドルするように実装。
+  - キャンバスタップ時にフォーカスを奪取するロジック (`.simultaneousGesture`) を追加。`App.commands` を使用した既存のショートカットルーティングとの両立を確認。
+
+### 予定されている変更
+- **M17: Zoom Interaction**
+  - `GraphStore`: `zoom(at:factor:)` は M16 にて先行実装済みだが、`ViewportManager` への委譲など最適化の余地あり。
+  - `GraphView`: ピンチおよびホイールズームの実装。
+
+---
+## [M15] Multi-selection and Marquee (2026-04-05) [DONE]
+
+### 概要
+Shift + クリックによる複数選択および、Shift + ドラッグによる矩形選択（Marquee）を実装。
+
+### 実装ノーツ
+- **複数選択**: `ModifierKeysProvider` を導入し、Shift キーの状態をリアルタイム監視。`toggleNodeSelection` により既存選択を維持したままトグル可能に。
+- **矩形選択**: `MarqueeState` を管理し、`CGRect.contains` による完全包含判定を実装。`MarqueeView` により選択範囲を視覚化。
+- **競合解決**: 背景ドラッグジェスチャを Shift キーの状態に応じて「パン」と「矩形選択」で動的に切り替え。
+
+### 検証結果
+- `swift test --filter MarqueeTests`: Passed (2 tests)
+- `xcodebuild build`: 正常終了。
+
+---
+## [M13] Connection Interaction (2026-04-04) [DONE]
+
+### 概要
+ノード間の接続機能（ハンドル接続）を実装。
+
+### 実装ノーツ
+- **ハンドル検知**: `HandleMeasurementEngine` による実測ベースの座標解決。
+- **ジェネリック対応**: `ConnectionInteractionManager` を拡張し、任意のノード型に対応。
+- **最適化**: `GraphView` のレイヤー分離によるコンパイル負荷の軽減。
+
+### 検証結果
+- `swift test`: `ConnectionInteractionManagerTests` を含む全テストパス。
+- `xcodebuild build`: 正常終了。
+
+---
 ## [M12] Edge Rendering & Customization (2026-04-05) [DONE]
 
 ### 概要
@@ -97,7 +145,11 @@ M10a で発生したバグ修正および、フィードバックに基づくド
 ### 2026-04-05 (M13 Stability & Graduation)
 
 ## 実装済みの機能
-- [x] **M13 Stability & Fixes**
+- [x] M15: Multi-selection and Marquee (矩形選択)
+    - [x] M15a: Shift + Click による複数選択のトグル
+    - [x] M15b: Shift + Drag による背景での矩形選択。ノードの包含判定ロジックの実装
+- [ ] M16: Edge Label Rendering
+- [x] M13 Stability & Fixes
     - [x] `@MainActor` への完全な適応と、テストスイートの同期不全解消。
     - [x] `GraphStore.findHandle` の resolved-fallback 方式への刷新。
     - [x] `DefaultEdgeView` の再導入による M12 描画機能（マーカー、バックオフ）の復元。
@@ -132,3 +184,77 @@ M10a で発生したバグ修正および、フィードバックに基づくド
     - エッジの判定領域を `Rectangle()` から `Path.stroke(lineWidth: 20)` へ変更し、背景パン操作との干渉を完全に解消。
     - ノード選択時のボーダー幅を `3px` に強化し、青色の `shadow` を追加して視覚的なフィードバックを明快に改善。
 - **ビルド**: `swift build` および Xcode でのビルド成功を確認。
+
+## 2026-04-05: Milestone 15 Final Calibration & Doc Sync
+
+### 矩形選択判定ロジックの修正 (M15b)
+- `intersects` (交差) から `contains` (完全包含) に変更。
+- `CGRect.contains(CGRect)` を使用し、ノードが矩形内に完全に収まっている場合のみ選択されるように修正。
+- `MarqueeTests.swift` を `contains` 仕様の期待値に合わせて更新。
+- 全テスト（XCTest 17件, Swift Testing 23件）のパスを確認。
+
+### ドキュメント同期
+- `docs/current-plan.md`: Exit Rule を M15 の内容に刷新。用語を `marquee` に統一。
+- `docs/backlog.md`: M15 および M15b をチェック済み (DONE) に更新。
+- `requirements.md`: Milestone 15 を [DONE] として確定。
+- `walkthrough.md`: M15b を含む最終実装内容で更新。
+
+### ビルド検証
+- `xcodebuild build` 相当の整合性をパッケージビルドで確認済み。
+- **ModifierKeysProvider**: `nonisolated(unsafe)` 警告を解消するため、`MonitorHolder` クラスによるカプセル化を導入。
+
+### ビルド・テスト結果
+- `swift test --filter MarqueeTests`: Passed (2 tests)
+- `xcodebuild build` (Example App): Succeed with no warnings.
+
+## [2026-04-05] M15b (矩形選択) 実装完了
+
+### 変更点
+- **MarqueeState**: `GraphRuntimeState` に矩形選択の状態（開始点、現在点、計算済み矩形）を管理する構造体を追加。
+- **GraphStore**: 
+  - `startMarquee`, `updateMarquee`, `endMarquee` メソッドを実装。
+  - `endMarquee` ではビューポート座標からグラフ絶対座標への変換を行い、`CGRect.intersects` を用いたノード包含判定ロジックを実装。
+- **MarqueeView**: 選択中の半透明な矩形と破線枠を描画する SwiftUI ビューを新規作成。
+- **GraphView**: 
+  - `ModifierKeysProvider` による Shift キーの状態に応じて、背景ドラッグジェスチャの動作を「パン」と「矩形選択」で動的に切り替え。
+  - 最前面レイヤーに `MarqueeView` を配置。
+- **ModifierKeysProvider**: `nonisolated(unsafe)` 警告を解消するため、`MonitorHolder` クラスによるカプセル化を導入。
+
+### ビルド・テスト結果
+- `swift test --filter MarqueeTests`: Passed (2 tests)
+- `xcodebuild build` (Example App): Succeed with no warnings.
+
+### 今回で閉じたこと
+- マウスクリックおよびドラッグによる複数・範囲選択の基本機能。
+- macOS における Shift キーの状態取得と、既存ジェスチャとの競合解決。
+
+### 後続へ送る責務
+- エッジの矩形選択（現状はノードのみ）。
+- キーボードショートカット（Command+A で全選択、Delete キーで削除など）。
+
+## [2026-04-05] M15a: 複数選択 (Shift + クリック) の実装
+
+### 概要
+Shift + クリックによる複数選択機能を実装しました。プラットフォーム固有の修飾キー状態を抽象化するアダプターを導入し、既存の排他選択ロジックを壊さずにトグル選択を可能にしました。
+
+### 変更点
+- **Runtime/Adapters/ModifierKeysProvider.swift**:
+    - `NSEvent.addLocalMonitorForEvents(matching: [.flagsChanged])` を使用して Shift キーの状態をリアルタイムに監視するクラスを実装。
+    - `deinit` での安全なモニター解除のため、`nonisolated(unsafe)` を使用。
+- **Runtime/GraphStore.swift**:
+    - `toggleNodeSelection(_:)` および `toggleEdgeSelection(_:)` メソッドを追加。
+    - 既存の選択状態を維持したまま、特定の要素の選択状態を反転させ、モデルの `selected` フラグと同期する処理を実装。
+- **Public/API/GraphView.swift**:
+    - `ModifierKeysProvider` を内部で保持。
+    - ノードのタップ判定（ドラッグ距離が 4px 未満）時に、Shift キーが押されている場合は `toggleNodeSelection`、そうでない場合は `selectNode` を呼び出すように変更。
+- **Public/API/DefaultEdgeView.swift**:
+    - `ModifierKeysProvider` を受け取り、タップ時に `toggleEdgeSelection` または `selectEdge` を呼び出すように変更。
+- **Tests/SwGraphUITests/SelectionStateTests.swift**:
+    - 複数選択、選択解除、ノードとエッジの混在選択に関するテストケースを追加。
+
+### 検証結果
+- `swift test` 実行: 全 26 テスト（追加分 3 件含む）がパス。
+- ビルド確認: シンタックスエラーがないことを確認。
+
+### 次のステップ
+- [ ] M15b: 矩形選択 (Marquee) の実装

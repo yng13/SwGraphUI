@@ -26,6 +26,22 @@ M10a マイルストーンで発生した主要なインタラクションバグ
 
 ---
 
+## 2026-04-05: M15 Hotfix & M16 Completion
+
+### [M15] 矩形選択の座標修正
+- **問題**: 背景ジェスチャを `.local` (トランスフォーム済み空間) で取得していたため、ズーム・パン時に Marquee の表示とマウスがズレていた。
+- **解決**: ジェスチャ入力を `viewport_container` (スクリーン空間) に固定。
+- **判定**: `GraphStore.endMarquee` にてスクリーン矩形を現在のビューポート状態を用いてグラフ空間に逆変換して判定を行うように修正。
+
+### [M16] 選択機能の完成とズームボタン
+- **API**: `GraphStore` に `selectAll()`, `deleteSelection()`, `zoom(at:factor:)` を追加。
+- **参照準拠**: 矩形選択時に「選択されたノードに接続しているエッジ」を自動選択するようにロジックを修正。
+- **UI**: 右ペイン (InspectorView) にズームボタン (+, -, Fit) を追加。
+- **Shortcut**: Example アプリに `@FocusState` と `.onKeyPress` を導入し、キャンバスフォーカス時に `Delete` (削除) および `Cmd+A` (全選択) のショートカットを処理するように実装。`App.commands` を使用したフォールバック用グローバルショートカットも維持。
+- **検証**: 全 42 件のテストがパス。ズーム倍率に関わらず正確な矩形選択が可能であることを確認。
+
+---
+
 ## [M13] Connection Interaction (2026-04-04) [DONE]
 
 ### 概要
@@ -54,3 +70,27 @@ M10a マイルストーンで発生した主要なインタラクションバグ
 4.  **Edge Hit Area**: 描画線よりも広い（20px）透明なヒットエリアによる、直感的なエッジ選択（完了）。
 5.  **Background Clear**: キャンバス背景のタップによる全選択解除（完了）。
 6.  **Interaction Integrity**: パン操作やハンドルからの接続開始時に、不必要な選択が発火しない制御（完了）。
+
+---
+
+## ✅ Milestone 15: Advanced Selection (Hotfixed)
+- [x] Shift+Click: Multi-selection toggle
+- [x] Shift+Drag: Marquee selection
+  - [x] Coordinate-system fix (Screen to Graph conversion)
+  - [x] Containment logic (Full overlap required)
+
+## ✅ Milestone 16: Selection Completion & Navigation Basics
+- [x] Connected Edge Selection: Auto-select edges attached to selected nodes
+- [x] Keyboard Shortcuts: `Delete` (Delete Selection), `Cmd+A` (Select All)
+- [x] Basic Zoom UI: UI Buttons (+, -, Fit) in Inspector
+- [x] API: `GraphStore.zoom(at:factor:)`, `deleteSelection()`, `selectAll()`
+
+## ⏳ Milestone 17: Zoom & Viewport Interaction [IN PROGRESS]
+
+### 概要
+ピンチズームおよびマウスホイールによるビューポートの拡大縮小。
+
+### 要件項目
+1.  **Magnification Gesture**: トラックパッドのピンチ操作による、カーソル位置を中心としたズーム。
+2.  **Wheel Zoom**: マウスホイール（およびトラックパッドのスクロール）によるズーム。
+3.  **Store API**: `GraphStore.zoom(at:factor:)` による統一されたアクセス。

@@ -47,12 +47,22 @@
 - [x] **Milestone 12: Edge Rendering & Customization (CORE) [Done]**
 - [x] **Milestone 13: Connection Interaction (Runtime) [Done]**
 
-- **Milestone 14: Selection & Interaction Refinement [Done]**
-    - [x] Exclusive Single Selection (Node & Edge)
+- [x] M14: Selection & Interaction Refinement (Core)
+- [x] M15: Advanced Selection (Multi-select & Marquee) [Done]
+    - [x] M15a: Shift + Click Multi-selection
+    - [x] M15b: Shift + Drag Marquee Selection
     - [x] Selection Sync (runtimeState <-> model.selected)
     - [x] Gesture Refinement (minimumDistance: 0 for reliable tapping)
     - [x] Hit Area Optimization (Path-based hit area for edges)
     - [x] Design (Neutral/No Blue theme)
+- [ ] **Milestone 16: Selection Completion & Keyboard Shortcuts [IN PROGRESS]**
+    - [ ] Edge Marquee Logic Correction (Connected-node based)
+    - [ ] deleteSelection() / selectAll()
+    - [ ] Keyboard Shortcuts (Delete, Cmd+A)
+- [ ] **Milestone 17: Viewport Zoom Interaction [PENDING]**
+    - [ ] Zoom API (Store-level)
+    - [ ] Magnification Gesture
+    - [ ] Mouse Wheel Zoom
 
 - **Status**: 完了
 - **Goal**: ノードに追従するエッジ描画とカスタム描写。

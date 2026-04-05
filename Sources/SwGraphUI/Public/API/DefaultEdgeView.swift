@@ -4,10 +4,12 @@ import SwiftUI
 public struct DefaultEdgeView<Data: Sendable>: View {
     let edge: BaseEdge<Data>
     let store: GraphStore<Data>
+    let modifierKeys: ModifierKeysProvider
     
-    public init(edge: BaseEdge<Data>, store: GraphStore<Data>) {
+    public init(edge: BaseEdge<Data>, store: GraphStore<Data>, modifierKeys: ModifierKeysProvider) {
         self.edge = edge
         self.store = store
+        self.modifierKeys = modifierKeys
     }
     
     public var body: some View {
@@ -58,7 +60,11 @@ public struct DefaultEdgeView<Data: Sendable>: View {
                     .stroke(Color.black.opacity(0.0001), lineWidth: 20)
                     .contentShape(segmentsToPath(result.segments).stroke(lineWidth: 20))
                     .onTapGesture {
-                        store.selectEdge(edge.id)
+                        if modifierKeys.isShiftPressed {
+                            store.toggleEdgeSelection(edge.id)
+                        } else {
+                            store.selectEdge(edge.id)
+                        }
                     }
 
                 // 2. 表示用エッジ
