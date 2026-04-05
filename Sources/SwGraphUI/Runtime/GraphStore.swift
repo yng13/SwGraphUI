@@ -103,7 +103,15 @@ public final class GraphStore<Data: Sendable>: Sendable {
     public func zoom(at screenPoint: XYPosition? = nil, factor: Double) {
         // デフォルトは中心（仮。本来はサイズが必要だが、一旦 (0,0) を基準にするか呼び出し側で解決）
         let center = screenPoint ?? .zero
-        runtimeState.viewport.zoom(at: center, factor: factor)
+        
+        let newViewport = ViewportManager.calculateZoomAtPoint(
+            current: runtimeState.viewport.viewport,
+            factor: factor,
+            at: center,
+            minZoom: 0.5,
+            maxZoom: 2.0
+        )
+        runtimeState.viewport.setViewport(newViewport)
     }
 
     public func fitView(
@@ -264,6 +272,18 @@ public final class GraphStore<Data: Sendable>: Sendable {
                 } else {
                     runtimeState.selection.selectNode(id: node.id)
                     nodes[i].selected = true
+                }
+            }
+        }
+        
+        // 2. エッジの判定 (xyflow 準拠: 選択ノード集合に接続しているエッジを選択)
+        let selectedNodeIDs = runtimeState.selection.selectedNodeIDs
+        if !selectedNodeIDs.isEmpty {
+            for i in 0..<edges.count {
+                let edge = edges[i]
+                if selectedNodeIDs.contains(edge.source) || selectedNodeIDs.contains(edge.target) {
+                    runtimeState.selection.selectEdge(id: edge.id)
+                    edges[i].selected = true
                 }
             }
         }

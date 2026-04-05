@@ -80,17 +80,18 @@ M10a マイルストーンで発生した主要なインタラクションバグ
   - [x] Containment logic (Full overlap required)
 
 ## ✅ Milestone 16: Selection Completion & Navigation Basics
-- [x] Connected Edge Selection: Auto-select edges attached to selected nodes
+- [x] Connected Edge Selection: 選択ノード集合に接続しているエッジを包含するようにロジックを修正 (xyflow/Pane.svelte 準拠)
 - [x] Keyboard Shortcuts: `Delete` (Delete Selection), `Cmd+A` (Select All)
 - [x] Basic Zoom UI: UI Buttons (+, -, Fit) in Inspector
 - [x] API: `GraphStore.zoom(at:factor:)`, `deleteSelection()`, `selectAll()`
 
-## ⏳ Milestone 17: Zoom & Viewport Interaction [IN PROGRESS]
+## ✅ Milestone 17: Zoom & Viewport Interaction
 
 ### 概要
 ピンチズームおよびマウスホイールによるビューポートの拡大縮小。
 
 ### 要件項目
-1.  **Magnification Gesture**: トラックパッドのピンチ操作による、カーソル位置を中心としたズーム。
-2.  **Wheel Zoom**: マウスホイール（およびトラックパッドのスクロール）によるズーム。
-3.  **Store API**: `GraphStore.zoom(at:factor:)` による統一されたアクセス。
+1.  **Magnification Gesture**: トラックパッドのピンチ操作による、カーソル位置を中心としたズーム（完了）。
+2.  **Wheel Zoom**: マウスホイールによるキャンバスのパンと、`Cmd` または `Ctrl` ＋ホイールによるズームの分岐（完了）。
+3.  **Store API Separation**: `GraphStore.zoom(at:factor:)` にて `ViewportManager` を直接呼び出すことで、責務の分離と `runtimeState.viewport` への暗黙依存の排除（完了）。
+4.  **Local Wheel Bridge**: キャンバス内 Hover に連動する `ScrollMonitor` を利用し、グローバルではなく View ローカルでのマウスホイール捕捉を実現（完了）。

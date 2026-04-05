@@ -18,6 +18,13 @@ public struct GraphView<Data: Sendable, NodeContent: View>: View {
     // 修飾キーの状態監視アダプター
     @State private var modifierKeys = ModifierKeysProvider()
     
+    // Zoom / Hover 用状態
+    @State private var hoverLocation: CGPoint = .zero
+    @State private var lastMagnification: CGFloat = 1.0
+    #if os(macOS)
+    @StateObject private var scrollMonitor = ScrollMonitor()
+    #endif
+    
     // パンまたは Marquee 操作の継続的な変化量を計算するための内部用ステート
     @State private var lastPanTranslation: CGSize = .zero
     @State private var isMarqueeMode: Bool = false
@@ -49,7 +56,50 @@ public struct GraphView<Data: Sendable, NodeContent: View>: View {
         }
         .onAppear {
             _ = modifierKeys.isShiftPressed // 初期アクセスで監視開始
+            
+            #if os(macOS)
+            scrollMonitor.onEvent = { [store, weak scrollMonitor] event in
+                let location = scrollMonitor?.location ?? .zero
+                if event.modifierFlags.contains(.command) || event.modifierFlags.contains(.control) {
+                    let factor = exp(event.scrollingDeltaY * 0.01) // ホイール量に応じた倍率
+                    let center = XYPosition(x: location.x, y: location.y)
+                    store.zoom(at: center, factor: factor)
+                    return nil
+                } else {
+                    store.pan(by: XYPosition(x: event.scrollingDeltaX, y: event.scrollingDeltaY))
+                    return nil
+                }
+            }
+            #endif
         }
+        .onHover { isHovering in
+            #if os(macOS)
+            scrollMonitor.isHovering = isHovering
+            #endif
+        }
+        .onContinuousHover { phase in
+            switch phase {
+            case .active(let location):
+                self.hoverLocation = location
+                #if os(macOS)
+                scrollMonitor.location = location
+                #endif
+            case .ended:
+                break
+            }
+        }
+        .gesture(
+            MagnifyGesture()
+                .onChanged { value in
+                    let factor = value.magnification / lastMagnification
+                    let center = XYPosition(x: hoverLocation.x, y: hoverLocation.y)
+                    store.zoom(at: center, factor: factor)
+                    lastMagnification = value.magnification
+                }
+                .onEnded { _ in
+                    lastMagnification = 1.0
+                }
+        )
         #if os(macOS)
         .background(Color(nsColor: .windowBackgroundColor))
         #else

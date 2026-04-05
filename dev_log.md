@@ -1,20 +1,22 @@
 ---
-## [M16 & M17] Selection Completion & Zoom Interaction (2026-04-05) [IN PROGRESS]
+## [M16 & M17] Selection Completion & Zoom Interaction (2026-04-05) [DONE]
 
 ### 概要
-選択機能の完遂（M16）とズーム操作の実装（M17）を開始。
-M16 のキーボードショートカットの実装が完了。
+選択機能の完遂（M16）とズーム操作の実装（M17）が完了。
 
 ### 実装ノーツ
-- **M16: Selection Completion & Keyboard Shortcuts**
-  - `GraphStore`: 矩形選択後のエッジ選択ロジック（接続ノードベース）修正、`selectAll()`, `deleteSelection()` 実装済み。
-  - `Example`: `ContentView` に `@FocusState` を導入し、`.onKeyPress` にて `Delete` / `Cmd+A` イベントを直接ハンドルするように実装。
-  - キャンバスタップ時にフォーカスを奪取するロジック (`.simultaneousGesture`) を追加。`App.commands` を使用した既存のショートカットルーティングとの両立を確認。
-
-### 予定されている変更
+- **M16: Selection Completion**
+  - エッジ矩形選択ロジックの修正: `xyflow/Pane.svelte` の挙動に準拠し、選択されたノード集合に接続する全てのエッジを選択状態とするよう `GraphStore.endMarquee` を更新しました。これにより、ノードグループを選択した際に関連する接続線も自動で選択されるようになります。
+  - ショートカット実装: `Delete` / `Cmd+A` イベントは Example アプリ側でハンドル。
 - **M17: Zoom Interaction**
-  - `GraphStore`: `zoom(at:factor:)` は M16 にて先行実装済みだが、`ViewportManager` への委譲など最適化の余地あり。
-  - `GraphView`: ピンチおよびホイールズームの実装。
+  - **API分離**: `GraphStore.zoom(at:factor:)` の内部処理を `ViewportManager` を直接叩くように修正し、`GraphRuntimeState` への暗黙のドメインロジック依存を排除。
+  - **Magnification Gesture**: iOS/macOS 共通のピンチズームに対応するため、`GraphView` レベルに `MagnifyGesture` を追加し、カーソルの Hover 位置を中心点としてズームするよう実装。
+  - **Local Wheel Zoom**: macOS 専用の `ScrollMonitor` を作成。GraphView 全体に対するグローバルモニターの誤動作を防ぐため、「GraphView が Hover されている間のみ」モニターを有効にし、`Cmd` / `Ctrl` 押下時にはズーム、非押下時にはパン動作を行うよう分離しました。
+
+### 検証結果
+- `swift test`: 修正によるデグレなし、全パス（42件成功）。
+- `xcodebuild build` (Example): 正常終了。
+
 
 ---
 ## [M15] Multi-selection and Marquee (2026-04-05) [DONE]

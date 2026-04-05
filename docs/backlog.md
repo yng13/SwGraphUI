@@ -55,14 +55,14 @@
     - [x] Gesture Refinement (minimumDistance: 0 for reliable tapping)
     - [x] Hit Area Optimization (Path-based hit area for edges)
     - [x] Design (Neutral/No Blue theme)
-- [ ] **Milestone 16: Selection Completion & Keyboard Shortcuts [IN PROGRESS]**
-    - [ ] Edge Marquee Logic Correction (Connected-node based)
-    - [ ] deleteSelection() / selectAll()
-    - [ ] Keyboard Shortcuts (Delete, Cmd+A)
-- [ ] **Milestone 17: Viewport Zoom Interaction [PENDING]**
-    - [ ] Zoom API (Store-level)
-    - [ ] Magnification Gesture
-    - [ ] Mouse Wheel Zoom
+- [x] **Milestone 16: Selection Completion & Keyboard Shortcuts [DONE]**
+    - [x] Edge Marquee Logic Correction (Connected-node based)
+    - [x] deleteSelection() / selectAll()
+    - [x] Keyboard Shortcuts (Delete, Cmd+A)
+- [x] **Milestone 17: Viewport Zoom Interaction [DONE]**
+    - [x] Zoom API (Store-level)
+    - [x] Magnification Gesture
+    - [x] Mouse Wheel Zoom
 
 - **Status**: 完了
 - **Goal**: ノードに追従するエッジ描画とカスタム描写。
@@ -113,8 +113,7 @@
 - [ ] 文字ぼやけ回避の品質基準を定義
 - [ ] Example app に export 検証ハーネスを追加
 
-## 直近の次アクション (M14: Selection & Interaction Refinement)
+## 直近の次アクション (Epic 4: 受け入れ用 examples)
 
-1. node / edge の単一選択を `GraphStore` に実装する
-2. background click による clear と、pan / drag / connect との競合を整理する
-3. [`m14-selection-gap.md`](/Users/kentaro/Projects/SwGraphUI/docs/m14-selection-gap.md) を基準に、M14 の対象差分だけを先に埋める
+1. Basic interaction 相当の example の追加と整備
+2. Reconnect / Edge Label などの未追従部分の実装可否判断

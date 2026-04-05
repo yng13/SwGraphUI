@@ -79,18 +79,20 @@
 - `.reference/xyflow/packages/system/src/xydrag/*`
 - `.reference/xyflow/packages/system/src/xypanzoom/*`
 
-判定: `未追従`
+判定: `一部一致`
 
 一致している点:
 
 - node drag
 - hierarchy を考慮した drag
 - background pan
+- pinch zoom (MagnifyGesture)
+- wheel zoom (Mac: Cmd/Ctrl + Scroll)
+- background drag select (Marquee)
 
 未追従の点:
 
-- wheel zoom
-- pinch zoom
+- iOS でのピンチズームの中心点追従 (意図的差分: 現在 macOS ではカーソル位置基準だが、iOS では hover API の制約により座標が取れないため実質的に左上 `(0,0)` 基準となる)
 - auto pan
 - drag threshold の細部
 - selection on drag
