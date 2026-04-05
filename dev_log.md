@@ -112,3 +112,23 @@ M10a で発生したバグ修正および、フィードバックに基づくド
 **ビルド・テスト検証結果**:
 - **Package Tests**: `swift test` により、全 31 テストのパスを確認（XCTest 7 + Swift Testing 24）。
 - **Example Build**: `xcodebuild build` 成功。
+
+---
+### 2026-04-05 (M14 Selection & Interaction Refinement) [DONE]
+
+### 概要
+ノード・エッジの単一選択（排他選択）機能、背景タップによる選択解除、およびジェスチャ競合の解消を実装。
+
+### 実装ノーツ
+- **Selection 同期ロジック**: `GraphStore` を唯一の同期点とし、`runtimeState.selection` の更新に合わせて `nodes` / `edges` 配列内の `selected` フラグをアトミックに更新するロジックを実装。
+- **ジェスチャ分離 (Node)**: `DragGesture(minimumDistance: 4)` を採用し、移動が閾値未満で `onChanged` が呼ばれなかった場合のみを「選択（タップ）」と判定。これによりドラッグ開始時の誤発火を防止。
+- **エッジヒットエリアの強化**: 細いエッジのタップ判定を容易にするため、背後に 20px 幅の透明な `EdgeRenderer` を配置し、`.contentShape(Rectangle())` で判定領域を確保。
+- **排他性の保証**: ノード選択時にエッジの選択を解除し、その逆も行う仕様を `GraphStore` 内で保証。
+
+### 検証結果
+- **Package Tests**: `swift test` により、新規追加の `SelectionStateTests` を含む全 **32 テスト**のパスを確認（XCTest 9 + Swift Testing 23）。
+- **品質**: ドラッグ中、または接続操作中にノードが誤って選択されないことをロジックおよびテストで確認。
+- **Refinement (修正)**:
+    - エッジの判定領域を `Rectangle()` から `Path.stroke(lineWidth: 20)` へ変更し、背景パン操作との干渉を完全に解消。
+    - ノード選択時のボーダー幅を `3px` に強化し、青色の `shadow` を追加して視覚的なフィードバックを明快に改善。
+- **ビルド**: `swift build` および Xcode でのビルド成功を確認。

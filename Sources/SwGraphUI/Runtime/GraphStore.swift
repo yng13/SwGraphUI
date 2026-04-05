@@ -109,12 +109,46 @@ public final class GraphStore<Data: Sendable>: Sendable {
     // MARK: - Interaction Handlers
     
     // --- Selection ---
+    
+    /// 指定されたノードを選択状態にします（排他選択）。
     public func selectNode(_ id: String) {
+        runtimeState.selection.clear()
         runtimeState.selection.selectNode(id: id)
+        
+        // モデルフラグの同期
+        for i in 0..<nodes.count {
+            nodes[i].selected = (nodes[i].id == id)
+        }
+        for i in 0..<edges.count {
+            edges[i].selected = false
+        }
     }
     
+    /// 指定されたエッジを選択状態にします（排他選択）。
+    public func selectEdge(_ id: String) {
+        runtimeState.selection.clear()
+        runtimeState.selection.selectEdge(id: id)
+        
+        // モデルフラグの同期
+        for i in 0..<nodes.count {
+            nodes[i].selected = false
+        }
+        for i in 0..<edges.count {
+            edges[i].selected = (edges[i].id == id)
+        }
+    }
+    
+    /// すべての選択を解除します。
     public func clearSelection() {
         runtimeState.selection.clear()
+        
+        // モデルフラグの同期
+        for i in 0..<nodes.count {
+            nodes[i].selected = false
+        }
+        for i in 0..<edges.count {
+            edges[i].selected = false
+        }
     }
     
     // --- Dragging ---

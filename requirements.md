@@ -39,3 +39,18 @@ M10a マイルストーンで発生した主要なインタラクションバグ
 5.  **onConnect Callback**: 接続完了時に `Connection` オブジェクトを外部へ通知する仕組み（完了）。
 6.  **Hierarchy Support**: 階層化されたノード (Parent-Child) における絶対座標計算と接続対応（完了）。
 7.  **Stability & Test Graduation**: `@MainActor` への完全適応と、実測前ハンドルの推測解決によるロバストな検知（完了）。
+
+---
+
+## [M14] Selection & Interaction Refinement (2026-04-05) [DONE]
+
+### 概要
+ノード・エッジの単一選択機能と、既存のインタラクション（ドラッグ、パン）との競合整理。
+
+### 要件項目
+1.  **Exclusive Selection**: ノードとエッジの相互排他的な単一選択ロジック（完了）。
+2.  **Selection Sync (Source of Truth)**: `GraphStore` を唯一の同期点とし、モデルフラグとランタイム状態をアトミックに更新（完了）。
+3.  **Gesture Deconfliction**: `DragGesture` の `minimumDistance: 4` を利用し、ドラッグ開始とクリック（選択）を正確に分離（完了）。
+4.  **Edge Hit Area**: 描画線よりも広い（20px）透明なヒットエリアによる、直感的なエッジ選択（完了）。
+5.  **Background Clear**: キャンバス背景のタップによる全選択解除（完了）。
+6.  **Interaction Integrity**: パン操作やハンドルからの接続開始時に、不必要な選択が発火しない制御（完了）。

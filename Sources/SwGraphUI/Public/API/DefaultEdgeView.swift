@@ -53,14 +53,23 @@ public struct DefaultEdgeView<Data: Sendable>: View {
             )
             
             return AnyView(ZStack {
+                // 1. ヒットエリア（太いパス判定）
+                segmentsToPath(result.segments)
+                    .stroke(Color.black.opacity(0.0001), lineWidth: 20)
+                    .contentShape(segmentsToPath(result.segments).stroke(lineWidth: 20))
+                    .onTapGesture {
+                        store.selectEdge(edge.id)
+                    }
+
+                // 2. 表示用エッジ
                 EdgeRenderer(
                     segments: result.segments,
-                    strokeColor: edge.selected ? Color.blue : Color.gray,
+                    strokeColor: edge.selected ? Color.primary : Color.gray,
                     strokeWidth: strokeWidth,
                     animated: edge.animated
                 )
                 
-                // 終了マーカー（矢印）
+                // 3. 終了マーカー（矢印）
                 if let marker = edge.markerEnd {
                     ArrowHead(
                         at: CGPoint(x: targetHandlePos.x, y: targetHandlePos.y),
@@ -70,7 +79,7 @@ public struct DefaultEdgeView<Data: Sendable>: View {
                             targetPosition == .bottom ? .degrees(270) :
                             targetPosition == .left ? .degrees(0) : .degrees(180)
                         ),
-                        color: edge.selected ? Color.blue : Color.gray,
+                        color: edge.selected ? Color.primary : Color.gray,
                         width: marker.width ?? 6.0,
                         height: marker.height ?? 6.0
                     )
@@ -151,6 +160,30 @@ public struct DefaultEdgeView<Data: Sendable>: View {
             x: originalTarget.x - unitVector.x * backoff,
             y: originalTarget.y - unitVector.y * backoff
         )
+    }
+
+    private func segmentsToPath(_ segments: [PathSegment]) -> Path {
+        Path { path in
+            for segment in segments {
+                switch segment {
+                case .move(let to):
+                    path.move(to: CGPoint(x: to.x, y: to.y))
+                case .line(let to):
+                    path.addLine(to: CGPoint(x: to.x, y: to.y))
+                case .bezier(let to, let c1, let c2):
+                    path.addCurve(
+                        to: CGPoint(x: to.x, y: to.y),
+                        control1: CGPoint(x: c1.x, y: c1.y),
+                        control2: CGPoint(x: c2.x, y: c2.y)
+                    )
+                case .quadratic(let to, let c):
+                    path.addQuadCurve(
+                        to: CGPoint(x: to.x, y: to.y),
+                        control: CGPoint(x: c.x, y: c.y)
+                    )
+                }
+            }
+        }
     }
 }
 

@@ -40,11 +40,19 @@
 - [x] 基本的なノード表示 (M10b)
 - [x] 基本的なエッジ表示 (M12)
 - [x] pan / zoom (M8/M10a)
-- [ ] ノード選択 (M14)
+- [x] ノード選択 (M14)
 - [x] ノードドラッグ (M8/M10a)
 - [x] ハンドル接続 (M13)
+- [x] **Milestone 14: Selection & Interaction Refinement [Done]**
 - [x] **Milestone 12: Edge Rendering & Customization (CORE) [Done]**
 - [x] **Milestone 13: Connection Interaction (Runtime) [Done]**
+
+- **Milestone 14: Selection & Interaction Refinement [Done]**
+    - [x] Exclusive Single Selection (Node & Edge)
+    - [x] Selection Sync (runtimeState <-> model.selected)
+    - [x] Gesture Refinement (minimumDistance: 0 for reliable tapping)
+    - [x] Hit Area Optimization (Path-based hit area for edges)
+    - [x] Design (Neutral/No Blue theme)
 
 - **Status**: 完了
 - **Goal**: ノードに追従するエッジ描画とカスタム描写。

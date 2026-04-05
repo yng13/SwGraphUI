@@ -69,6 +69,9 @@ public struct GraphView<Data: Sendable, NodeContent: View>: View {
     private var backgroundLayerPart: some View {
         Color.clear
             .contentShape(Rectangle())
+            .onTapGesture {
+                store.clearSelection()
+            }
             .gesture(
                 DragGesture(minimumDistance: 5, coordinateSpace: .named("viewport_container"))
                     .onChanged { value in
@@ -120,20 +123,29 @@ public struct GraphView<Data: Sendable, NodeContent: View>: View {
                 .gesture(
                     DragGesture(minimumDistance: 0, coordinateSpace: .named("viewport_container"))
                         .onChanged { value in
-                            let viewport = store.runtimeState.viewport.viewport
-                            let graphPointer = XYPosition(x: value.location.x, y: value.location.y).fromScreen(viewport: viewport)
-                            
-                            if !store.runtimeState.drag.isDragging {
-                                store.startDragging(nodeIDs: [node.id], at: graphPointer)
-                                onEvent?(.dragStart(nodeIDs: [node.id]))
-                            } else {
-                                store.updateDragging(to: graphPointer)
-                                onEvent?(.dragUpdate(nodeIDs: [node.id]))
+                            let translation = sqrt(pow(value.translation.width, 2) + pow(value.translation.height, 2))
+                            if translation > 4 {
+                                let viewport = store.runtimeState.viewport.viewport
+                                let graphPointer = XYPosition(x: value.location.x, y: value.location.y).fromScreen(viewport: viewport)
+                                
+                                if !store.runtimeState.drag.isDragging {
+                                    store.startDragging(nodeIDs: [node.id], at: graphPointer)
+                                    onEvent?(.dragStart(nodeIDs: [node.id]))
+                                } else {
+                                    store.updateDragging(to: graphPointer)
+                                    onEvent?(.dragUpdate(nodeIDs: [node.id]))
+                                }
                             }
                         }
-                        .onEnded { _ in
-                            store.stopDragging()
-                            onEvent?(.dragStop(nodeIDs: [node.id]))
+                        .onEnded { value in
+                            if store.runtimeState.drag.isDragging {
+                                store.stopDragging()
+                                onEvent?(.dragStop(nodeIDs: [node.id]))
+                            } else {
+                                // 移動距離が閾値 (4px) 未満だった場合はタップとみなして選択
+                                // minimumDistance: 0 なので、静止クリックでも確実にここへ到達する
+                                store.selectNode(node.id)
+                            }
                         }
                 )
         }
@@ -178,8 +190,9 @@ public struct DefaultNodeView<Data: Sendable>: View {
         )
         .overlay(
             RoundedRectangle(cornerRadius: 5)
-                .stroke(node.selected ? Color.blue : Color.gray.opacity(0.3), lineWidth: node.selected ? 2 : 1)
+                .stroke(node.selected ? Color.primary : Color.gray.opacity(0.3), lineWidth: node.selected ? 3 : 1)
         )
+        .shadow(color: Color.black.opacity(node.selected ? 0.2 : 0.1), radius: node.selected ? 5 : 2)
         .overlay(
             HStack {
                 // 左側ターゲットハンドル
