@@ -8,25 +8,26 @@ struct SidebarView: View {
     
     var body: some View {
         List {
+            // 一番上のカテゴリ（Basic）だけがヘッダー化されるのを防ぐため、
+            // 空のセクションや、あるいは明示的なスタイルを持つセクション構成に。
+            // macOS のサイドバー特有の挙動に対処します。
             ForEach(ExampleAppStore.SampleCategory.allCases) { category in
-                Section(category.rawValue) {
+                Section(header: Text(category.rawValue).font(.headline).foregroundColor(.secondary)) {
                     ForEach(appStore.samples(in: category), id: \.id) { sample in
                         HStack {
                             Label(sample.title, systemImage: "doc.text")
                                 .font(.subheadline)
                             Spacer()
-                            if appStore.selectedCategory == category && graphStore.nodes.count > 0 {
-                                // 簡易的な選択状態表示（実際には選択中のサンプルを保持するのが理想）
-                            }
                         }
                         .contentShape(Rectangle())
                         .onTapGesture {
                             appStore.switchSample(to: sample, in: graphStore)
                         }
-                        .listRowSeparator(.hidden)
                     }
                 }
             }
+            
+            Divider()
             
             Section("Actions") {
                 Button(action: {
@@ -45,6 +46,7 @@ struct SidebarView: View {
                 }
             }
         }
+        .listStyle(.sidebar)
     }
 }
 #endif

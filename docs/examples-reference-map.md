@@ -13,17 +13,16 @@
 
 | Category | Public example | 判定 | ローカル参照 source | SwGraphUI 実装例 |
 | --- | --- | --- | --- | --- |
-| Feature Overview | Feature Overview | 近似 | `.reference/xyflow/examples/react/src/examples/Overview` | `ExampleAppStore.overview` (M19: Reconnect/Label/Marker統合) |
-| Interaction | Lifecycle Demo | 近似 | `.reference/xyflow/examples/react/src/examples/DragNDrop`, `UpdateNode` | `Example/SwGraphUIExampleApp.swift` (M20: ボタン経由の追加/削除/編集。D&Dは未実装) |
-| Nodes | Custom Nodes | 部分一致 | `.reference/xyflow/examples/react/src/examples/CustomNode` | `ExampleAppStore.customShowcase` (M21: Toolbar/Color/CPUノード) |
-
+| Feature Overview | Feature Overview | 近似 | `.reference/xyflow/examples/react/src/examples/Overview` | `OverviewSample.swift` (M19: Reconnect/Label/Marker統合) |
+| Interaction | Lifecycle Demo | 近似 | `.reference/xyflow/examples/react/src/examples/DragNDrop/index.tsx`, `UpdateNode` | `BasicSample.swift` (M20/22: 追加/削除/編集。D&Dは未実装) |
+| Nodes | Custom Nodes | 部分一致 | `.reference/xyflow/examples/react/src/examples/CustomNode` | `CustomShowcaseSample.swift` (M21: Toolbar/Color/CPUノード) |
 | Nodes | Stress Test | 未追従 | `.reference/xyflow/examples/react/src/examples/Stress` | - |
-| Subflows | Sub Flow | 近似 | `.reference/xyflow/examples/react/src/examples/Subflow` | `ExampleAppStore.hierarchy` |
-| Interaction | Interaction (Playground) | 一部一致 | `.reference/xyflow/examples/react/src/examples/Interaction` | `ExampleAppStore.interaction` (Toggle群無) |
+| Subflows | Sub Flow | 近似 | `.reference/xyflow/examples/react/src/examples/Subflow` | `HierarchySample.swift` |
+| Interaction | Interaction (Playground) | 一部一致 | `.reference/xyflow/examples/react/src/examples/Interaction` | `InteractionSample.swift` (M22: サンプル独立化) |
 | Interaction | Save and Restore | 未追従 | `.reference/xyflow/examples/react/src/examples/SaveRestore` | - |
 | Interaction | Connection Events / Add Edge 相当 | 近似 | `.reference/xyflow/examples/react/src/examples/AddNodeOnEdgeDrop`, `UseConnection`, `UseNodeConnections` | M13 の handle 接続 + `ExampleAppStore.addEdge` |
-| Interaction | Overlap Test | 近似 | - | `ExampleAppStore.overlap` |
-| Edges | Edge Types | 部分一致 | `.reference/xyflow/examples/react/src/examples/EdgeTypes` | `ExampleAppStore.customShowcase` (M21: CustomEdgeBody) |
+| Interaction | Overlap Test | 近似 | - | `OverlapSample.swift` |
+| Edges | Edge Types | 部分一致 | `.reference/xyflow/examples/react/src/examples/EdgeTypes` | `CustomShowcaseSample.swift` (M21: CustomEdgeBody) |
 
 
 ## ローカル clone にあるが公開 core examples に直接対応しない route

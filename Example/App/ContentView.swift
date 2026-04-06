@@ -233,7 +233,19 @@ extension ContentView {
     private func buildCustomNode(_ node: BaseNode<String>) -> some View {
         switch node.kind {
         case "toolbar":
-            ToolbarNodeView(node: node, store: graphStore, onConnect: onConnectHandler)
+            ToolbarNodeView(
+                node: node,
+                store: graphStore,
+                onUpdate: {
+                    graphStore.updateSelectedNodes { $0.data = "Updated via Toolbar!" }
+                    appStore.appendLog(kind: "toolbar.update", payload: "node text changed")
+                },
+                onDelete: {
+                    graphStore.deleteSelection()
+                    appStore.appendLog(kind: "toolbar.delete", payload: "node removed")
+                },
+                onConnect: onConnectHandler
+            )
         case "color":
             ColorNodeView(node: node, store: graphStore, onConnect: onConnectHandler)
         case "custom":
@@ -255,12 +267,12 @@ extension ContentView {
             return AnyView(CustomEdgeBody(segments: segments, color: color, width: width, animated: animated, reconnecting: reconnecting))
         } else {
             return AnyView(
-                DefaultEdgeView(
-                    edge: edge,
-                    store: graphStore,
-                    onReconnect: nil,
-                    modifierKeys: nil,
-                    edgeBodyBuilder: nil
+                EdgeRenderer(
+                    segments: segments,
+                    strokeColor: color,
+                    strokeWidth: width,
+                    animated: animated,
+                    isReconnecting: reconnecting
                 )
             )
         }

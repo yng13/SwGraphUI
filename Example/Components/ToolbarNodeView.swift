@@ -4,15 +4,15 @@ import SwGraphUI
 struct ToolbarNodeView: View {
     let node: BaseNode<String>
     let store: GraphStore<String>
+    let onUpdate: () -> Void
+    let onDelete: () -> Void
     let onConnect: ((Connection) -> Void)?
     
     var body: some View {
         VStack(spacing: 0) {
             if node.selected {
                 HStack(spacing: 8) {
-                    Button(action: {
-                        store.updateSelectedNodes { $0.data = "Updated!" }
-                    }) {
+                    Button(action: onUpdate) {
                         Image(systemName: "pencil")
                             .font(.system(size: 10))
                     }
@@ -22,9 +22,7 @@ struct ToolbarNodeView: View {
                     .clipShape(Circle())
                     .foregroundColor(.white)
                     
-                    Button(action: {
-                        store.deleteSelection()
-                    }) {
+                    Button(action: onDelete) {
                         Image(systemName: "trash")
                             .font(.system(size: 10))
                     }

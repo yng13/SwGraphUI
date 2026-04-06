@@ -75,7 +75,7 @@ public final class ExampleAppStore {
     
     // MARK: - Sample Registry
     
-    /// 利用可能なサンプルのリスト
+    /// 全サンプルのレジストリ
     private let allSamples: [any GraphSample] = [
         BasicSample(),
         HierarchySample(),

@@ -15,7 +15,7 @@
 - `未追従`: 参照実装にあるが、SwGraphUI では未実装または一部未達
 - `要再判断`: 参照に寄せるか、Swift 向けに再設計するかをまだ決め切っていない
 
-## 現状サマリ (M13 時点)
+## 現状サマリ (M22 時点)
 
 ### 一致 / 受け入れ可
 
@@ -30,6 +30,8 @@
 - multi-selection (nodes & edges)
 - **edge label** (base rendering)
 - **reconnect anchor** (interactive reconnection)
+- **Node Toolbar**: 選択ノード上部へのフローティングツールバー表示 (M21)
+- **Custom Edge**: エッジ中間点でのベジエ曲線以外のカスタム描画 (M21: CustomEdgeBody)
 
 ### 意図的差分
 
@@ -39,13 +41,13 @@
 - `PaddingValue.relative / .points` による型安全な padding API
 - iOS pinch zoom の中心点（hover座標取得不可による (0,0) フォールバック）
 - **Edge customization**: 描画本体のみを `edgeBuilder` で注入し、再接続ハンドルやラベル等のオーバーレイ機能をライブラリ側で共通化する設計（ロジックの漏洩防止と機能維持を優先）
-- **Toolbar nodes**: 選択時のツールバー UI をライブラリ内部ではなく Example (User) 側の View 合成で実現する方針
+- **Toolbar nodes**: 選択時のツールバー UI をライブラリ内部ではなく Example (User) 側の View 合成で実現する方針。M21 にて `onUpdate / onDelete` クロージャを介した疎結合化を実現。
 
 ### 未着手 / 未完
 
 - whiteboard 系 interaction
-- toolbar / portal / minimap
-- whiteboard 系 interaction
+- Minimap: グラフ全体の縮小図表示 (M23: Next)
+- NodeResizer: ノードのインタラクティブなリサイズ
 - keyboard interaction / a11y component 群 (一部 bridge 実装済み)
 - auto pan
 

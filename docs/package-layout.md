@@ -57,9 +57,22 @@ Sources/
       Adapters/
       Utilities/
       TestingSupport/
+Example/
+  App/          # App, ContentView, Store
+  Views/        # Sidebar, Inspector, etc.
+  Samples/      # Isolated GraphSample files
+  Components/   # Custom Node/Edge views
 ```
 
 ## 各ディレクトリの責務
+
+### `Example/` (Sample App)
+
+- **Root**: `SwGraphUIExampleApp.swift` (アプリのエントリポイント)。
+- **App**: `ContentView.swift` や、グローバルな実行状態を管理する `ExampleAppStore`。
+- **Views**: サイドバー、インスペクタ、ログビューなどの UI 基盤。
+- **Samples**: `GraphSample` プロトコルに準拠した独立したサンプル定義（1サンプル 1ソース）。
+- **Components**: `ToolbarNodeView`, `ColorNodeView`, `CustomEdgeBody` などの再利用可能なカスタム要素。
 
 ### `Core/Model`
 

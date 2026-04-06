@@ -12,17 +12,13 @@
 
 ## Exit Rule
 - [x] **Examples の充実**: `Basic interaction` (M20: Elements Lifecycle) が実装されていること。
-- [ ] **高度な Example**: Custom Node / Edge または Minimap 等の拡張機能が 1 つ以上検証されていること。
-- [ ] **ドキュメント同期**: `reference-divergence.md` 上での未追従事項が更新されていること。
+- [x] **高度な Example**: Custom Node / Edge 展示が完了していること (M21)。
+- [x] **基盤整備**: Example アプリのモジュール化・独立化が完了していること (M22)。
+- [ ] **UI Components**: Minimap 等の拡張機能が 1 つ以上検証されていること (M23: Next)。
+- [x] **ドキュメント同期**: `reference-divergence.md` 上での未追従事項が更新されていること。
 
 ## 完了したマイルストーン
+- [x] M22: Example App Refactoring & Modularization
+- [x] M21: Custom Node / Edge Showcase
 - [x] M20: Elements Lifecycle (Add/Delete/Edit)
 - [x] M19: Interactive Showcase & Doc Repair
-- [x] M18: Edge Reconnection & Edge Label (Interactive)
-- [x] M17: Viewport Zoom Interaction
-- [x] M16: Selection Completion & Keyboard Shortcuts (Core)
-- [x] M15: Advanced Selection (Multi-select & Marquee)
-- [x] M14: Selection & Interaction Refinement (Core)
-- [x] M13: Connection Interaction (Runtime)
-- [x] M12: Edge Rendering & Customization (Core)
-- [x] M10a/10b: Measurement Engine & Adaptive Harness

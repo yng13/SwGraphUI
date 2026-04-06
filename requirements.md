@@ -1,14 +1,16 @@
 # Requirements - SwGraphUI
 
-## [Epic 4] Basic Interaction Examples (2026-04-05) [DONE]
+## [Epic 4] Basic Interaction & Custom Elements (2026-04-06) [DONE]
 
 ### 概要
-Example アプリに対し、`xyflow/Overview` および `xyflow/Interaction` 相当の受け入れ確認ハーネスを追加する。
+Example アプリに対し、`xyflow/Overview` および `xyflow/Interaction` 相当の受け入れ確認ハーネスを追加するとともに、カスタムノード・エッジのショーケースとアプリ構造のモジュール化を実現する。
 
 ### 要件項目
-1.  **Overview サンプル**: 各種ノード (Default, Custom)とエッジ (Marker込み) の一覧デモ。
-2.  **Interaction サンプル**: 矩形選択、パン・ズーム、ドラッグ、Overlap、Hierarchy などの状態変化を網羅的にテストできるデモ構成。
-3.  **ドキュメントとの同期**: 各サンプルが `xyflow` のどの Example の検証ハーネスであるかを `docs/examples-reference-map.md` と `docs/reference-divergence.md` に明記。
+1.  **Overview サンプル**: 各種ノード (Default, Custom)とエッジ (Marker込み) の一覧デモ（完了）。
+2.  **Interaction サンプル**: 矩形選択、パン・ズーム、ドラッグ、Overlap、Hierarchy などの状態変化を網羅的にテストできるデモ構成（完了）。
+3.  **Custom Showcase (M21)**: Node Toolbar, Color Node, Custom Edge Body などの高度なカスタマイズ実証（完了）。
+4.  **Modular Refactoring (M22)**: 「1サンプル 1ソース化」による保守性の向上と、ツリー型サイドバーナビゲーションの導入（完了）。
+5.  **ドキュメントとの同期**: 各サンプルが `xyflow` のどの Example の検証ハーネスであるかを `docs/examples-reference-map.md` と `docs/reference-divergence.md` に最新化して明記（完了）。
 
 ## [M10b/11] Measurement Engine & View Customization (2026-04-04) [DONE]
 
