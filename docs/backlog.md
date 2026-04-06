@@ -97,7 +97,7 @@
   - [x] DefaultEdgeView (Bezier / Straight / SmoothStep 追従)
   - [x] Arrow Marker サポート
   - [x] GraphView の階層的初期化サポート
-- [ ] Basic interaction 相当 example 群
+- [x] **Milestone 20: Elements Lifecycle (Add/Delete/Edit) [Done]**
 - [ ] Custom Node / Edge 系 example 群
 - [ ] Layout 系 example 群
 - [ ] Whiteboard 系 example 群

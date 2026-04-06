@@ -245,6 +245,11 @@ public struct ViewportState: Sendable, Equatable {
             padding: padding
         )
     }
+
+    /// スクリーン座標をグラフ空間の座標に変換します。
+    public func toGraphSpace(_ screenPoint: XYPosition) -> XYPosition {
+        screenPoint.fromScreen(viewport: viewport)
+    }
 }
 
 /// ハンドルの実測座標を保持する状態

@@ -1,14 +1,33 @@
 ---
+## [Epic 4] Milestone 20: Elements Lifecycle (Add/Remove/Update) (2026-04-06) [DONE]
+
+### 概要
+要素の動的な生成、一括削除、およびデータの直接編集機能を実装し、実用的な編集ワークフローを実証。
+
+### 技術的変更
+- **GraphStore (Core)**
+    - `addNode(_:)`, `updateSelectedNodes(_:)` をパブリック API として追加。
+    - 新規追加時に自動でそのノードのみを選択状態へ移行するロジックをカプセル化。
+- **ExampleApp (UI)**
+    - サイドバーに「Add Node」ボタンを追加。表示領域中央（スクリーン座標）からグラフ座標への逆変換を行い、正確な位置への配置を実現。
+    - インスペクターに「Delete Selected」および「Save Snapshot (JSON ログ出力)」を実装。
+    - ノード・エッジのラベル (data, label) 編集フィールドを整備。
+
+### 検証結果
+- ズーム・パン状態でのノード配置精度、削除後の整合性、および JSON ログの正常出力を確認。
+
+---
 ## [Epic 4] Milestone 19: Interactive Showcase & Doc Repair (2026-04-06) [DONE]
 
 ### 概要
 これまでに実装した全機能を俯瞰・確認できる「Feature Overview」サンプルの刷新と、開発記録の整合性回復。
 
 ### 実装ノーツ
-- **ExampleAppStore.swift**
+- **ExampleAppStore.swift / SwGraphUIExampleApp.swift**
     - `overview` サンプルを「機能ギャラリー」として刷新。ベジェ/直線/ステップ各1本、ラベル、再接続ハンドル、両端マーカー、1組のグループを配置。
     - `addEdge` メソッドを更新し、新規エッジにデフォルトで `.both` 再接続属性を付与。
-    - ユーザー向けに再接続操作を促すヒントログを追加。
+    - インスペクターに **Viewport 操作（Zoom In/Out, FitView）** ボタンを追加し、中心基準の操作に対応。
+    - ユーザー向けに再接続や操作を促すヒントログを追加。
 - **ドキュメント更新**
     - `dev_log.md`: Milestone 18 の記録を統合し、フォーマットをカノニカルな状態へ改善。
     - `docs/examples-reference-map.md`: Feature Overview の進捗ステータスを更新。

@@ -11,10 +11,13 @@
 - Edge Label / Reconnect 関連のデモ実装
 
 ## Exit Rule
-- [ ] **Examples の充実**: 少なくとも `Basic interaction` に相当するサンプルが Example に追加されていること。
+- [x] **Examples の充実**: `Basic interaction` (M20: Elements Lifecycle) が実装されていること。
+- [ ] **高度な Example**: Custom Node / Edge または Minimap 等の拡張機能が 1 つ以上検証されていること。
 - [ ] **ドキュメント同期**: `reference-divergence.md` 上での未追従事項が更新されていること。
 
 ## 完了したマイルストーン
+- [x] M20: Elements Lifecycle (Add/Delete/Edit)
+- [x] M19: Interactive Showcase & Doc Repair
 - [x] M18: Edge Reconnection & Edge Label (Interactive)
 - [x] M17: Viewport Zoom Interaction
 - [x] M16: Selection Completion & Keyboard Shortcuts (Core)

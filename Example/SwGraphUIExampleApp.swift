@@ -294,18 +294,39 @@ struct SidebarView: View {
     let graphStore: GraphStore<String>
     
     var body: some View {
-        List(ExampleAppStore.SampleCategory.allCases, selection: $appStore.selectedCategory) { category in
-            HStack {
-                Text(category.rawValue)
-                Spacer()
-                if appStore.selectedCategory == category {
-                    Image(systemName: "checkmark").foregroundColor(.blue)
+        List {
+            Section("Samples") {
+                ForEach(ExampleAppStore.SampleCategory.allCases) { category in
+                    HStack {
+                        Text(category.rawValue)
+                        Spacer()
+                        if appStore.selectedCategory == category {
+                            Image(systemName: "checkmark").foregroundColor(.blue)
+                        }
+                    }
+                    .tag(category)
                 }
             }
-            .tag(category)
-        }
-        .onChange(of: appStore.selectedCategory) { _, newValue in
-            appStore.switchSample(to: newValue, in: graphStore)
+            .onChange(of: appStore.selectedCategory) { _, newValue in
+                appStore.switchSample(to: newValue, in: graphStore)
+            }
+            
+            Section("Actions") {
+                Button(action: {
+                    let screenCenter = XYPosition(x: appStore.currentGraphSize.width / 2, y: appStore.currentGraphSize.height / 2)
+                    let graphPos = graphStore.runtimeState.viewport.toGraphSpace(screenCenter)
+                    let newNodeID = "node-\(UUID().uuidString.prefix(4).lowercased())"
+                    let newNode = BaseNode(
+                        id: newNodeID,
+                        position: graphPos,
+                        data: "New Node"
+                    )
+                    graphStore.addNode(newNode)
+                    appStore.appendLog(kind: "node.add", payload: "id=\(newNodeID)")
+                }) {
+                    Label("Add Node", systemImage: "plus.circle")
+                }
+            }
         }
     }
 }
@@ -379,10 +400,19 @@ struct InspectorView: View {
                 LabeledContent("Nodes", value: "\(graphStore.selectedNodes.count)")
                 LabeledContent("Edges", value: "\(graphStore.selectedEdges.count)")
                 
-                Button("Clear Selection") {
-                    graphStore.clearSelection()
+                HStack {
+                    Button("Clear", role: .cancel) {
+                        graphStore.clearSelection()
+                    }
+                    
+                    Button("Delete", role: .destructive) {
+                        let nodes = graphStore.selectedNodes.count
+                        let edges = graphStore.selectedEdges.count
+                        graphStore.deleteSelection()
+                        appStore.appendLog(kind: "selection.delete", payload: "nodes=\(nodes), edges=\(edges)")
+                    }
+                    .disabled(graphStore.selectedNodes.isEmpty && graphStore.selectedEdges.isEmpty)
                 }
-                .disabled(graphStore.selectedNodes.isEmpty && graphStore.selectedEdges.isEmpty)
             } header: {
                 Text("Selection Summary")
             }
@@ -398,6 +428,20 @@ struct InspectorView: View {
             Section("Current Setup") {
                 LabeledContent("Category", value: appStore.selectedCategory.rawValue)
                 LabeledContent("Total Nodes", value: "\(graphStore.nodes.count)")
+            }
+            
+            Section("Development") {
+                Button(action: {
+                    let nodes = graphStore.nodes.map { ["id": $0.id, "data": $0.data] }
+                    let edges = graphStore.edges.map { ["id": $0.id, "source": $0.source, "target": $0.target] }
+                    let snapshot: [String: Any] = ["nodes": nodes, "edges": edges]
+                    if let data = try? JSONSerialization.data(withJSONObject: snapshot, options: .prettyPrinted),
+                       let json = String(data: data, encoding: .utf8) {
+                        appStore.appendLog(kind: "snapshot.save", payload: json)
+                    }
+                }) {
+                    Label("Save Snapshot (Log)", systemImage: "square.and.arrow.down")
+                }
             }
         }
     }
@@ -542,13 +586,29 @@ struct InspectorView: View {
     private var nodeInfoSection: some View {
         Section("Node Info") {
             ForEach(graphStore.selectedNodes) { node in
-                VStack(alignment: .leading, spacing: 4) {
+                VStack(alignment: .leading, spacing: 10) {
                     Text(node.id).font(.headline).monospaced()
-                    Text("Type: \(node.kind ?? "default")").font(.caption)
-                    Text("Pos: \(Int(node.position.x)), \(Int(node.position.y))").font(.caption)
-                        .foregroundStyle(.secondary)
+                    
+                    VStack(alignment: .leading, spacing: 4) {
+                        Text("Label").font(.caption).foregroundStyle(.secondary)
+                        TextField("Node Data", text: Binding(
+                            get: { node.data },
+                            set: { val in
+                                graphStore.updateSelectedNodes { target in
+                                    if target.id == node.id { target.data = val }
+                                }
+                            }
+                        ))
+                        .textFieldStyle(.roundedBorder)
+                    }
+                    
+                    VStack(alignment: .leading, spacing: 2) {
+                        Text("Type: \(node.kind ?? "default")").font(.caption)
+                        Text("Pos: \(Int(node.position.x)), \(Int(node.position.y))").font(.caption)
+                            .foregroundStyle(.secondary)
+                    }
                 }
-                .padding(.vertical, 2)
+                .padding(.vertical, 4)
             }
         }
     }

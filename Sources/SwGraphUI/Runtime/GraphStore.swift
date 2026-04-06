@@ -137,6 +137,21 @@ public final class GraphStore<Data: Sendable>: Sendable {
     
     // --- Selection ---
     
+    /// 新しいノードを追加し、そのノードを選択状態にします。
+    public func addNode(_ node: BaseNode<Data>) {
+        nodes.append(node)
+        selectNode(node.id)
+    }
+
+    /// 選択中の全てのノードを更新します。
+    public func updateSelectedNodes(_ transform: (inout BaseNode<Data>) -> Void) {
+        for i in 0..<nodes.count {
+            if nodes[i].selected {
+                transform(&nodes[i])
+            }
+        }
+    }
+
     /// 指定されたノードを選択状態にします（排他選択）。
     public func selectNode(_ id: String) {
         runtimeState.selection.clear()

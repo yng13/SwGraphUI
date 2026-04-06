@@ -14,6 +14,7 @@
 | Category | Public example | 判定 | ローカル参照 source | SwGraphUI 実装例 |
 | --- | --- | --- | --- | --- |
 | Feature Overview | Feature Overview | 近似 | `.reference/xyflow/examples/react/src/examples/Overview` | `ExampleAppStore.overview` (M19: Reconnect/Label/Marker統合) |
+| Interaction | Lifecycle Demo | 近似 | `.reference/xyflow/examples/react/src/examples/DragNDrop`, `UpdateNode` | `Example/SwGraphUIExampleApp.swift` (M20: ボタン経由の追加/削除/編集。D&Dは未実装) |
 | Nodes | Custom Nodes | 近似 | `.reference/xyflow/examples/react/src/examples/CustomNode` | `ExampleAppStore.custom` |
 | Nodes | Stress Test | 未追従 | `.reference/xyflow/examples/react/src/examples/Stress` | - |
 | Subflows | Sub Flow | 近似 | `.reference/xyflow/examples/react/src/examples/Subflow` | `ExampleAppStore.hierarchy` |
