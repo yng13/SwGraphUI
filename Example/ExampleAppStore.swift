@@ -112,27 +112,30 @@ public final class ExampleAppStore {
             appendLog(kind: "hint", payload: "Custom nodes have purple handles")
             
         case .overview:
+            let g1 = BaseNode(id: "g1", position: XYPosition(x: 450, y: 150), data: "Group Node", width: 250, height: 200)
+            let c1 = BaseNode(id: "c1", position: XYPosition(x: 50, y: 50), data: "Inside Group", parentID: "g1")
+            
             newNodes = [
-                BaseNode(id: "welcome", position: XYPosition(x: 250, y: 0), data: "Overview: Component Gallery"),
-                BaseNode(id: "n-default", position: XYPosition(x: 50, y: 100), data: "Default Node"),
-                BaseNode(id: "n-custom", position: XYPosition(x: 250, y: 100), data: "Custom Node", kind: "custom"),
-                BaseNode(id: "n-styled", position: XYPosition(x: 450, y: 100), data: "Markers & Types"),
+                BaseNode(id: "welcome", position: XYPosition(x: 250, y: 0), data: "Overview: Feature Gallery"),
+                BaseNode(id: "n-source", position: XYPosition(x: 50, y: 120), data: "Common Source"),
+                BaseNode(id: "n-styled", position: XYPosition(x: 250, y: 120), data: "Styled Nodes"),
                 
-                BaseNode(id: "n-target1", position: XYPosition(x: 50, y: 300), data: "Bezier (Default)"),
-                BaseNode(id: "n-target2", position: XYPosition(x: 250, y: 300), data: "Straight Path"),
-                BaseNode(id: "n-target3", position: XYPosition(x: 450, y: 300), data: "Smooth Step")
+                BaseNode(id: "n-target1", position: XYPosition(x: 50, y: 350), data: "Bezier (Default)"),
+                BaseNode(id: "n-target2", position: XYPosition(x: 250, y: 350), data: "Straight Path"),
+                g1, c1
             ]
             newEdges = [
                 // Bezier
-                BaseEdge<String>(id: "e-bez", source: "n-default", target: "n-target1", markerEnd: EdgeMarker(type: .arrowClosed), label: "Bezier Edge", reconnectable: .both),
+                BaseEdge<String>(id: "e-bez", source: "n-source", target: "n-target1", markerEnd: EdgeMarker(type: .arrowClosed), label: "Bezier & Label", reconnectable: .both),
                 // Straight
-                BaseEdge<String>(id: "e-str", source: "n-custom", target: "n-target2", kind: "straight", markerEnd: EdgeMarker(type: .arrowClosed), label: "Straight Line", reconnectable: .both),
-                // SmoothStep
-                BaseEdge<String>(id: "e-smooth", source: "n-styled", target: "n-target3", kind: "smoothstep", markerEnd: EdgeMarker(type: .arrowClosed), label: "Smooth Step", reconnectable: .both),
-                // Animated Bezier
-                BaseEdge<String>(id: "e-anim", source: "welcome", target: "n-custom", animated: true, markerEnd: EdgeMarker(type: .arrow), label: "Animated", reconnectable: .both)
+                BaseEdge<String>(id: "e-str", source: "n-source", target: "n-target2", kind: "straight", markerEnd: EdgeMarker(type: .arrowClosed), label: "Straight Line", reconnectable: .both),
+                // SmoothStep to Group Child
+                BaseEdge<String>(id: "e-smooth", source: "n-styled", target: "c1", kind: "smoothstep", markerEnd: EdgeMarker(type: .arrowClosed), label: "Smooth Step", reconnectable: .both),
+                // Animated Bezier with Start/End Markers
+                BaseEdge<String>(id: "e-anim", source: "welcome", target: "n-styled", animated: true, markerStart: EdgeMarker(type: .arrow), markerEnd: EdgeMarker(type: .arrowClosed), label: "Animated Markers", reconnectable: .both)
             ]
-            appendLog(kind: "sample", payload: "Overview: Bezier/Straight/SmoothStep edges & Marker types")
+            appendLog(kind: "sample", payload: "Overview: [Reconnect/Label/Marker/Group] showcase")
+            appendLog(kind: "hint", payload: "Try dragging edge ends to RECONNECT, or select nodes to move them.")
 
         case .interaction:
             // Hierarchy
@@ -184,7 +187,8 @@ public final class ExampleAppStore {
             targetHandle: connection.targetHandle,
             sourcePosition: connection.sourcePosition,
             targetPosition: connection.targetPosition,
-            markerEnd: EdgeMarker(type: .arrowClosed)
+            markerEnd: EdgeMarker(type: .arrowClosed),
+            reconnectable: .both
         )
         
         graphStore.edges.append(newEdge)

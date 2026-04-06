@@ -348,6 +348,33 @@ struct InspectorView: View {
     
     var body: some View {
         List {
+            Section("Viewport") {
+                HStack(spacing: 12) {
+                    Button {
+                        let center = XYPosition(x: appStore.currentGraphSize.width / 2, y: appStore.currentGraphSize.height / 2)
+                        graphStore.zoom(at: center, factor: 1.2)
+                    } label: {
+                        Label("In", systemImage: "plus.magnifyingglass")
+                    }
+                    
+                    Button {
+                        let center = XYPosition(x: appStore.currentGraphSize.width / 2, y: appStore.currentGraphSize.height / 2)
+                        graphStore.zoom(at: center, factor: 0.8)
+                    } label: {
+                        Label("Out", systemImage: "minus.magnifyingglass")
+                    }
+                    
+                    Button {
+                        graphStore.fitView(in: appStore.currentGraphSize)
+                    } label: {
+                        Label("Fit", systemImage: "scope")
+                    }
+                }
+                .buttonStyle(.bordered)
+                .controlSize(.small)
+                .labelStyle(.iconOnly)
+            }
+            
             Section {
                 LabeledContent("Nodes", value: "\(graphStore.selectedNodes.count)")
                 LabeledContent("Edges", value: "\(graphStore.selectedEdges.count)")

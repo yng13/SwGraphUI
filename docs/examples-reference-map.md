@@ -13,7 +13,7 @@
 
 | Category | Public example | 判定 | ローカル参照 source | SwGraphUI 実装例 |
 | --- | --- | --- | --- | --- |
-| Feature Overview | Feature Overview | 一部一致 | `.reference/xyflow/examples/react/src/examples/Overview` | `ExampleAppStore.overview` (MiniMap/Controls無) |
+| Feature Overview | Feature Overview | 近似 | `.reference/xyflow/examples/react/src/examples/Overview` | `ExampleAppStore.overview` (M19: Reconnect/Label/Marker統合) |
 | Nodes | Custom Nodes | 近似 | `.reference/xyflow/examples/react/src/examples/CustomNode` | `ExampleAppStore.custom` |
 | Nodes | Stress Test | 未追従 | `.reference/xyflow/examples/react/src/examples/Stress` | - |
 | Subflows | Sub Flow | 近似 | `.reference/xyflow/examples/react/src/examples/Subflow` | `ExampleAppStore.hierarchy` |
