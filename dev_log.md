@@ -23,6 +23,12 @@ Example アプリに対し、`xyflow/Overview` および `xyflow/Interaction` �
 ### 技術的変更
 - `GraphView.swift`: `onTapGesture` を `DragGesture` の `onEnded` に統合し、Shift+ドラッグを最優先化。
 - `EdgePathAlgorithms.swift`: `sourceTangentAngle` および `stepPath` を追加。
+
+- [2026-04-06] M18: エッジ再接続・ラベル表示の不具合修正
+    - **再接続ハンドルの反応改善**: `GraphView` に `edgeOverlayLayer` を導入。ハンドルとラベルをノードレイヤーより前面に配置することで、ノードと重なっている場合でも確実にドラッグ操作を開始できるように改善。
+    - **矢印の描画方向修正**: `shortenedPosition` におけるバックオフ座標計算の符号ミスを修正。パスの端点が正しくハンドルの手前で停止するように変更。
+    - **ラベル視認性の向上**: ラベルの描画レイヤーを前面に移動し、`foregroundStyle` と `background` の調整（シャドウ追加）により背景色に依らず視認可能なように修正。
+    - **リファクタリング**: `DefaultEdgeView.swift` 内のロジックを整理し、パス本体 (`DefaultEdgeView`) とオーバーレイ (`DefaultEdgeOverlayView`) に分離。
 - `DefaultEdgeView.swift`: `shortenedPosition` による両端のパス計算と、両端への `ArrowHead` 描画。制御点を維持したパス短縮ロジックを実装。
 - `SwGraphUIExampleApp.swift`: `Form/Section` 形式によるインスペクタ UI のリデザイン。マーカーサイズ (2-20px) 調整対応。
 - `ExampleAppStore.swift`: `isInspectorVisible`, `isLogVisible` の初期値を変更。
@@ -110,7 +116,14 @@ Shift + クリックによる複数選択および、Shift + ドラッグによ�
     - **先端固定 (Apex-fixed) 回転**: 矢印の先端を不動点とした幾何計算 (`rotatedPoint`) により、サイズに関わらずノード境界に密着する描画を実現。
     - **ベクトルベース Backoff**: パス終端の接線ベクトルに沿って端点を短縮。曲線侵入時の隙間や突き抜けを完全に解消。
     - **Reactive Animation**: `.task(id: animated)` により、インスペクター操作に即座に反応する Dash アニメーションを実装。
-- **データクリーンアップ**: サンプルデータからハードコードされたアニメーションフラグを削除し、一貫性を確保。
+### M18: エッジ再接続とUI改善 (Hotfix 3)
+
+1.  **ラベルの可視化**: サンプルデータ (`ExampleAppStore`) に `label` と `reconnectable` を追加。初期状態でラベルとハンドルが表示されることを確認。
+2.  **再接続中の視覚フィードバック**: 再接続ドラッグ中にオリジナルエッジを **opacity 0.3 かつ点線** で表示。
+3.  **レイヤーと Z-Index**: `GraphView` で OverlayLayer を 2 パス描画に分割し、選択中のハンドルを最前面に配置。
+4.  **ビルド修正**: `BaseEdge` イニシャライザの引数順序と型推論の問題を解消。
+5.  **検証結果**: `swift build` & `swift test` (23件) 全て合格。
+からハードコードされたアニメーションフラグを削除し、一貫性を確保。
 
 ### 検証結果
 - `swift test`: **全 31 テストパス**。
@@ -177,6 +190,11 @@ M10a で発生したバグ修正および、フィードバックに基づくド
 
 ## 実装済みの機能
 
+- [x] R18.5 エッジの再接続 (Reconnection)
+    - [x] ドラッグ中のオリジナルエッジの点線表示
+    - [x] 各端点でのハンドルクリックによる接続開始
+    - [x] ソース側の再接続による向きの維持
+- [x] R18.6 ダークモード対応のラベル表示
 - [x] **M13: Connection Interaction (ハンドル接続機能)**
     - [x] 実測ベースのハンドル位置特定エンジン (`HandleMeasurementEngine`)
     - [x] ドラッグ中のターゲットハンドル検知ロジック (`findHandle`)
@@ -292,6 +310,13 @@ Shift + クリックによる複数選択機能を実装しました。プラッ
 - **Runtime/Adapters/ModifierKeysProvider.swift**:
     - `NSEvent.addLocalMonitorForEvents(matching: [.flagsChanged])` を使用して Shift キーの状態をリアルタイムに監視するクラスを実装。
     - `deinit` での安全なモニター解除のため、`nonisolated(unsafe)` を使用。
+-### 2024-04-05 M18 Hotfix-4
+- **修正内容**: 
+    - ソース側ハンドルがラベルに遮られて動かない問題を ZStack 順序変更とヒット判定拡大で解消。
+    - 再接続モードに `isSource` フラグを追加し、`stopConnecting` において向きが逆転しないように修正。
+    - macOS ネイティブの `NSVisualEffectView` を使い、ダークモードでも視認性の高いラベル背景を実装。
+- **検証**: `swift test` & `swift build` (Success).
+- **ビルドパス**: `Sources/SwGraphUI/Public/API/DefaultEdgeView.swift`, `Sources/SwGraphUI/Runtime/GraphStore.swift`.
 - **Runtime/GraphStore.swift**:
     - `toggleNodeSelection(_:)` および `toggleEdgeSelection(_:)` メソッドを追加。
     - 既存の選択状態を維持したまま、特定の要素の選択状態を反転させ、モデルの `selected` フラグと同期する処理を実装。
@@ -300,7 +325,7 @@ Shift + クリックによる複数選択機能を実装しました。プラッ
     - ノードのタップ判定（ドラッグ距離が 4px 未満）時に、Shift キーが押されている場合は `toggleNodeSelection`、そうでない場合は `selectNode` を呼び出すように変更。
 - **Public/API/DefaultEdgeView.swift**:
     - `ModifierKeysProvider` を受け取り、タップ時に `toggleEdgeSelection` または `selectEdge` を呼び出すように変更。
-- **Tests/SwGraphUITests/SelectionStateTests.swift**:
+- **Tests/SelectionStateTests.swift**:
     - 複数選択、選択解除、ノードとエッジの混在選択に関するテストケースを追加。
 
 ### 検証結果

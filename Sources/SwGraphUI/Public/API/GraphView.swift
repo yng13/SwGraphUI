@@ -14,6 +14,7 @@ public struct GraphView<Data: Sendable, NodeContent: View>: View {
     public let nodeBuilder: (BaseNode<Data>) -> NodeContent
     public var onEvent: ((GraphEvent) -> Void)?
     public var onConnect: ((Connection) -> Void)?
+    public var onReconnect: ((String, Connection) -> Void)?
     
     // 修飾キーの状態監視アダプター
     @State private var modifierKeys = ModifierKeysProvider()
@@ -33,11 +34,13 @@ public struct GraphView<Data: Sendable, NodeContent: View>: View {
         store: GraphStore<Data>,
         onEvent: ((GraphEvent) -> Void)? = nil,
         onConnect: ((Connection) -> Void)? = nil,
+        onReconnect: ((String, Connection) -> Void)? = nil,
         @ViewBuilder nodeBuilder: @escaping (BaseNode<Data>) -> NodeContent
     ) {
         self.store = store
         self.onEvent = onEvent
         self.onConnect = onConnect
+        self.onReconnect = onReconnect
         self.nodeBuilder = nodeBuilder
     }
     
@@ -170,13 +173,12 @@ public struct GraphView<Data: Sendable, NodeContent: View>: View {
     @ViewBuilder
     private var viewportContainer: some View {
         ZStack(alignment: .topLeading) {
-            // 背景レイヤーを Viewport 内部に移動。
-            // これにより、背景の空きスペースをドラッグするとパン/Marqueeが動作する。
             backgroundLayerPart
             
             edgeLayer
             previewLayer
             nodeLayer
+            edgeOverlayLayer
         }
         .scaleEffect(store.runtimeState.viewport.viewport.zoom, anchor: .topLeading)
         .offset(x: store.runtimeState.viewport.viewport.x, y: store.runtimeState.viewport.viewport.y)
@@ -186,6 +188,18 @@ public struct GraphView<Data: Sendable, NodeContent: View>: View {
     private var edgeLayer: some View {
         ForEach(store.edges) { edge in
             DefaultEdgeView(edge: edge, store: store, modifierKeys: modifierKeys)
+        }
+    }
+
+    @ViewBuilder
+    private var edgeOverlayLayer: some View {
+        // Pass 1: 非選択のエッジ（ラベルのみ）
+        ForEach(store.edges.filter { !$0.selected }) { edge in
+            DefaultEdgeOverlayView(edge: edge, store: store, onReconnect: onReconnect)
+        }
+        // Pass 2: 選択中のエッジ（ラベル + ハンドルを最前面に）
+        ForEach(store.edges.filter { $0.selected }) { edge in
+            DefaultEdgeOverlayView(edge: edge, store: store, onReconnect: onReconnect)
         }
     }
 
@@ -243,9 +257,10 @@ extension GraphView where NodeContent == DefaultNodeView<Data> {
     public init(
         store: GraphStore<Data>,
         onEvent: ((GraphEvent) -> Void)? = nil,
-        onConnect: ((Connection) -> Void)? = nil
+        onConnect: ((Connection) -> Void)? = nil,
+        onReconnect: ((String, Connection) -> Void)? = nil
     ) {
-        self.init(store: store, onEvent: onEvent, onConnect: onConnect) { node in
+        self.init(store: store, onEvent: onEvent, onConnect: onConnect, onReconnect: onReconnect) { node in
             DefaultNodeView(node: node, store: store, onConnect: onConnect)
         }
     }

@@ -41,7 +41,7 @@ public final class ExampleAppStore {
     #endif
     
     public var isCodeViewVisible: Bool = true
-    public var isLogVisible: Bool = false
+    public var isLogVisible: Bool = true
     public var isInspectorVisible: Bool = true
     
     // MARK: - Debug Logging
@@ -124,13 +124,13 @@ public final class ExampleAppStore {
             ]
             newEdges = [
                 // Bezier
-                BaseEdge(id: "e-bez", source: "n-default", target: "n-target1", markerEnd: EdgeMarker(type: .arrowClosed)),
+                BaseEdge<String>(id: "e-bez", source: "n-default", target: "n-target1", markerEnd: EdgeMarker(type: .arrowClosed), label: "Bezier Edge", reconnectable: .both),
                 // Straight
-                BaseEdge(id: "e-str", source: "n-custom", target: "n-target2", kind: "straight", markerEnd: EdgeMarker(type: .arrowClosed)),
+                BaseEdge<String>(id: "e-str", source: "n-custom", target: "n-target2", kind: "straight", markerEnd: EdgeMarker(type: .arrowClosed), label: "Straight Line", reconnectable: .both),
                 // SmoothStep
-                BaseEdge(id: "e-smooth", source: "n-styled", target: "n-target3", kind: "smoothstep", markerEnd: EdgeMarker(type: .arrowClosed)),
+                BaseEdge<String>(id: "e-smooth", source: "n-styled", target: "n-target3", kind: "smoothstep", markerEnd: EdgeMarker(type: .arrowClosed), label: "Smooth Step", reconnectable: .both),
                 // Animated Bezier
-                BaseEdge(id: "e-anim", source: "welcome", target: "n-custom", animated: true, markerEnd: EdgeMarker(type: .arrow))
+                BaseEdge<String>(id: "e-anim", source: "welcome", target: "n-custom", animated: true, markerEnd: EdgeMarker(type: .arrow), label: "Animated", reconnectable: .both)
             ]
             appendLog(kind: "sample", payload: "Overview: Bezier/Straight/SmoothStep edges & Marker types")
 
@@ -149,10 +149,9 @@ public final class ExampleAppStore {
             let f1 = BaseNode(id: "f1", position: XYPosition(x: 400, y: 250), data: "Floating Target")
             
             newNodes = [group, c1, c2, o1, o2, o3, f1]
-            newEdges = [
-                BaseEdge(id: "ei1", source: "c1", target: "f1", markerEnd: EdgeMarker(type: .arrowClosed)),
-                BaseEdge(id: "ei2", source: "c2", target: "o1", markerEnd: EdgeMarker(type: .arrowClosed))
-            ]
+            let e1 = BaseEdge<String>(id: "e-c1-c2", source: "c1", target: "c2", markerEnd: EdgeMarker(type: .arrowClosed), label: "Reconnect Me", reconnectable: .both)
+            let e2 = BaseEdge<String>(id: "e-o1-o3", source: "o1", target: "o3", markerEnd: EdgeMarker(type: .arrowClosed), label: "Overlap Edge", reconnectable: .both)
+            newEdges = [e1, e2]
             appendLog(kind: "sample", payload: "Interaction: Test Multi-select, Marquee (Shift+Drag), Hierarchy Drag, and Overlap")
             appendLog(kind: "hint", payload: "Try Shift+Drag for Marquee Selection or Cmd+Wheel to Zoom")
         }

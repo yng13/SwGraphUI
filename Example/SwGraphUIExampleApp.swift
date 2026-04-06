@@ -80,14 +80,14 @@ struct ContentView: View {
             }
             
             // Content: Main Graph Canvas & Code
-            VStack(spacing: 0) {
+            VSplitView {
                 mainCanvasView
-                    .frame(minHeight: 300)
+                    .frame(minHeight: 400, idealHeight: 1200, maxHeight: .infinity)
+                    .layoutPriority(1)
                 
                 if appStore.isCodeViewVisible {
-                    Divider()
                     CodeView(graphStore: graphStore)
-                        .frame(height: 200)
+                        .frame(minHeight: 150, idealHeight: 400, maxHeight: .infinity)
                 }
             }
             .frame(minWidth: 400)
@@ -95,14 +95,17 @@ struct ContentView: View {
             
             // Detail/Inspector: Properties & Logs
             if appStore.isInspectorVisible {
-                VStack(spacing: 0) {
-                    InspectorView(appStore: appStore, graphStore: graphStore)
-                        .frame(minHeight: 200)
-                    
+                ZStack {
                     if appStore.isLogVisible {
-                        Divider()
-                        LogView(appStore: appStore)
-                            .frame(height: 250)
+                        VSplitView {
+                            InspectorView(appStore: appStore, graphStore: graphStore)
+                                .frame(minHeight: 200, maxHeight: .infinity)
+                            
+                            LogView(appStore: appStore)
+                                .frame(minHeight: 150, idealHeight: 250, maxHeight: .infinity)
+                        }
+                    } else {
+                        InspectorView(appStore: appStore, graphStore: graphStore)
                     }
                 }
                 .frame(minWidth: 250, idealWidth: 300, maxWidth: 500)
@@ -212,6 +215,9 @@ struct ContentView: View {
                 onEvent: handleGraphEvent,
                 onConnect: { connection in
                     appStore.addEdge(connection: connection, in: graphStore)
+                },
+                onReconnect: { id, connection in
+                    appStore.appendLog(kind: "onReconnect", payload: "\(id): \(connection.source) -> \(connection.target)")
                 }
             ) { node in
                 if node.kind == "custom" {
@@ -407,6 +413,20 @@ struct InspectorView: View {
                 get: { representative.animated },
                 set: { val in graphStore.updateSelectedEdges { $0.animated = val } }
             ))
+            
+            TextField("Label", text: Binding(
+                get: { representative.label ?? "" },
+                set: { val in graphStore.updateSelectedEdges { $0.label = val.isEmpty ? nil : val } }
+            ))
+            
+            Picker("Reconnect", selection: Binding(
+                get: { representative.reconnectable },
+                set: { val in graphStore.updateSelectedEdges { $0.reconnectable = val } }
+            )) {
+                ForEach(ReconnectMode.allCases, id: \.self) { mode in
+                    Text(mode.rawValue.capitalized).tag(mode)
+                }
+            }
         } header: {
             Text("Edge Style")
         }
@@ -521,13 +541,18 @@ struct LogView: View {
             .padding(8)
             .background(Color.secondary.opacity(0.1))
             
-            List(appStore.logs) { log in
-                Text(log.description)
-                    .font(.system(.caption, design: .monospaced))
+            ScrollView {
+                VStack(alignment: .leading, spacing: 4) {
+                    ForEach(appStore.logs) { log in
+                        Text(log.description)
+                            .font(.system(.caption, design: .monospaced))
+                            .frame(maxWidth: .infinity, alignment: .leading)
+                    }
+                }
+                .padding(8)
             }
-            .listStyle(.plain)
+            .textSelection(.enabled)
         }
-        .background(Color.white)
     }
 }
 

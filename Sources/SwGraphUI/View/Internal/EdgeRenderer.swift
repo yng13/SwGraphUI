@@ -7,6 +7,7 @@ struct EdgeRenderer: View {
     let strokeColor: Color
     let strokeWidth: CGFloat
     let animated: Bool
+    let isReconnecting: Bool
     
     @State private var phase: CGFloat = 0
     
@@ -47,6 +48,9 @@ struct EdgeRenderer: View {
     }
     
     private var strokeStyle: StrokeStyle {
+        if isReconnecting {
+            return StrokeStyle(lineWidth: strokeWidth, lineCap: .round, dash: [5, 5])
+        }
         if animated {
             return StrokeStyle(lineWidth: strokeWidth, lineCap: .round, dash: [10, 5], dashPhase: phase)
         } else {

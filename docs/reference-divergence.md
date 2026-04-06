@@ -28,6 +28,8 @@
 - wheel / trackpad / pinch を含む zoom interaction (macOS 中心)
 - selection rectangle / marquee select
 - multi-selection (nodes & edges)
+- **edge label** (base rendering)
+- **reconnect anchor** (interactive reconnection)
 
 ### 意図的差分
 
@@ -39,8 +41,8 @@
 
 ### 未着手 / 未完
 
-- reconnect anchor / edge reconnect interaction
-- edge label / toolbar / portal / minimap
+- whiteboard 系 interaction
+- toolbar / portal / minimap
 - whiteboard 系 interaction
 - keyboard interaction / a11y component 群 (一部 bridge 実装済み)
 - auto pan
@@ -114,10 +116,9 @@
 - self-connection 除外
 - hidden / connectable の除外
 - hierarchy node を含む handle 座標解決
+- **reconnect interaction** (既存エッジの端点ドラッグによる更新)
 
 未追従の点:
-
-- reconnect interaction
 - strict / loose mode の運用差
 - handle bounds ベースのより厳密な hit 判定
 
@@ -136,12 +137,12 @@
 - marker end の基本表示
 - drag 追随
 - custom edge へ広げやすい中間幾何表現
+- **edge label** (座標計算と基本表示)
+- **reconnect anchor** (選択時のハンドル表示)
 
 未追従の点:
 
-- edge label
 - edge toolbar
-- reconnect anchor
 - animation の細部
 
 ### 5. Selection
@@ -175,8 +176,7 @@
 
 ## 次に詰める優先順位
 
-1. reconnect と edge label (M18)
-2. internal cache (`positionAbsolute`, `handleBounds`) の要否再判断
-3. auto pan 実装
+1. internal cache (`positionAbsolute`, `handleBounds`) の要否再判断
+2. auto pan 実装
 4. examples coverage の拡張 (Stress Test, Save/Restore 等)
 5. A11y / Keyboard interaction の体系的整理

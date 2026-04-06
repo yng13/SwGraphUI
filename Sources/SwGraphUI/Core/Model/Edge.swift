@@ -7,6 +7,14 @@ public enum MarkerType: String, Sendable {
     case arrowClosed = "arrowclosed"
 }
 
+/// エッジの再接続許可モード。
+public enum ReconnectMode: String, Sendable, CaseIterable {
+    case none
+    case source
+    case target
+    case both
+}
+
 public struct EdgeMarker: Sendable, Equatable {
     public var type: MarkerType
     public var color: String?
@@ -86,6 +94,8 @@ public struct BaseEdge<Data: Sendable>: Sendable, Identifiable {
     public var ariaLabel: String?
     public var interactionWidth: Double?
     public var curvature: Double?
+    public var label: String?
+    public var reconnectable: ReconnectMode
 
     // MARK: - Library-managed/Interaction state
     public var hidden: Bool
@@ -113,7 +123,9 @@ public struct BaseEdge<Data: Sendable>: Sendable, Identifiable {
         hidden: Bool = false,
         deletable: Bool = true,
         selectable: Bool = true,
-        selected: Bool = false
+        selected: Bool = false,
+        label: String? = nil,
+        reconnectable: ReconnectMode = .none
     ) {
         self.id = id
         self.source = source
@@ -135,6 +147,8 @@ public struct BaseEdge<Data: Sendable>: Sendable, Identifiable {
         self.deletable = deletable
         self.selectable = selectable
         self.selected = selected
+        self.label = label
+        self.reconnectable = reconnectable
     }
 }
 

@@ -405,7 +405,8 @@ public final class GraphStore<Data: Sendable>: Sendable {
         fromHandleType: HandleType,
         fromHandlePosition: Position,
         fromPosition: XYPosition,
-        at pointer: XYPosition
+        at pointer: XYPosition,
+        mode: ConnectionActionType = .connect
     ) {
         runtimeState.connection.start(
             fromNodeID: fromNodeID,
@@ -413,7 +414,8 @@ public final class GraphStore<Data: Sendable>: Sendable {
             fromHandleType: fromHandleType,
             fromHandlePosition: fromHandlePosition,
             fromPosition: fromPosition,
-            at: pointer
+            at: pointer,
+            mode: mode
         )
     }
     
@@ -431,24 +433,73 @@ public final class GraphStore<Data: Sendable>: Sendable {
         )
     }
     
+    @discardableResult
     public func stopConnecting() -> Connection? {
         guard let active = runtimeState.connection.active else { return nil }
+        
+        print("[DEBUG] Reconnect Stop attempt: mode=\(active.mode), targetNode=\(active.targetNodeID ?? "nil")")
+        
         var result: Connection? = nil
         
         if let targetNodeID = active.targetNodeID,
            let targetHandlePosition = active.targetHandlePosition {
-            result = Connection(
-                source: active.fromNodeID,
-                target: targetNodeID,
-                sourceHandle: active.fromHandleID,
-                targetHandle: active.targetHandleID,
-                sourcePosition: active.fromHandlePosition,
-                targetPosition: targetHandlePosition
-            )
+            // mode に応じて source/target の実体を正しく構成
+            switch active.mode {
+            case .connect:
+                result = Connection(
+                    source: active.fromNodeID,
+                    target: targetNodeID,
+                    sourceHandle: active.fromHandleID,
+                    targetHandle: active.targetHandleID,
+                    sourcePosition: active.fromHandlePosition,
+                    targetPosition: targetHandlePosition
+                )
+            case .reconnect(_, let isSource):
+                if isSource {
+                    // ソース側をドラッグ中：
+                    // 移動端（マウス位置）が新しい「ソース」、固定端が既存の「ターゲット」
+                    result = Connection(
+                        source: targetNodeID,
+                        target: active.fromNodeID,
+                        sourceHandle: active.targetHandleID,
+                        targetHandle: active.fromHandleID,
+                        sourcePosition: targetHandlePosition,
+                        targetPosition: active.fromHandlePosition
+                    )
+                } else {
+                    // ターゲット側をドラッグ中：
+                    // 固定端が既存の「ソース」、移動端（マウス位置）が新しい「ターゲット」
+                    result = Connection(
+                        source: active.fromNodeID,
+                        target: targetNodeID,
+                        sourceHandle: active.fromHandleID,
+                        targetHandle: active.targetHandleID,
+                        sourcePosition: active.fromHandlePosition,
+                        targetPosition: targetHandlePosition
+                    )
+                }
+            }
+        }
+        
+        if let conn = result, case .reconnect(let edgeID, _) = active.mode {
+            updateEdgeConnection(id: edgeID, newConnection: conn)
         }
         
         runtimeState.connection.end()
         return result
+    }
+
+    private func updateEdgeConnection(id: String, newConnection: Connection) {
+        if let index = edges.firstIndex(where: { $0.id == id }) {
+            var edge = edges[index]
+            edge.source = newConnection.source
+            edge.target = newConnection.target
+            edge.sourceHandle = newConnection.sourceHandle
+            edge.targetHandle = newConnection.targetHandle
+            edge.sourcePosition = newConnection.sourcePosition
+            edge.targetPosition = newConnection.targetPosition
+            edges[index] = edge
+        }
     }
 
     // --- Hover ---

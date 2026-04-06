@@ -9,6 +9,7 @@ public struct HandleView<Data: Sendable>: View {
     public let placement: Position
     public let store: GraphStore<Data>
     public let onConnect: ((Connection) -> Void)?
+    public let onReconnect: ((String, Connection) -> Void)?
     
     // ヒットエリア拡大用の定数
     private let hitAreaPadding: CGFloat = 8
@@ -20,7 +21,8 @@ public struct HandleView<Data: Sendable>: View {
         type: HandleType,
         placement: Position,
         store: GraphStore<Data>,
-        onConnect: ((Connection) -> Void)? = nil
+        onConnect: ((Connection) -> Void)? = nil,
+        onReconnect: ((String, Connection) -> Void)? = nil
     ) {
         self.nodeID = nodeID
         self.handleID = handleID
@@ -28,6 +30,7 @@ public struct HandleView<Data: Sendable>: View {
         self.placement = placement
         self.store = store
         self.onConnect = onConnect
+        self.onReconnect = onReconnect
     }
     
     public var body: some View {
@@ -91,8 +94,17 @@ public struct HandleView<Data: Sendable>: View {
                         }
                     }
                     .onEnded { _ in
+                        // 再接続 (reconnect) の場合は GraphStore 内部で更新が完結しているため、
+                        // 外部の onConnect コールバック（新規追加用）を呼ばないように制御する。
+                        let active = store.runtimeState.connection.active
+                        let mode = active?.mode
+                        
                         if let connection = store.stopConnecting() {
-                            onConnect?(connection)
+                            if case .connect = mode {
+                                onConnect?(connection)
+                            } else if case .reconnect(let edgeID, _) = mode {
+                                onReconnect?(edgeID, connection)
+                            }
                         }
                     }
             )

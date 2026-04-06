@@ -106,8 +106,21 @@ public struct DragState: Sendable, Equatable {
     }
 }
 
+/// 接続操作のモード（新規または再接続）
+public enum ConnectionActionType: Sendable, Equatable {
+    case connect
+    case reconnect(edgeID: String, isSource: Bool)
+    
+    /// 再接続中のエッジID（新規接続時はnil）
+    public var edgeID: String? {
+        if case .reconnect(let id, _) = self { return id }
+        return nil
+    }
+}
+
 /// 進行中の接続状態
 public struct ConnectionInProgressState: Sendable, Equatable {
+    public var mode: ConnectionActionType
     public var fromNodeID: String
     public var fromHandleID: String?
     public var fromHandleType: HandleType
@@ -119,6 +132,7 @@ public struct ConnectionInProgressState: Sendable, Equatable {
     public var targetHandlePosition: Position?
 
     public init(
+        mode: ConnectionActionType = .connect,
         fromNodeID: String,
         fromHandleID: String? = nil,
         fromHandleType: HandleType,
@@ -129,6 +143,7 @@ public struct ConnectionInProgressState: Sendable, Equatable {
         targetHandleID: String? = nil,
         targetHandlePosition: Position? = nil
     ) {
+        self.mode = mode
         self.fromNodeID = fromNodeID
         self.fromHandleID = fromHandleID
         self.fromHandleType = fromHandleType
@@ -159,9 +174,11 @@ public struct ConnectionState: Sendable, Equatable {
         fromHandleType: HandleType,
         fromHandlePosition: Position,
         fromPosition: XYPosition,
-        at pointer: XYPosition
+        at pointer: XYPosition,
+        mode: ConnectionActionType = .connect
     ) {
         self.active = .init(
+            mode: mode,
             fromNodeID: fromNodeID,
             fromHandleID: fromHandleID,
             fromHandleType: fromHandleType,

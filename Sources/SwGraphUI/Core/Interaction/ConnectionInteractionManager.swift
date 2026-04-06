@@ -122,11 +122,14 @@ public enum ConnectionInteractionManager {
         let x = absolutePosition.x
         let y = absolutePosition.y
         
+        // DefaultNodeView の標準オフセット（8px）を考慮した推測値
+        let handleOffset: Double = 8.0
+        
         switch placement {
-        case .top:    return XYPosition(x: x + w / 2, y: y)
-        case .bottom: return XYPosition(x: x + w / 2, y: y + h)
-        case .left:   return XYPosition(x: x, y: y + h / 2)
-        case .right:  return XYPosition(x: x + w, y: y + h / 2)
+        case .top:    return XYPosition(x: x + w / 2, y: y - handleOffset)
+        case .bottom: return XYPosition(x: x + w / 2, y: y + h + handleOffset)
+        case .left:   return XYPosition(x: x - handleOffset, y: y + h / 2)
+        case .right:  return XYPosition(x: x + w + handleOffset, y: y + h / 2)
         }
     }
 }

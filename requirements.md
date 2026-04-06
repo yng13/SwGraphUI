@@ -85,9 +85,7 @@ M10a マイルストーンで発生した主要なインタラクションバグ
 
 ## ✅ Milestone 15: Advanced Selection (Hotfixed)
 - [x] Shift+Click: Multi-selection toggle
-- [x] Shift+Drag: Marquee selection
-  - [x] Coordinate-system fix (Screen to Graph conversion)
-  - [x] Containment logic (Full overlap required)
+- [x] Marquee Selection Fix: ビューポート座標系への完全対応 (Hotfixed in M15)
 
 ## ✅ Milestone 16: Selection Completion & Navigation Basics
 - [x] Connected Edge Selection: 選択ノード集合に接続しているエッジを包含するようにロジックを修正 (xyflow/Pane.svelte 準拠)
@@ -105,3 +103,29 @@ M10a マイルストーンで発生した主要なインタラクションバグ
 2.  **Wheel Zoom**: マウスホイールによるキャンバスのパンと、`Cmd` または `Ctrl` ＋ホイールによるズームの分岐（完了）。
 3.  **Store API Separation**: `GraphStore.zoom(at:factor:)` にて `ViewportManager` を直接呼び出すことで、責務の分離と `runtimeState.viewport` への暗黙依存の排除（完了）。
 4.  **Local Wheel Bridge**: キャンバス内 Hover に連動する `ScrollMonitor` を利用し、グローバルではなく View ローカルでのマウスホイール捕捉を実現（完了）。
+
+---
+
+## ✅ Milestone 18: Edge Reconnection & Polish (Hotfixed) [DONE]
+
+### 概要
+エッジの再接続ハンドル表示、データモデル拡張（Label / ReconnectMode）、および視覚的なフィードバックの改善。
+
+### 要件項目
+1.  **Data Model Extension**: `BaseEdge` への `label` および `reconnectable` 属性の追加（完了）。
+2.  **Reconnection Handles**: ソースおよびターゲット端点でのドラッグハンドルの表示（完了）。
+3.  **GraphStore Logic**: 既存エッジを破棄せず端点のみを更新するアトミックな再接続ロジック（完了）。
+4.  **Visual Feedback**: ドラッグ中にオリジナルエッジを点線表示にし、プレビュー線と区別。ホバー時のハンドルスケーリングなどの UX 向上（完了）。
+5.  **Interaction Integrity**: Z順の最適化とレイヤー分離により、ラベルとハンドルの重なりによる操作不能を解消（完了）。
+6.  **Directional Preservation**: ソース側を繋ぎ変えてもエッジの向き（A -> B）が正しく維持されるロジック（完了）。
+7.  **Dark Mode Compliance**: アダプティブなラベル背景とログビューの視認性確保（完了）。
+8.  **Example App Updates**: Inspector でのエッジ属性編集と、再接続成功時の `onReconnect` ログ出力対応（完了）。
+
+## ✅ Hotfix-4: Viewport Sync & Gesture Stability
+
+### 概要
+ビューポートの同期不整合およびジェスチャの競合修正。
+
+### 要件項目
+1.  **Viewport Sync**: `GraphStore` と `ViewportManager` 間の状態同期を厳密化し、ズーム時のジャンプを抑制。
+2.  **Gesture Priority**: パンとズームのジェスチャ優先順位を明示的に定義し、意図しない操作の干渉を排除。
