@@ -10,13 +10,23 @@ public struct DefaultEdgeView<Data: Sendable>: View {
     let store: GraphStore<Data>
     let onReconnect: ((String, Connection) -> Void)?
     let modifierKeys: ModifierKeysProvider?
+    let edgeBodyBuilder: (([PathSegment], Color, CGFloat, Bool, Bool) -> AnyView)?
+
     
-    public init(edge: BaseEdge<Data>, store: GraphStore<Data>, onReconnect: ((String, Connection) -> Void)? = nil, modifierKeys: ModifierKeysProvider? = nil) {
+    public init(
+        edge: BaseEdge<Data>,
+        store: GraphStore<Data>,
+        onReconnect: ((String, Connection) -> Void)? = nil,
+        modifierKeys: ModifierKeysProvider? = nil,
+        edgeBodyBuilder: (([PathSegment], Color, CGFloat, Bool, Bool) -> AnyView)? = nil
+    ) {
         self.edge = edge
         self.store = store
         self.onReconnect = onReconnect
         self.modifierKeys = modifierKeys
+        self.edgeBodyBuilder = edgeBodyBuilder
     }
+
     
     public var body: some View {
         if let (sourcePos, targetPos, sourceHandlePos, targetHandlePos) = resolvePositions() {
@@ -78,13 +88,26 @@ public struct DefaultEdgeView<Data: Sendable>: View {
                     }
 
                 // 2. 表示用エッジ
-                EdgeRenderer(
-                    segments: adjustedSegments,
-                    strokeColor: edge.selected ? (isReconnecting ? Color.blue : Color.primary) : Color.gray,
-                    strokeWidth: strokeWidth,
-                    animated: edge.animated && !isReconnecting,
-                    isReconnecting: isReconnecting
-                )
+                Group {
+                    if let edgeBodyBuilder = edgeBodyBuilder {
+                        edgeBodyBuilder(
+                            adjustedSegments,
+                            edge.selected ? (isReconnecting ? Color.blue : Color.primary) : Color.gray,
+                            strokeWidth,
+                            edge.animated && !isReconnecting,
+                            isReconnecting
+                        )
+                    } else {
+                        EdgeRenderer(
+                            segments: adjustedSegments,
+                            strokeColor: edge.selected ? (isReconnecting ? Color.blue : Color.primary) : Color.gray,
+                            strokeWidth: strokeWidth,
+                            animated: edge.animated && !isReconnecting,
+                            isReconnecting: isReconnecting
+                        )
+                    }
+                }
+
                 .opacity(isReconnecting ? 0.3 : 1.0)
                 
                 // 3. 始点マーカー

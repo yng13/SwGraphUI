@@ -115,5 +115,5 @@
 
 ## 直近の次アクション (Epic 4: 受け入れ用 examples)
 
-1. Basic interaction 相当の example の追加と整備
-2. Advanced features (Toolbar, Minimap, etc.) の実装可否判断
+1. Custom Node / Edge Showcase (M21) の実装
+2. UI Components (Minimap, Controls) の整備 (M22)

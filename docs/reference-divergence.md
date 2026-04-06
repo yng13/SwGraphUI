@@ -38,6 +38,8 @@
 - `GraphStore` を `@Observable @MainActor` の公式入口として採用
 - `PaddingValue.relative / .points` による型安全な padding API
 - iOS pinch zoom の中心点（hover座標取得不可による (0,0) フォールバック）
+- **Edge customization**: 描画本体のみを `edgeBuilder` で注入し、再接続ハンドルやラベル等のオーバーレイ機能をライブラリ側で共通化する設計（ロジックの漏洩防止と機能維持を優先）
+- **Toolbar nodes**: 選択時のツールバー UI をライブラリ内部ではなく Example (User) 側の View 合成で実現する方針
 
 ### 未着手 / 未完
 
@@ -139,11 +141,13 @@
 - custom edge へ広げやすい中間幾何表現
 - **edge label** (座標計算と基本表示)
 - **reconnect anchor** (選択時のハンドル表示)
+- **edgeBodyBuilder** (M21: エッジ本体の意匠を注入可能に拡張)
 
 未追従の点:
 
-- edge toolbar
+- edge toolbar (ノード用は Example で実演済み)
 - animation の細部
+
 
 ### 5. Selection
 

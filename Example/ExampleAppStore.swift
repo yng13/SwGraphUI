@@ -19,6 +19,8 @@ public final class ExampleAppStore {
         case custom = "Custom & Measure"
         case overview = "Feature Overview"
         case interaction = "Interaction Playground"
+        case customShowcase = "Custom Showcase"
+
         
         public var id: String { rawValue }
     }
@@ -157,7 +159,24 @@ public final class ExampleAppStore {
             newEdges = [e1, e2]
             appendLog(kind: "sample", payload: "Interaction: Test Multi-select, Marquee (Shift+Drag), Hierarchy Drag, and Overlap")
             appendLog(kind: "hint", payload: "Try Shift+Drag for Marquee Selection or Cmd+Wheel to Zoom")
+            
+        case .customShowcase:
+            newNodes = [
+                BaseNode(id: "toolbar-node", position: XYPosition(x: 50, y: 150), data: "Select for Toolbar", kind: "toolbar"),
+                BaseNode(id: "red-node", position: XYPosition(x: 350, y: 50), data: "Red", kind: "color"),
+                BaseNode(id: "blue-node", position: XYPosition(x: 350, y: 250), data: "Blue", kind: "color"),
+                BaseNode(id: "custom-v1", position: XYPosition(x: 50, y: 350), data: "Complex CPU Node", kind: "custom"),
+                BaseNode(id: "styled-node", position: XYPosition(x: 450, y: 350), data: "Standard Styled")
+            ]
+            newEdges = [
+                BaseEdge<String>(id: "e-custom-edge", source: "toolbar-node", target: "red-node", kind: "custom", markerEnd: EdgeMarker(type: .arrowClosed), label: "Custom Path & Neon", reconnectable: .both),
+                BaseEdge<String>(id: "e-red-blue", source: "red-node", target: "blue-node", markerEnd: EdgeMarker(type: .arrowClosed), label: "Default Edge", reconnectable: .both),
+                BaseEdge<String>(id: "e-blue-styled", source: "blue-node", target: "styled-node", animated: true, markerEnd: EdgeMarker(type: .arrowClosed), label: "Animated Default", reconnectable: .both)
+            ]
+            appendLog(kind: "sample", payload: "Custom Showcase: ToolbarNode, ColorNode, and CustomEdgeBody")
+            appendLog(kind: "hint", payload: "Click 'toolbar-node' to see floating menus. Red/Blue nodes are Custom ColorNodes.")
         }
+
         
         graphStore.nodes = newNodes
         graphStore.edges = newEdges

@@ -1,17 +1,25 @@
 import SwiftUI
 
-/// エッジの幾何情報を基に実際の描画を行う内部 View。
+/// エッジの幾何情報を基に実際の描画を行う View。
 /// PathSegment の配列を SwiftUI の Path に変換して描画します。
-struct EdgeRenderer: View {
-    let segments: [PathSegment]
-    let strokeColor: Color
-    let strokeWidth: CGFloat
-    let animated: Bool
-    let isReconnecting: Bool
+public struct EdgeRenderer: View {
+    public let segments: [PathSegment]
+    public let strokeColor: Color
+    public let strokeWidth: CGFloat
+    public let animated: Bool
+    public let isReconnecting: Bool
     
     @State private var phase: CGFloat = 0
     
-    var body: some View {
+    public init(segments: [PathSegment], strokeColor: Color, strokeWidth: CGFloat, animated: Bool, isReconnecting: Bool) {
+        self.segments = segments
+        self.strokeColor = strokeColor
+        self.strokeWidth = strokeWidth
+        self.animated = animated
+        self.isReconnecting = isReconnecting
+    }
+    
+    public var body: some View {
         Path { path in
             for segment in segments {
                 switch segment {

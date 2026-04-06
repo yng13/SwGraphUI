@@ -216,28 +216,11 @@ struct ContentView: View {
                 onConnect: { connection in
                     appStore.addEdge(connection: connection, in: graphStore)
                 },
-                onReconnect: { id, connection in
-                    appStore.appendLog(kind: "onReconnect", payload: "\(id): \(connection.source) -> \(connection.target)")
-                }
-            ) { node in
-                if node.kind == "custom" {
-                    CustomNodeView(
-                        node: node,
-                        store: graphStore,
-                        onConnect: { conn in
-                            appStore.addEdge(connection: conn, in: graphStore)
-                        }
-                    )
-                } else {
-                    DefaultNodeView(
-                        node: node,
-                        store: graphStore,
-                        onConnect: { conn in
-                            appStore.addEdge(connection: conn, in: graphStore)
-                        }
-                    )
-                }
-            }
+                onReconnect: { _, _ in },
+                edgeBuilder: buildCustomEdge,
+                nodeBuilder: buildCustomNode
+            )
+            .coordinateSpace(name: "graph")
             .background(Color.white)
             .border(Color.blue.opacity(0.3), width: 2) // FitView対象領域を可視化
             .onAppear {
@@ -805,5 +788,199 @@ struct CustomNodeView: View {
         }
         .scaleEffect(node.selected ? 1.05 : 1.0)
         .animation(.spring(response: 0.3, dampingFraction: 0.6), value: node.selected)
+    }
+}
+
+// MARK: - Milestone 21 Custom Components
+
+/// 選択時にツールバーを表示するノード
+struct ToolbarNodeView: View {
+    let node: BaseNode<String>
+    let store: GraphStore<String>
+    let onConnect: ((Connection) -> Void)?
+    
+    var body: some View {
+        VStack(spacing: 0) {
+            if node.selected {
+                HStack(spacing: 8) {
+                    Button(action: {
+                        store.updateSelectedNodes { $0.data = "Updated!" }
+                    }) {
+                        Image(systemName: "pencil")
+                            .font(.system(size: 10))
+                    }
+                    .buttonStyle(.plain)
+                    .padding(4)
+                    .background(Color.blue)
+                    .clipShape(Circle())
+                    .foregroundColor(.white)
+                    
+                    Button(action: {
+                        store.deleteSelection()
+                    }) {
+                        Image(systemName: "trash")
+                            .font(.system(size: 10))
+                    }
+                    .buttonStyle(.plain)
+                    .padding(4)
+                    .background(Color.red)
+                    .clipShape(Circle())
+                    .foregroundColor(.white)
+                }
+                .padding(6)
+                .background(
+                    RoundedRectangle(cornerRadius: 8)
+                        .fill(Color.black.opacity(0.8))
+                        .shadow(radius: 4)
+                )
+                .transition(.move(edge: .bottom).combined(with: .opacity))
+                .offset(y: -10)
+                .zIndex(100)
+            }
+            
+            DefaultNodeView(node: node, store: store, onConnect: onConnect)
+        }
+        .animation(.spring(response: 0.2), value: node.selected)
+    }
+}
+
+/// カラーバリエーションを持つシンプルなノード
+struct ColorNodeView: View {
+    let node: BaseNode<String>
+    let store: GraphStore<String>
+    let onConnect: ((Connection) -> Void)?
+    
+    var body: some View {
+        let color: Color = {
+            switch node.data.lowercased() {
+            case "red": return .red
+            case "blue": return .blue
+            case "green": return .green
+            case "orange": return .orange
+            default: return .purple
+            }
+        }()
+        
+        Text(node.data)
+            .font(.caption.bold())
+            .foregroundColor(.white)
+            .padding(12)
+            .frame(minWidth: 80)
+            .background(
+                RoundedRectangle(cornerRadius: 8)
+                    .fill(color)
+                    .shadow(radius: node.selected ? 4 : 2)
+            )
+            .overlay(
+                RoundedRectangle(cornerRadius: 8)
+                    .stroke(node.selected ? Color.white : Color.clear, lineWidth: 2)
+            )
+            .overlay(
+                HStack {
+                    HandleView(nodeID: node.id, type: .target, placement: .left, store: store, onConnect: onConnect)
+                        .offset(x: -8)
+                    Spacer()
+                    HandleView(nodeID: node.id, type: .source, placement: .right, store: store, onConnect: onConnect)
+                        .offset(x: 8)
+                }
+            )
+    }
+}
+
+/// 本体の描画のみをカスタマイズしたエッジ例
+struct CustomEdgeBody: View {
+    let segments: [PathSegment]
+    let color: Color
+    let width: CGFloat
+    let animated: Bool
+    let reconnecting: Bool
+    
+    var body: some View {
+        ZStack {
+            // 背景に太い光彩を入れる例
+            EdgeRenderer(
+                segments: segments,
+                strokeColor: color.opacity(0.2),
+                strokeWidth: width + 4,
+                animated: animated,
+                isReconnecting: reconnecting
+            )
+            
+            // 本体
+            EdgeRenderer(
+                segments: segments,
+                strokeColor: color,
+                strokeWidth: width,
+                animated: animated,
+                isReconnecting: reconnecting
+            )
+            
+            // 中心に模様を入れる点線
+            if !reconnecting {
+                EdgeRenderer(
+                    segments: segments,
+                    strokeColor: .white.opacity(0.5),
+                    strokeWidth: 1,
+                    animated: animated,
+                    isReconnecting: false
+                )
+                .mask(
+                    EdgeRenderer(
+                        segments: segments,
+                        strokeColor: .black,
+                        strokeWidth: width,
+                        animated: false,
+                        isReconnecting: false
+                    )
+                )
+            }
+        }
+    }
+}
+
+// MARK: - Builders
+
+extension ContentView {
+    private var onConnectHandler: (Connection) -> Void {
+        { connection in
+            appStore.addEdge(connection: connection, in: graphStore)
+        }
+    }
+
+    @ViewBuilder
+    private func buildCustomNode(_ node: BaseNode<String>) -> some View {
+        switch node.kind {
+        case "toolbar":
+            ToolbarNodeView(node: node, store: graphStore, onConnect: onConnectHandler)
+        case "color":
+            ColorNodeView(node: node, store: graphStore, onConnect: onConnectHandler)
+        case "custom":
+            CustomNodeView(node: node, store: graphStore, onConnect: onConnectHandler)
+        default:
+            DefaultNodeView(node: node, store: graphStore, onConnect: onConnectHandler)
+        }
+    }
+    
+    private func buildCustomEdge(
+        _ edge: BaseEdge<String>,
+        _ segments: [PathSegment],
+        _ color: Color,
+        _ width: CGFloat,
+        _ animated: Bool,
+        _ reconnecting: Bool
+    ) -> AnyView {
+        if edge.kind == "custom" {
+            return AnyView(CustomEdgeBody(segments: segments, color: color, width: width, animated: animated, reconnecting: reconnecting))
+        } else {
+            return AnyView(
+                DefaultEdgeView(
+                    edge: edge,
+                    store: graphStore,
+                    onReconnect: nil,
+                    modifierKeys: nil,
+                    edgeBodyBuilder: nil
+                )
+            )
+        }
     }
 }

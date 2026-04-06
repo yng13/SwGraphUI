@@ -1,4 +1,25 @@
 ---
+## [Epic 4] Milestone 21: Custom Node / Edge Showcase (2026-04-06) [DONE]
+
+### 概要
+ノード・エッジのカスタマイズ性を実証する「Custom Showcase」を実装。パブリック API を拡張し、再接続やラベル等の基本機能を維持したまま意匠（ツールバー、動的配色、カスタムパス）を柔軟に変更可能にした。
+
+### 技術的変更
+- **Library Layer (GraphView / DefaultEdgeView)**
+    - `edgeBuilder` を導入し、エッジ本体の View を外部注入可能に。
+    - `DefaultEdgeView` をリファクタリングし、ヒット判定・マーカー・オーバーレイを共通部品として維持しつつ、描画本体 (`edgeBodyBuilder`) のみを作替可能にする構成を採用。
+- **Example App (Showcase Components)**
+    - `ToolbarNodeView`: 選択時にノード上部にフローティングメニュー（削除・編集）を表示。副作用を Example 側のロジックに閉じ込める合成 View 方式を採用。
+    - `ColorNodeView`: ノードデータに応じた動的な配色を行うコンポーネント。
+    - `CustomEdgeBody`: エッジ本体に光彩効果や中心点線を重層的に適用するカスタムレンダリング例。
+- **Example App (Showcase Integration)**
+    - `SampleCategory.customShowcase` を追加し、上記コンポーネントを組み合わせたギャラリーを構築。
+
+### 検証結果
+- `swift test` によるビルドパスおよび、マニュアルによるカスタム要素の再接続・選択挙動の正常性を確認。
+- デザイン面での拡張性と、コアロジック（接続・スナップ）の堅牢性の両立を実証。
+
+---
 ## [Epic 4] Milestone 20: Elements Lifecycle (Add/Remove/Update) (2026-04-06) [DONE]
 
 ### 概要

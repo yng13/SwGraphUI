@@ -12,7 +12,9 @@ public enum GraphEvent: Sendable {
 public struct GraphView<Data: Sendable, NodeContent: View>: View {
     public let store: GraphStore<Data>
     public let nodeBuilder: (BaseNode<Data>) -> NodeContent
+    public let edgeBuilder: (BaseEdge<Data>, [PathSegment], Color, CGFloat, Bool, Bool) -> AnyView
     public var onEvent: ((GraphEvent) -> Void)?
+
     public var onConnect: ((Connection) -> Void)?
     public var onReconnect: ((String, Connection) -> Void)?
     
@@ -35,6 +37,7 @@ public struct GraphView<Data: Sendable, NodeContent: View>: View {
         onEvent: ((GraphEvent) -> Void)? = nil,
         onConnect: ((Connection) -> Void)? = nil,
         onReconnect: ((String, Connection) -> Void)? = nil,
+        edgeBuilder: ((BaseEdge<Data>, [PathSegment], Color, CGFloat, Bool, Bool) -> AnyView)? = nil,
         @ViewBuilder nodeBuilder: @escaping (BaseNode<Data>) -> NodeContent
     ) {
         self.store = store
@@ -42,7 +45,11 @@ public struct GraphView<Data: Sendable, NodeContent: View>: View {
         self.onConnect = onConnect
         self.onReconnect = onReconnect
         self.nodeBuilder = nodeBuilder
+        self.edgeBuilder = edgeBuilder ?? { _, segments, color, width, animated, reconnecting in
+            AnyView(EdgeRenderer(segments: segments, strokeColor: color, strokeWidth: width, animated: animated, isReconnecting: reconnecting))
+        }
     }
+
     
     public var body: some View {
         let _ = modifierKeys.isShiftPressed // Body のリアクティブ性を確保
@@ -187,9 +194,18 @@ public struct GraphView<Data: Sendable, NodeContent: View>: View {
     @ViewBuilder
     private var edgeLayer: some View {
         ForEach(store.edges) { edge in
-            DefaultEdgeView(edge: edge, store: store, modifierKeys: modifierKeys)
+            DefaultEdgeView(
+                edge: edge,
+                store: store,
+                onReconnect: onReconnect,
+                modifierKeys: modifierKeys,
+                edgeBodyBuilder: { segments, color, width, animated, reconnecting in
+                    edgeBuilder(edge, segments, color, width, animated, reconnecting)
+                }
+            )
         }
     }
+
 
     @ViewBuilder
     private var edgeOverlayLayer: some View {
