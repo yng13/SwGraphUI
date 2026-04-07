@@ -158,3 +158,25 @@ Example アプリの 3 カラム IDE レイアウト、パン・ズーム基盤�
 ### 検証結果
 - `swift test`: 合計42件全パス (XCTest 19件 + Swift Testing 23件)。
 - マニュアル確認: `Feature Overview` および `MiniMap & Controls` サンプルでの `fitView` 正常動作（グラフ全体の表示）を確認。
+
+---
+## [Epic 4] Milestone 24: Edge Text / Edge Label の精緻化 (2026-04-08) [DONE]
+
+### 概要
+エッジラベルの意匠（背景、パディング、角丸、色）を詳細に制御可能な `EdgeLabelView` を導入し、パス種別に応じた最適な配置を実現。モデル層を軽量に保ちつつ、OS ごとのプレミアムな外観（macOS: VisualEffect, iOS: ThinMaterial）をサポートした。
+
+### 技術的変更
+- **Core Model (Edge.swift)**
+    - `EdgeLabelStyle` 構造体を定義。`SwiftUI.Font` や `Color` を直接持たず、シリアライズ可能な文字列トークンや数値でスタイル（textColor, backgroundStyle, padding, cornerRadius）を表現。
+- **View Layer (Internal / Public)**
+    - `EdgeLabelView`: スタイル定義に基づき背景とテキストを描画するコンポーネントを新設。
+    - `SwiftUIUtils`: macOS 用の `VisualEffectView` と汎用的な `Color(hex:)` イニシャライザを共有部品として統合。
+    - `DefaultEdgeView`: `DefaultEdgeOverlayView` で `EdgeLabelView` を使用するようにリファクタリング。
+- **Algorithms (EdgePathAlgorithms.swift)**
+    - `step` / `smoothStep` における `labelX/Y` 計算を、パスの幾何学的中心ではなく「視覚的な中心（主セグメントの中点）」に調整。
+- **Example App (Showcase)**
+    - `EdgeLabelSample`: 異なるパス種別とスタイルの組み合わせを網羅した独立したショーケースを追加。
+
+### 検証結果
+- `swift test`: 合計42件全パス。
+- マニュアル確認: `Edge Label Showcase` にて、ダークモード/ライトモード、および各パス種別におけるラベルの視認性と配置の整合性を確認。

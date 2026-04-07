@@ -194,20 +194,7 @@ public struct DefaultEdgeOverlayView<Data: Sendable>: View {
             ZStack {
                 // 1. ラベル表示
                 if let label = edge.label, !label.isEmpty {
-                    Text(label)
-                        .font(.caption2)
-                        .foregroundStyle(Color.primary)
-                        .padding(.horizontal, 4)
-                        .padding(.vertical, 2)
-                        .background(
-                            RoundedRectangle(cornerRadius: 4)
-                                .fill(Color.secondary.opacity(0.1))
-                                #if os(macOS)
-                                .background(VisualEffectView().cornerRadius(4))
-                                .background(Color(NSColor.windowBackgroundColor).opacity(0.8).cornerRadius(4))
-                                #endif
-                                .shadow(color: .black.opacity(0.1), radius: 2)
-                        )
+                    EdgeLabelView(label: label, style: edge.labelStyle)
                         .position(x: baseResult.labelX, y: baseResult.labelY)
                 }
 
@@ -423,17 +410,6 @@ private struct ArrowHead: View {
     }
 }
 
-/// macOS 用の視覚効果ビュー
-private struct VisualEffectView: NSViewRepresentable {
-    func makeNSView(context: Context) -> NSVisualEffectView {
-        let view = NSVisualEffectView()
-        view.blendingMode = .withinWindow
-        view.state = .active
-        view.material = .windowBackground
-        return view
-    }
-    func updateNSView(_ nsView: NSVisualEffectView, context: Context) {}
-}
 
 extension EdgePathAlgorithms {
     // 既存の calculatePath への公開アクセスをサポート

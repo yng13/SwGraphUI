@@ -28,7 +28,7 @@
 - wheel / trackpad / pinch を含む zoom interaction (macOS 中心)
 - selection rectangle / marquee select
 - multi-selection (nodes & edges)
-- **edge label** (base rendering)
+- **edge label** (refined: background, padding, rounded corners, and visual-center positioning)
 - **reconnect anchor** (interactive reconnection)
 - **Node Toolbar**: 選択ノード上部へのフローティングツールバー表示 (M21)
 - **Custom Edge**: エッジ中間点でのベジエ曲線以外のカスタム描画 (M21: CustomEdgeBody)
@@ -142,7 +142,7 @@
 - marker end の基本表示
 - drag 追随
 - custom edge へ広げやすい中間幾何表現
-- **edge label** (座標計算と基本表示)
+- **edge label** (M24: スタイル制御可能な EdgeLabelView と視覚的中心配置)
 - **reconnect anchor** (選択時のハンドル表示)
 - **edgeBodyBuilder** (M21: エッジ本体の意匠を注入可能に拡張)
 

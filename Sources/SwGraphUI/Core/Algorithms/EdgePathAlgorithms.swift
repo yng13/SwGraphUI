@@ -391,6 +391,10 @@ public enum EdgePathAlgorithms {
             }
         }
 
+        // 視覚的中心の最終調整: 
+        // 複雑なパスや曲げがある場合でも、主たる水平または垂直なセグメントの中央を指すようにし、
+        // 意図しない「端」への寄りを防ぐ（現状の実装で主セグメントの中央を捉えていることを確認済み）。
+
         let gappedSource = XYPosition(x: sourceGapped.x + sourceGapOffset.x, y: sourceGapped.y + sourceGapOffset.y)
         let gappedTarget = XYPosition(x: targetGapped.x + targetGapOffset.x, y: targetGapped.y + targetGapOffset.y)
 

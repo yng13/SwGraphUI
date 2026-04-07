@@ -51,6 +51,36 @@ public enum ConnectionLineType: String, Sendable {
     case simpleBezier = "simplebezier"
 }
 
+public struct EdgeLabelStyle: Sendable, Equatable, Codable {
+    public var textColor: String?
+    public var font: String?
+    public var fontSize: Double?
+    public var showBg: Bool
+    public var bgStyle: String?
+    public var bgPadding: Double
+    public var bgBorderRadius: Double
+
+    public static let `default` = EdgeLabelStyle()
+
+    public init(
+        textColor: String? = nil,
+        font: String? = nil,
+        fontSize: Double? = nil,
+        showBg: Bool = true,
+        bgStyle: String? = nil,
+        bgPadding: Double = 6.0,
+        bgBorderRadius: Double = 4.0
+    ) {
+        self.textColor = textColor
+        self.font = font
+        self.fontSize = fontSize
+        self.showBg = showBg
+        self.bgStyle = bgStyle
+        self.bgPadding = bgPadding
+        self.bgBorderRadius = bgBorderRadius
+    }
+}
+
 public struct EdgePosition: Sendable, Equatable {
     public var sourceX: Double
     public var sourceY: Double
@@ -95,6 +125,7 @@ public struct BaseEdge<Data: Sendable>: Sendable, Identifiable {
     public var interactionWidth: Double?
     public var curvature: Double?
     public var label: String?
+    public var labelStyle: EdgeLabelStyle
     public var reconnectable: ReconnectMode
 
     // MARK: - Library-managed/Interaction state
@@ -125,6 +156,7 @@ public struct BaseEdge<Data: Sendable>: Sendable, Identifiable {
         selectable: Bool = true,
         selected: Bool = false,
         label: String? = nil,
+        labelStyle: EdgeLabelStyle = .default,
         reconnectable: ReconnectMode = .none
     ) {
         self.id = id
@@ -148,6 +180,7 @@ public struct BaseEdge<Data: Sendable>: Sendable, Identifiable {
         self.selectable = selectable
         self.selected = selected
         self.label = label
+        self.labelStyle = labelStyle
         self.reconnectable = reconnectable
     }
 }

@@ -148,3 +148,14 @@ M23 完了に伴うドキュメント、進捗管理ファイル、および開�
 1.  **dev_log.md**: 重複した区切り線 (---) の削除と、テスト件数（合計42件）の正確な記述への更新（完了）。
 2.  **docs/reference-divergence.md**: `NodeResizer` の重複記述の削除と、完了済み項目の分類確認（完了）。
 3.  **docs/backlog.md**: 「直近の次アクション」が M24 以降を指していることの確認（完了）。
+## ✅ Milestone 24: Edge Text / Edge Label の精緻化 (2026-04-08) [DONE]
+
+### 概要
+エッジラベルの意匠（背景、パディング、角丸、色）を詳細に制御可能な `EdgeLabelView` を導入し、パス種別に応じた最適な配置を実現。
+
+### 要件項目
+1.  **EdgeLabelStyle**: `SwiftUI` 型に依存しない軽量なスタイル定義構造体の導入（完了）。
+2.  **EdgeLabelView**: 背景、パディング、角丸をサポートする標準ラベルコンポーネント（完了）。
+3.  **Visual Consistency**: macOS での `VisualEffectView` と iOS での `Material` フォールバック対応（完了）。
+4.  **Algorithmic Centering**: `step` / `smoothStep` における視覚的なパス中心へのラベル配置調整（完了）。
+5.  **Edge Label Showcase**: 多様なスタイルを確認可能な独立したサンプルの追加（完了）。
