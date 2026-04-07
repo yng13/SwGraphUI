@@ -138,3 +138,23 @@ Shift + クリックによる複数選択および、Shift + ドラッグによ�
 
 ### 概要
 Example アプリの 3 カラム IDE レイアウト、パン・ズーム基盤、およびデバッグ用 `CodeView` の実装。
+
+---
+## [Epic 4] Milestone 23: MiniMap & Controls の実装と洗練 (2026-04-07) [DONE]
+
+### 概要
+グラフ補助ツールとしての MiniMap と操作パネルを作成し、表示の不整合やレイアウトのガタつきを解消。また、`InteractivityState` による詳細なジェスチャ制御を導入。
+
+### 技術的変更
+- **Component Refinement**
+    - `DefaultNodeView`: モデルの `width/height` プロパティを反映。メイン画面と MiniMap のサイズ同期。
+    - `ControlsView`: パネルの縦伸び問題を `.fixedSize()` で修正。
+    - `MiniMapView`: `NodeOrigin` を反映させ、階層ノードの絶対位置計算を正確化。`.clipped()` を追加。
+- **Interactivity & Zoom Refinement**
+    - `zoomOnScroll` と `zoomOnPinch` を分離。
+    - `InteractivityState` に `minZoom` / `maxZoom` を追加し、ハードコードを廃止。
+    - `nodesConnectable` フラグによる接続ガードを実装。
+
+### 検証結果
+- `swift test`: 42件全パス (XCTest 19 + Swift Testing 23)。
+- マニュアル確認: `Feature Overview` および `MiniMap & Controls` サンプルでの `fitView` 正常動作（グラフ全体の表示）を確認。

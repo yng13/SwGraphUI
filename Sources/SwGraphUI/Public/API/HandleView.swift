@@ -66,6 +66,7 @@ public struct HandleView<Data: Sendable>: View {
             .gesture(
                 DragGesture(minimumDistance: 0, coordinateSpace: .named("viewport_container"))
                     .onChanged { value in
+                        guard store.runtimeState.interactivity.nodesConnectable else { return }
                         let viewport = store.runtimeState.viewport.viewport
                         let pointerInGraph = XYPosition(x: value.location.x, y: value.location.y).fromScreen(viewport: viewport)
                         

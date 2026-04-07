@@ -31,6 +31,10 @@ struct OverviewSample: GraphSample {
             BaseEdge<String>(id: "e-anim", source: "welcome", target: "n-styled", animated: true, markerStart: EdgeMarker(type: .arrow), markerEnd: EdgeMarker(type: .arrowClosed), label: "Animated Markers", reconnectable: .both)
         ]
         
+        // ズーム制限の緩和
+        graphStore.runtimeState.interactivity.minZoom = 0.1
+        graphStore.runtimeState.interactivity.maxZoom = 4.0
+        
         appStore.appendLog(kind: "sample", payload: "Overview: [Reconnect/Label/Marker/Group] showcase")
         appStore.appendLog(kind: "hint", payload: "Try dragging edge ends to RECONNECT, or select nodes to move them.")
     }

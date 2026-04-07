@@ -68,6 +68,11 @@ struct InspectorView: View {
                 LabeledContent("Total Nodes", value: "\(graphStore.nodes.count)")
             }
             
+            Section("Global View Options") {
+                Toggle("Show MiniMap", isOn: $appStore.isMiniMapVisible)
+                Toggle("Show Controls", isOn: $appStore.isControlsVisible)
+            }
+            
             Section("Development") {
                 Button(action: {
                     let nodes = graphStore.nodes.map { ["id": $0.id, "data": $0.data] }

@@ -14,7 +14,7 @@
 - [x] **Examples の充実**: `Basic interaction` (M20: Elements Lifecycle) が実装されていること。
 - [x] **高度な Example**: Custom Node / Edge 展示が完了していること (M21)。
 - [x] **基盤整備**: Example アプリのモジュール化・独立化が完了していること (M22)。
-- [ ] **UI Components**: Minimap 等の拡張機能が 1 つ以上検証されていること (M23: Next)。
+- [x] **UI Components**: MiniMap / Controls の精緻化 (M23: DONE)。
 - [x] **ドキュメント同期**: `reference-divergence.md` 上での未追従事項が更新されていること。
 
 ## 完了したマイルストーン

@@ -123,6 +123,20 @@ M10a マイルストーンで発生した主要なインタラクションバグ
 7.  **Dark Mode Compliance**: アダプティブなラベル背景とログビューの視認性確保（完了）。
 8.  **Example App Updates**: Inspector でのエッジ属性編集と、再接続成功時の `onReconnect` ログ出力対応（完了）。
 
+## ✅ Milestone 23: MiniMap & Controls Implementation [DONE]
+
+### 概要
+MiniMap および標準コントロールのコンポーネント化、および詳細なインタラクション制御の導入。再監査に基づき、表示精度とレイアウトの安定性を向上。
+
+### 要件項目
+- [x] **MiniMap**: グラフ全域の絶対座標を考慮した縮小表示とビューポート同期（完了）。
+- [x] **Node Sync**: メインキャンバスのノードサイズと MiniMap 上のサイズを同期（完了）。
+- [x] **Controls Panel**: パネルの縦方向サイズ固定によるレイアウト安定化（完了）。
+- [x] **Interactivity Control**: ピンチ・スクロール・接続の個別フラグ制御（完了）。
+- [x] **Modular Overlays**: `ZStack` 合成による軽量な拡張方式の採用（完了）。
+
+---
+
 ## ✅ Hotfix-4: Viewport Sync & Gesture Stability
 
 ### 概要

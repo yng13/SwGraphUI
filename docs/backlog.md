@@ -100,7 +100,7 @@
 - [x] **Milestone 20: Elements Lifecycle (Add/Delete/Edit) [Done]**
 - [x] **Milestone 21: Custom Node / Edge Showcase [Done]**
 - [x] **Milestone 22: Example App Refactoring & Modularization [Done]** (1サンプル 1ソース化)
-- [ ] Milestone 23: UI Components (Minimap, Controls) の整備
+- [x] Milestone 23: UI Components (MiniMap, Controls) の精緻化 [Done]
 - [ ] Layout 系 example 群
 - [ ] Whiteboard 系 example 群
 - [ ] UI components 系 example 群
@@ -115,6 +115,5 @@
 - [ ] 文字ぼやけ回避の品質基準を定義
 - [ ] Example app に export 検証ハーネスを追加
 
-## 直近の次アクション (Epic 4: 受け入れ用 examples)
-
-1. UI Components (Minimap, Controls) の整備 (M23)
+## 直近の次アクション
+- [ ] Edge Text / Edge Label の精緻化 (M24)

@@ -20,6 +20,7 @@ public final class ExampleAppStore {
         case overview = "Feature Overview"
         case interaction = "Interaction Playground"
         case customShowcase = "Custom Showcase"
+        case plugins = "Plugins"
         
         public var id: String { rawValue }
     }
@@ -44,6 +45,9 @@ public final class ExampleAppStore {
     public var isCodeViewVisible: Bool = true
     public var isLogVisible: Bool = true
     public var isInspectorVisible: Bool = true
+    
+    public var isMiniMapVisible: Bool = true
+    public var isControlsVisible: Bool = true
     
     // MARK: - Debug Logging
     
@@ -83,7 +87,8 @@ public final class ExampleAppStore {
         CustomSample(),
         OverviewSample(),
         InteractionSample(),
-        CustomShowcaseSample()
+        CustomShowcaseSample(),
+        MiniMapAndControlsSample()
     ]
     
     /// カテゴリに属するサンプルを返します

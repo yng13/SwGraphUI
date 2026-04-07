@@ -261,6 +261,38 @@ public struct HandleMeasurementState: Sendable, Equatable {
     }
 }
 
+/// インタラクション制御状態
+public struct InteractivityState: Sendable, Equatable {
+    public var nodesDraggable: Bool = true
+    public var nodesConnectable: Bool = true
+    public var elementsSelectable: Bool = true
+    public var panOnDrag: Bool
+    public var zoomOnScroll: Bool
+    public var zoomOnPinch: Bool
+    public var minZoom: Double
+    public var maxZoom: Double
+    
+    public init(
+        nodesDraggable: Bool = true,
+        nodesConnectable: Bool = true,
+        elementsSelectable: Bool = true,
+        panOnDrag: Bool = true,
+        zoomOnScroll: Bool = true,
+        zoomOnPinch: Bool = true,
+        minZoom: Double = 0.5,
+        maxZoom: Double = 2.0
+    ) {
+        self.nodesDraggable = nodesDraggable
+        self.nodesConnectable = nodesConnectable
+        self.elementsSelectable = elementsSelectable
+        self.panOnDrag = panOnDrag
+        self.zoomOnScroll = zoomOnScroll
+        self.zoomOnPinch = zoomOnPinch
+        self.minZoom = minZoom
+        self.maxZoom = maxZoom
+    }
+}
+
 /// グラフの実行時状態（一時的な状態）を一括管理するクラス。
 @Observable
 @MainActor
@@ -271,6 +303,7 @@ public final class GraphRuntimeState: Sendable {
     public var connection: ConnectionState
     public var viewport: ViewportState
     public var handleMeasurements: HandleMeasurementState
+    public var interactivity: InteractivityState
     
     /// 矩形選択（Marquee）の状態。
     public struct MarqueeState: Sendable, Equatable {
@@ -296,7 +329,8 @@ public final class GraphRuntimeState: Sendable {
         drag: DragState = .init(),
         connection: ConnectionState = .init(),
         viewport: ViewportState = .init(),
-        handleMeasurements: HandleMeasurementState = .init()
+        handleMeasurements: HandleMeasurementState = .init(),
+        interactivity: InteractivityState = .init()
     ) {
         self.selection = selection
         self.hover = hover
@@ -304,5 +338,6 @@ public final class GraphRuntimeState: Sendable {
         self.connection = connection
         self.viewport = viewport
         self.handleMeasurements = handleMeasurements
+        self.interactivity = interactivity
     }
 }

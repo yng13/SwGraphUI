@@ -161,19 +161,41 @@ struct ContentView: View {
     
     private var mainCanvasView: some View {
         GeometryReader { geometry in
-            GraphView(
-                store: graphStore,
-                onEvent: handleGraphEvent,
-                onConnect: { connection in
-                    appStore.addEdge(connection: connection, in: graphStore)
-                },
-                onReconnect: { _, _ in },
-                edgeBuilder: buildCustomEdge,
-                nodeBuilder: buildCustomNode
-            )
-            .coordinateSpace(name: "graph")
-            .background(Color.white)
-            .border(Color.blue.opacity(0.3), width: 2) // FitView対象領域を可視化
+            ZStack(alignment: .bottomTrailing) {
+                GraphView(
+                    store: graphStore,
+                    onEvent: handleGraphEvent,
+                    onConnect: { connection in
+                        appStore.addEdge(connection: connection, in: graphStore)
+                    },
+                    onReconnect: { _, _ in },
+                    edgeBuilder: buildCustomEdge,
+                    nodeBuilder: buildCustomNode
+                )
+                .coordinateSpace(name: "graph")
+                .background(Color.white)
+                .border(Color.blue.opacity(0.3), width: 2) // FitView対象領域を可視化
+                
+                // Plugins Area
+                ZStack {
+                    if appStore.isMiniMapVisible {
+                        MiniMapView(
+                            store: graphStore,
+                            containerSize: Dimensions(width: geometry.size.width, height: geometry.size.height)
+                        )
+                        .frame(width: 200, height: 150)
+                        .padding()
+                        .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .bottomTrailing)
+                    }
+                    
+                    if appStore.isControlsVisible {
+                        ControlsView(store: graphStore)
+                            .padding()
+                            .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .bottomLeading)
+                    }
+                }
+                .allowsHitTesting(true) // プラグイン領域への入力を許可
+            }
             .onAppear {
                 appStore.currentGraphSize = Dimensions(width: geometry.size.width, height: geometry.size.height)
             }

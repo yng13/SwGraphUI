@@ -117,20 +117,35 @@ public final class GraphStore<Data: Sendable>: Sendable {
             current: runtimeState.viewport.viewport,
             factor: factor,
             at: center,
-            minZoom: 0.5,
-            maxZoom: 2.0
+            minZoom: runtimeState.interactivity.minZoom,
+            maxZoom: runtimeState.interactivity.maxZoom
         )
         runtimeState.viewport.setViewport(newViewport)
     }
 
+    /// ビューポートを 1.2 倍拡大します。
+    public func zoomIn() {
+        zoom(factor: 1.2)
+    }
+
+    /// ビューポートを 0.8 倍縮小します。
+    public func zoomOut() {
+        zoom(factor: 0.8)
+    }
+
     public func fitView(
         in size: Dimensions = Dimensions(width: 800, height: 600),
-        padding: GeometryAlgorithms.Padding = .all(.relative(0.1)),
-        minZoom: Double = 0.5,
-        maxZoom: Double = 2.0
+        padding: GeometryAlgorithms.Padding = .all(.relative(0.1))
     ) {
         let lookup = Dictionary(uniqueKeysWithValues: nodes.map { ($0.id, $0) })
-        runtimeState.viewport.fitView(nodes: nodes, nodeLookup: lookup, in: size, padding: padding, minZoom: minZoom, maxZoom: maxZoom)
+        runtimeState.viewport.fitView(
+            nodes: nodes,
+            nodeLookup: lookup,
+            in: size,
+            padding: padding,
+            minZoom: runtimeState.interactivity.minZoom,
+            maxZoom: runtimeState.interactivity.maxZoom
+        )
     }
 
     // MARK: - Interaction Handlers
@@ -520,5 +535,31 @@ public final class GraphStore<Data: Sendable>: Sendable {
     // --- Hover ---
     public func setHoveredNode(_ id: String?) {
         runtimeState.hover.hoveredNodeID = id
+    }
+
+    // --- Interactivity ---
+
+    public func setNodesDraggable(_ draggable: Bool) {
+        runtimeState.interactivity.nodesDraggable = draggable
+    }
+
+    public func setNodesConnectable(_ connectable: Bool) {
+        runtimeState.interactivity.nodesConnectable = connectable
+    }
+
+    public func setElementsSelectable(_ selectable: Bool) {
+        runtimeState.interactivity.elementsSelectable = selectable
+    }
+
+    public func setPanOnDrag(_ panOnDrag: Bool) {
+        runtimeState.interactivity.panOnDrag = panOnDrag
+    }
+
+    public func setZoomOnScroll(_ enabled: Bool) {
+        runtimeState.interactivity.zoomOnScroll = enabled
+    }
+    
+    public func setZoomOnPinch(_ enabled: Bool) {
+        runtimeState.interactivity.zoomOnPinch = enabled
     }
 }

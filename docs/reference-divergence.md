@@ -32,6 +32,8 @@
 - **reconnect anchor** (interactive reconnection)
 - **Node Toolbar**: 選択ノード上部へのフローティングツールバー表示 (M21)
 - **Custom Edge**: エッジ中間点でのベジエ曲線以外のカスタム描画 (M21: CustomEdgeBody)
+- **Minimap**: グラフ全体の縮小図表示とビューポート同期 (M23)
+- **Controls**: ズーム/FitView 等の標準操作パネル (M23)
 
 ### 意図的差分
 
@@ -46,7 +48,7 @@
 ### 未着手 / 未完
 
 - whiteboard 系 interaction
-- Minimap: グラフ全体の縮小図表示 (M23: Next)
+- NodeResizer: ノードのインタラクティブなリサイズ
 - NodeResizer: ノードのインタラクティブなリサイズ
 - keyboard interaction / a11y component 群 (一部 bridge 実装済み)
 - auto pan

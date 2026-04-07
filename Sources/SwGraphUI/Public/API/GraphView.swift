@@ -71,6 +71,8 @@ public struct GraphView<Data: Sendable, NodeContent: View>: View {
             
             #if os(macOS)
             scrollMonitor.onEvent = { [store, weak scrollMonitor] event in
+                guard store.runtimeState.interactivity.zoomOnScroll else { return nil }
+                
                 let location = scrollMonitor?.location ?? .zero
                 if event.modifierFlags.contains(.command) || event.modifierFlags.contains(.control) {
                     let factor = exp(event.scrollingDeltaY * 0.01) // ホイール量に応じた倍率
@@ -103,6 +105,7 @@ public struct GraphView<Data: Sendable, NodeContent: View>: View {
         .gesture(
             MagnifyGesture()
                 .onChanged { value in
+                    guard store.runtimeState.interactivity.zoomOnPinch else { return }
                     let factor = value.magnification / lastMagnification
                     let center = XYPosition(x: hoverLocation.x, y: hoverLocation.y)
                     store.zoom(at: center, factor: factor)
@@ -146,12 +149,14 @@ public struct GraphView<Data: Sendable, NodeContent: View>: View {
                 DragGesture(minimumDistance: 0, coordinateSpace: .named("viewport_container"))
                     .onChanged { value in
                         if modifierKeys.isShiftPressed {
+                            guard store.runtimeState.interactivity.elementsSelectable else { return }
                             if !isMarqueeMode {
                                 isMarqueeMode = true
                                 store.startMarquee(at: value.startLocation)
                             }
                             store.updateMarquee(to: value.location)
                         } else {
+                            guard store.runtimeState.interactivity.panOnDrag else { return }
                             if !isMarqueeMode {
                                 // パン操作
                                 let deltaX = value.translation.width - lastPanTranslation.width
@@ -166,6 +171,7 @@ public struct GraphView<Data: Sendable, NodeContent: View>: View {
                             store.endMarquee(isShiftPressed: true)
                             isMarqueeMode = false
                         } else {
+                            guard store.runtimeState.interactivity.elementsSelectable else { return }
                             // 移動距離が小さい場合は背景タップとみなしてクリア
                             let distance = sqrt(pow(value.translation.width, 2) + pow(value.translation.height, 2))
                             if distance < 5 {
@@ -237,6 +243,7 @@ public struct GraphView<Data: Sendable, NodeContent: View>: View {
                 .gesture(
                     DragGesture(minimumDistance: 0, coordinateSpace: .named("viewport_container"))
                         .onChanged { [store = self.store, onEvent = self.onEvent] value in
+                            guard store.runtimeState.interactivity.nodesDraggable else { return }
                             let translation = sqrt(pow(value.translation.width, 2) + pow(value.translation.height, 2))
                             if translation > 4 {
                                 let viewport = store.runtimeState.viewport.viewport
@@ -256,6 +263,7 @@ public struct GraphView<Data: Sendable, NodeContent: View>: View {
                                 store.stopDragging()
                                 onEvent?(.dragStop(nodeIDs: [node.id]))
                             } else {
+                                guard store.runtimeState.interactivity.elementsSelectable else { return }
                                 // 移動距離が閾値 (4px) 未満だった場合はタップとみなして選択
                                 if modifierKeys.isShiftPressed {
                                     store.toggleNodeSelection(node.id)
@@ -295,12 +303,16 @@ public struct DefaultNodeView<Data: Sendable>: View {
     }
     
     public var body: some View {
+        let nodeWidth = node.width.map { CGFloat($0) }
+        let nodeHeight = node.height.map { CGFloat($0) }
+        
         VStack {
             Text(node.id)
                 .font(.caption)
                 .bold()
         }
         .padding(10)
+        .frame(width: nodeWidth, height: nodeHeight)
         .background(
             RoundedRectangle(cornerRadius: 5)
                 .fill(Self.backgroundColor)
