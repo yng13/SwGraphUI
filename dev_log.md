@@ -156,5 +156,5 @@ Example アプリの 3 カラム IDE レイアウト、パン・ズーム基盤�
     - `nodesConnectable` フラグによる接続ガードを実装。
 
 ### 検証結果
-- `swift test`: 42件全パス (XCTest 19 + Swift Testing 23)。
+- `swift test`: 合計42件全パス (XCTest 19件 + Swift Testing 23件)。
 - マニュアル確認: `Feature Overview` および `MiniMap & Controls` サンプルでの `fitView` 正常動作（グラフ全体の表示）を確認。

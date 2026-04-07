@@ -49,7 +49,6 @@
 
 - whiteboard 系 interaction
 - NodeResizer: ノードのインタラクティブなリサイズ
-- NodeResizer: ノードのインタラクティブなリサイズ
 - keyboard interaction / a11y component 群 (一部 bridge 実装済み)
 - auto pan
 

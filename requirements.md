@@ -137,11 +137,14 @@ MiniMap および標準コントロールのコンポーネント化、および
 
 ---
 
-## ✅ Hotfix-4: Viewport Sync & Gesture Stability
+---
+
+## ✅ Doc-Polish: Documentation & Log Alignment (2026-04-08) [DONE]
 
 ### 概要
-ビューポートの同期不整合およびジェスチャの競合修正。
+M23 完了に伴うドキュメント、進捗管理ファイル、および開発ログの整合性不備を修正。
 
-### 要件項目
-1.  **Viewport Sync**: `GraphStore` と `ViewportManager` 間の状態同期を厳密化し、ズーム時のジャンプを抑制。
-2.  **Gesture Priority**: パンとズームのジェスチャ優先順位を明示的に定義し、意図しない操作の干渉を排除。
+### 項目
+1.  **dev_log.md**: 重複した区切り線 (---) の削除と、テスト件数（合計42件）の正確な記述への更新（完了）。
+2.  **docs/reference-divergence.md**: `NodeResizer` の重複記述の削除と、完了済み項目の分類確認（完了）。
+3.  **docs/backlog.md**: 「直近の次アクション」が M24 以降を指していることの確認（完了）。
