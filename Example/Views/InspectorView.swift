@@ -71,6 +71,12 @@ struct InspectorView: View {
             Section("Global View Options") {
                 Toggle("Show MiniMap", isOn: $appStore.isMiniMapVisible)
                 Toggle("Show Controls", isOn: $appStore.isControlsVisible)
+                
+                Picker("Background Style", selection: $appStore.backgroundVariant) {
+                    Text("Dots").tag(BackgroundVariant.dots)
+                    Text("Lines").tag(BackgroundVariant.lines)
+                    Text("Cross").tag(BackgroundVariant.cross)
+                }
             }
             
             Section("Persistence (M26)") {

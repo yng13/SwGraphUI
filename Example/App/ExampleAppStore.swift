@@ -53,6 +53,9 @@ public final class ExampleAppStore {
     public var isMiniMapVisible: Bool = true
     public var isControlsVisible: Bool = true
     
+    /// 背景の描画スタイル (dots, lines, cross)
+    public var backgroundVariant: BackgroundVariant = .dots
+    
     // MARK: - Debug Logging
     
     public struct LogEntry: Identifiable {

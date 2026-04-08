@@ -170,7 +170,13 @@ struct ContentView: View {
                     },
                     onReconnect: { _, _ in },
                     edgeBuilder: buildCustomEdge,
-                    nodeBuilder: buildCustomNode
+                    nodeBuilder: buildCustomNode,
+                    backgroundBuilder: {
+                        AnyView(BackgroundView(
+                            viewport: graphStore.runtimeState.viewport.viewport,
+                            variant: appStore.backgroundVariant
+                        ))
+                    }
                 )
                 .coordinateSpace(name: "graph")
                 .background(Color.white)

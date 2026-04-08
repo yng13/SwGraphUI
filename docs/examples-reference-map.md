@@ -22,6 +22,7 @@
 | Interaction | Save and Restore | 近似 | `.reference/xyflow/examples/react/src/examples/SaveRestore` | `SaveRestoreSample.swift` (M26: JSON Snapshot 形式) |
 | Interaction | Connection Events / Add Edge 相当 | 近似 | `.reference/xyflow/examples/react/src/examples/AddNodeOnEdgeDrop`, `UseConnection`, `UseNodeConnections` | M13 の handle 接続 + `ExampleAppStore.addEdge` |
 | Interaction | Overlap Test | 近似 | - | `OverlapSample.swift` |
+| View | Backgrounds | 近似 | - | `BackgroundView.swift` & `InspectorView.swift` (Global Options) |
 | Edges | Edge Label Renderer | 近似 | `.reference/xyflow/examples/react/src/examples/EdgeLabelRenderer` | `EdgeLabelSample.swift` (M24: スタイル・配置精緻化) |
 | Edges | Edge Types | 部分一致 | `.reference/xyflow/examples/react/src/examples/EdgeTypes` | `CustomShowcaseSample.swift` (M21: CustomEdgeBody), `EdgeLabelSample.swift` |
 

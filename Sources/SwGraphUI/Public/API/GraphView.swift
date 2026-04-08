@@ -13,6 +13,7 @@ public struct GraphView<Data: Sendable, NodeContent: View>: View {
     public let store: GraphStore<Data>
     public let nodeBuilder: (BaseNode<Data>) -> NodeContent
     public let edgeBuilder: (BaseEdge<Data>, [PathSegment], Color, CGFloat, Bool, Bool) -> AnyView
+    public let backgroundBuilder: () -> AnyView
     public var onEvent: ((GraphEvent) -> Void)?
 
     public var onConnect: ((Connection) -> Void)?
@@ -38,13 +39,15 @@ public struct GraphView<Data: Sendable, NodeContent: View>: View {
         onConnect: ((Connection) -> Void)? = nil,
         onReconnect: ((String, Connection) -> Void)? = nil,
         edgeBuilder: ((BaseEdge<Data>, [PathSegment], Color, CGFloat, Bool, Bool) -> AnyView)? = nil,
-        @ViewBuilder nodeBuilder: @escaping (BaseNode<Data>) -> NodeContent
+        @ViewBuilder nodeBuilder: @escaping (BaseNode<Data>) -> NodeContent,
+        @ViewBuilder backgroundBuilder: @escaping () -> AnyView = { AnyView(EmptyView()) }
     ) {
         self.store = store
         self.onEvent = onEvent
         self.onConnect = onConnect
         self.onReconnect = onReconnect
         self.nodeBuilder = nodeBuilder
+        self.backgroundBuilder = backgroundBuilder
         self.edgeBuilder = edgeBuilder ?? { _, segments, color, width, animated, reconnecting in
             AnyView(EdgeRenderer(segments: segments, strokeColor: color, strokeWidth: width, animated: animated, isReconnecting: reconnecting))
         }
@@ -56,6 +59,8 @@ public struct GraphView<Data: Sendable, NodeContent: View>: View {
         
         ZStack {
             GeometryReader { geometry in
+                backgroundBuilder()
+                
                 // ビューポート（グラフ空間）コンテナ
                 viewportContainer
                 
@@ -308,9 +313,11 @@ extension GraphView where NodeContent == DefaultNodeView<Data> {
         onConnect: ((Connection) -> Void)? = nil,
         onReconnect: ((String, Connection) -> Void)? = nil
     ) {
-        self.init(store: store, onEvent: onEvent, onConnect: onConnect, onReconnect: onReconnect) { node in
+        self.init(store: store, onEvent: onEvent, onConnect: onConnect, onReconnect: onReconnect, nodeBuilder: { node in
             DefaultNodeView(node: node, store: store, onConnect: onConnect)
-        }
+        }, backgroundBuilder: {
+            AnyView(BackgroundView(viewport: store.runtimeState.viewport.viewport))
+        })
     }
 }
 

@@ -34,6 +34,7 @@
 - **Custom Edge**: エッジ中間点でのベジエ曲線以外のカスタム描画 (M21: CustomEdgeBody)
 - **Minimap**: グラフ全体の縮小図表示とビューポート同期 (M23)
 - **Controls**: ズーム/FitView 等の標準操作パネル (M23)
+- **Background**: Dots/Lines バリアントとズームに応じた LOD 制御 (M27b)
 - **NodeResizer**: 8方向のインタラクティブなノードリサイズと制約適用 (M25a / M25b: Corner + Shift Lock)
 - **Auto Pan**: ドラッグ・接続操作時の自動スクロールと座標同期 (M27a)
 

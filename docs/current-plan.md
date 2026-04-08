@@ -5,10 +5,12 @@
 
 ## Proposed Changes
 
-### [Epic 4] 受け入れ用 examples 追加
-- Basic interaction 系のサンプル構築
-- 任意で Custom Node / Custom Edge 系サンプルの構築
-- Edge Label / Reconnect 関連のデモ実装
+### [Epic 4] 背景とオートパンの精緻化 (M27)
+- [x] M27a: Auto Pan Interaction (Logic & Timer Sync)
+- [x] M27b: Background Enhancement (Canvas, LOD, Variants) [DONE]
+    - [x] 縮小率に応じたドットの間引き (LOD)
+    - [x] dots / lines / cross バリアントのサポート
+    - [x] 視認性向上のための 5x5 アクセント
 
 ## Exit Rule
 - [x] **Examples の充実**: `Basic interaction` (M20: Elements Lifecycle) が実装されていること。
@@ -18,6 +20,7 @@
 - [x] **ドキュメント同期**: `reference-divergence.md` 上での未追従事項が更新されていること。
 
 ## 完了したマイルストーン
+- [x] M27b: Background Enhancement (2026-04-08)
 - [x] M27a: Auto Pan Interaction (2026-04-08)
 - [x] M26: Snapshots / Save & Restore (2026-04-08)
 - [x] M25b: Aspect Ratio & Advanced Resizing (2026-04-08)

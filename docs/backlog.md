@@ -112,10 +112,10 @@
     - [x] connect / reconnect / drag 中の auto pan (50fps Timer 方式)
     - [x] Screen space -> Graph space 座標再解決
     - [x] deinit/onDisappear 時の安全な停止処理
-- [ ] **Milestone 27b: Backgrounds**
-    - [ ] BackgroundView (Grid / Dots / Lines)
-    - [ ] Dynamic grid scaling (zoom 連動)
-    - [ ] Background styling API
+- [x] **Milestone 27b: Backgrounds [DONE]**
+    - [x] BackgroundView (Grid / Dots / Lines)
+    - [x] Dynamic grid scaling (zoom 連動)
+    - [x] Background styling API
 - [ ] **Milestone 28: Interaction Polish & A11y**
     - [ ] keyboard interaction (Undo/Redo, Arrow keys move)
     - [ ] a11y component 群の棚卸し
@@ -134,5 +134,8 @@
 - [ ] Example app に export 検証ハーネスを追加
 
 ### 直近の次アクション
-- [ ] Milestone 27b (Backgrounds) の詳細プランニング
-- [ ] グリッドの動的スケーリング・色のカスタマイズ性の検討
+- [x] Milestone 27a (Auto Pan Interaction) [DONE]
+- [x] Milestone 27b (Background Enhancement) [DONE]
+    - [x] LOD (ズーム間引き) の実装
+    - [x] Dots / Lines / Cross バリアント対応
+    - [x] 5x5 メジャーグリッドアクセントの導入
