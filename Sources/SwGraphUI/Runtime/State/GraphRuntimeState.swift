@@ -261,6 +261,36 @@ public struct HandleMeasurementState: Sendable, Equatable {
     }
 }
 
+/// オートパン（自動スクロール）の状態
+public struct AutoPanState: Sendable, Equatable {
+    /// オートパンが現在動作中かどうか
+    public var isActive: Bool = false
+    /// 現在のマウス/ポインタ位置（スクリーン座標系）
+    public var mousePosition: XYPosition?
+    /// 現在の算出速度（加算量）
+    public var velocity: XYPosition = .zero
+    /// 描画コンテナの寸法（速度計算の基準）
+    public var containerSize: Dimensions?
+    
+    public init(
+        isActive: Bool = false,
+        mousePosition: XYPosition? = nil,
+        velocity: XYPosition = .zero,
+        containerSize: Dimensions? = nil
+    ) {
+        self.isActive = isActive
+        self.mousePosition = mousePosition
+        self.velocity = velocity
+        self.containerSize = containerSize
+    }
+    
+    public mutating func clear() {
+        isActive = false
+        mousePosition = nil
+        velocity = .zero
+    }
+}
+
 /// インタラクション制御状態
 public struct InteractivityState: Sendable, Equatable {
     public var nodesDraggable: Bool = true
@@ -303,6 +333,7 @@ public final class GraphRuntimeState: Sendable {
     public var connection: ConnectionState
     public var viewport: ViewportState
     public var handleMeasurements: HandleMeasurementState
+    public var autoPan: AutoPanState
     public var interactivity: InteractivityState
     
     /// 矩形選択（Marquee）の状態。
@@ -330,6 +361,7 @@ public final class GraphRuntimeState: Sendable {
         connection: ConnectionState = .init(),
         viewport: ViewportState = .init(),
         handleMeasurements: HandleMeasurementState = .init(),
+        autoPan: AutoPanState = .init(),
         interactivity: InteractivityState = .init()
     ) {
         self.selection = selection
@@ -338,6 +370,7 @@ public final class GraphRuntimeState: Sendable {
         self.connection = connection
         self.viewport = viewport
         self.handleMeasurements = handleMeasurements
+        self.autoPan = autoPan
         self.interactivity = interactivity
     }
 }

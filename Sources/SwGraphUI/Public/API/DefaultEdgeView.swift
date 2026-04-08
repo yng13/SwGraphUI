@@ -342,8 +342,6 @@ struct ReconnectAnchor<Data: Sendable>: View {
                             let fixedHandleType: HandleType = isReconnectingSource ? .target : .source
                             let fixedPlacement = isReconnectingSource ? (edge.targetPosition ?? .left) : (edge.sourcePosition ?? .right)
                             
-                            print("[DEBUG] Reconnect Start: handleType=\(handleType), isSource=\(isReconnectingSource), fixedNode=\(fixedNodeID), fixedHandleType=\(fixedHandleType)")
-
                             let fixedKey = HandleKey(nodeID: fixedNodeID, handleID: fixedHandleID, type: fixedHandleType, placement: fixedPlacement)
                             let fixedPos = store.resolvedHandlePosition(for: fixedKey)
                             
@@ -357,6 +355,9 @@ struct ReconnectAnchor<Data: Sendable>: View {
                                 mode: .reconnect(edgeID: edge.id, isSource: isReconnectingSource)
                             )
                         } else {
+                            // オートパンへの通知 (Screen space)
+                            store.updateAutoPan(at: XYPosition(x: value.location.x, y: value.location.y))
+                            
                             if let nearest = store.findHandle(near: graphPointer, threshold: ConnectionInteractionManager.snapDistance) {
                                 store.updateConnecting(
                                     to: graphPointer,

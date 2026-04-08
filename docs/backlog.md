@@ -108,10 +108,17 @@
     - [x] 現在の graph snapshot の encode / decode 方針を定義 (Codable)
     - [x] Example app に restore 導線を追加 (Inspector & Sample)
     - [x] `examples-reference-map.md` の Save and Restore 対応を更新
-- [ ] **Milestone 27: Auto Pan & Interaction Polish**
-  - [ ] connect / reconnect / drag 中の auto pan
-  - [ ] keyboard interaction の整理
-  - [ ] a11y component 群の棚卸し
+- [x] **Milestone 27a: Auto Pan Interaction [DONE]**
+    - [x] connect / reconnect / drag 中の auto pan (50fps Timer 方式)
+    - [x] Screen space -> Graph space 座標再解決
+    - [x] deinit/onDisappear 時の安全な停止処理
+- [ ] **Milestone 27b: Backgrounds**
+    - [ ] BackgroundView (Grid / Dots / Lines)
+    - [ ] Dynamic grid scaling (zoom 連動)
+    - [ ] Background styling API
+- [ ] **Milestone 28: Interaction Polish & A11y**
+    - [ ] keyboard interaction (Undo/Redo, Arrow keys move)
+    - [ ] a11y component 群の棚卸し
 - [ ] Layout 系 example 群
 - [ ] UI components 系 example 群
 - [ ] Whiteboard 系 example 群 (後順位)
@@ -127,5 +134,5 @@
 - [ ] Example app に export 検証ハーネスを追加
 
 ### 直近の次アクション
-- [ ] Milestone 27 (Auto Pan & Interaction Polish) のプランニング
-- [ ] Backgrounds / Grid システムの要件整理 (Epic 5)
+- [ ] Milestone 27b (Backgrounds) の詳細プランニング
+- [ ] グリッドの動的スケーリング・色のカスタマイズ性の検討

@@ -65,6 +65,22 @@ public struct GraphView<Data: Sendable, NodeContent: View>: View {
                 }
             }
             .coordinateSpace(name: "viewport_container")
+            .onAppear {
+                // 初期サイズの同期
+                // ※ GeometryReader 内部で geometry を直接参照して store を叩くと無限ループのリスクがあるため、
+                // 本来は一方向の通知に留めます。
+            }
+            .background(
+                GeometryReader { geometry in
+                    Color.clear
+                        .onAppear {
+                            store.setContainerSize(Dimensions(width: geometry.size.width, height: geometry.size.height))
+                        }
+                        .onChange(of: geometry.size) { _, newValue in
+                            store.setContainerSize(Dimensions(width: newValue.width, height: newValue.height))
+                        }
+                }
+            )
         }
         .onAppear {
             _ = modifierKeys.isShiftPressed // 初期アクセスで監視開始
@@ -136,6 +152,9 @@ public struct GraphView<Data: Sendable, NodeContent: View>: View {
                 store.updateHandlePosition(key: entry.key, absolutePosition: absoluteCenter)
             }
         }
+        .onDisappear {
+            store.cancelInteractions()
+        }
         .environment(store)
     }
 
@@ -186,6 +205,7 @@ public struct GraphView<Data: Sendable, NodeContent: View>: View {
 
     @ViewBuilder
     private var viewportContainer: some View {
+        let vp = store.runtimeState.viewport.viewport
         ZStack(alignment: .topLeading) {
             backgroundLayerPart
             
@@ -194,8 +214,8 @@ public struct GraphView<Data: Sendable, NodeContent: View>: View {
             nodeLayer
             edgeOverlayLayer
         }
-        .scaleEffect(store.runtimeState.viewport.viewport.zoom, anchor: .topLeading)
-        .offset(x: store.runtimeState.viewport.viewport.x, y: store.runtimeState.viewport.viewport.y)
+        .scaleEffect(vp.zoom, anchor: .topLeading)
+        .offset(x: vp.x, y: vp.y)
     }
 
     @ViewBuilder
@@ -254,6 +274,9 @@ public struct GraphView<Data: Sendable, NodeContent: View>: View {
                                     store.startDragging(nodeIDs: [node.id], at: graphPointer)
                                     onEvent?(.dragStart(nodeIDs: [node.id]))
                                 } else {
+                                    // オートパンへの通知 (Screen space)
+                                    store.updateAutoPan(at: XYPosition(x: value.location.x, y: value.location.y))
+                                    
                                     store.updateDragging(to: graphPointer)
                                     onEvent?(.dragUpdate(nodeIDs: [node.id]))
                                 }

@@ -35,6 +35,7 @@
 - **Minimap**: グラフ全体の縮小図表示とビューポート同期 (M23)
 - **Controls**: ズーム/FitView 等の標準操作パネル (M23)
 - **NodeResizer**: 8方向のインタラクティブなノードリサイズと制約適用 (M25a / M25b: Corner + Shift Lock)
+- **Auto Pan**: ドラッグ・接続操作時の自動スクロールと座標同期 (M27a)
 
 ### 意図的差分
 
@@ -50,7 +51,6 @@
 
 - whiteboard 系 interaction
 - keyboard interaction / a11y component 群 (一部 bridge 実装済み)
-- auto pan
 
 ### 要再判断
 

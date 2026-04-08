@@ -13,6 +13,9 @@ public final class GraphStore<Data: Sendable>: Sendable {
     // MARK: - Runtime State
     public var runtimeState: GraphRuntimeState
     
+    // MARK: - Interaction State
+    private var autoPanTimer: Timer?
+    
     // MARK: - Selection Accessors
     public var selectedNodes: [BaseNode<Data>] {
         nodes.filter { $0.selected }
@@ -116,7 +119,10 @@ public final class GraphStore<Data: Sendable>: Sendable {
     }
     
     public func pan(by delta: XYPosition) {
-        runtimeState.viewport.panBy(dx: delta.x, dy: delta.y)
+        // 構造体の再代入を明示的に行い、@Observable の通知を確実にする
+        var state = runtimeState.viewport
+        state.panBy(dx: delta.x, dy: delta.y)
+        runtimeState.viewport = state
     }
     
     /// 指定された中心点を基準に拡大・縮小します。
@@ -160,6 +166,102 @@ public final class GraphStore<Data: Sendable>: Sendable {
             minZoom: runtimeState.interactivity.minZoom,
             maxZoom: runtimeState.interactivity.maxZoom
         )
+    }
+    
+    // MARK: - Auto Pan Operations
+    
+    /// コンテナ（キャンバス）の寸法を更新します。
+    public func setContainerSize(_ size: Dimensions) {
+        runtimeState.autoPan.containerSize = size
+    }
+    
+    /// オートパンを更新し、必要に応じてタイマーを開始します。
+    /// - Parameter screenPointer: 「viewport_container」座標系での現在のポインタ位置。
+    public func updateAutoPan(at screenPointer: XYPosition) {
+        runtimeState.autoPan.mousePosition = screenPointer
+        
+        guard let containerSize = runtimeState.autoPan.containerSize,
+              containerSize.width > 0, containerSize.height > 0 else {
+            return
+        }
+        
+        let velocity = AutoPanAlgorithms.calculateVelocity(
+            mousePosition: screenPointer,
+            containerSize: containerSize,
+            speed: 25 // スピードを 15 -> 25 に強化
+        )
+        
+        if velocity != .zero {
+            if autoPanTimer == nil {
+                startAutoPanTimer()
+            }
+            runtimeState.autoPan.isActive = true
+            runtimeState.autoPan.velocity = velocity
+        } else {
+            runtimeState.autoPan.isActive = false
+            // 速度が0の場合はタイマーは止めず、ポインタが閾値内に戻るのを待つか、
+            // インタラクション終了時に止めます。
+        }
+    }
+    
+    private func startAutoPanTimer() {
+        guard autoPanTimer == nil else { return }
+        
+        // 50fps (20ms) で更新
+        // 直接 RunLoop.main.add することで、ドラッグ中 (.tracking) もタイマーがブロックされないようにする
+        let timer = Timer(timeInterval: 0.02, repeats: true) { [weak self] _ in
+            Task { @MainActor in
+                self?.handleAutoPanTick()
+            }
+        }
+        RunLoop.main.add(timer, forMode: .common)
+        autoPanTimer = timer
+    }
+    
+    private func stopAutoPanTimer() {
+        autoPanTimer?.invalidate()
+        autoPanTimer = nil
+        runtimeState.autoPan.clear()
+    }
+    
+    private func handleAutoPanTick() {
+        guard let mousePos = runtimeState.autoPan.mousePosition,
+              let containerSize = runtimeState.autoPan.containerSize else {
+            stopAutoPanTimer()
+            return
+        }
+        
+        // 最新の速度を再計算
+        let velocity = AutoPanAlgorithms.calculateVelocity(
+            mousePosition: mousePos,
+            containerSize: containerSize,
+            speed: 25 // スピードを 15 -> 25 に強化
+        )
+        
+        guard velocity != .zero else {
+            runtimeState.autoPan.isActive = false
+            return
+        }
+        
+        runtimeState.autoPan.isActive = true
+        runtimeState.autoPan.velocity = velocity
+        
+        // ビューポートを移動
+        pan(by: velocity)
+        
+        // ポインタ・オブジェクトの同期
+        // ビューポートが動いた状態で、再度画面上のポインタからグラフ空間の座標を割り出す
+        let viewport = runtimeState.viewport.viewport
+        let newGraphPointer = mousePos.fromScreen(viewport: viewport)
+        
+        if runtimeState.drag.isDragging {
+            updateDragging(to: newGraphPointer)
+        } else if runtimeState.connection.active != nil {
+            updateConnecting(to: newGraphPointer)
+        } else {
+            // インタラクションが見当たらない場合は停止
+            stopAutoPanTimer()
+        }
     }
 
     // MARK: - Interaction Handlers
@@ -290,6 +392,7 @@ public final class GraphStore<Data: Sendable>: Sendable {
     /// 矩形選択を開始します。
     /// - Parameter pointer: スクリーン座標系での開始位置。
     public func startMarquee(at pointer: CGPoint) {
+        stopAutoPanTimer() // 矩形選択中はオートパンを行わない
         runtimeState.marquee = GraphRuntimeState.MarqueeState(startPos: pointer, currentPos: pointer)
     }
     
@@ -370,6 +473,12 @@ public final class GraphStore<Data: Sendable>: Sendable {
     }
     
     public func updateDragging(to pointer: XYPosition) {
+        // オートパンの更新（ポインタ位置はスクリーン座標として扱う。
+        // updateDragging 引数の pointer はすでに fromScreen 済みの場合があるため、
+        // GraphStore.updateAutoPan は別途 DragGesture 等から直接 screen 座標を受け取る運用にするか、
+        // ここで再逆変換するかを検討。
+        // 今回は呼び出し側の GraphView で store.updateAutoPan を呼ぶ。
+        
         runtimeState.drag.updateDrag(to: pointer)
         
         let lookup = Dictionary(uniqueKeysWithValues: nodes.map { ($0.id, $0) })
@@ -394,6 +503,7 @@ public final class GraphStore<Data: Sendable>: Sendable {
     }
     
     public func stopDragging() {
+        stopAutoPanTimer()
         runtimeState.drag.stopDrag()
         for i in 0..<nodes.count {
             nodes[i].dragging = false
@@ -469,6 +579,7 @@ public final class GraphStore<Data: Sendable>: Sendable {
         targetHandleID: String? = nil,
         targetHandlePosition: Position? = nil
     ) {
+        // Viewport が動いている場合でも、引数の pointer (Graph space) に基づき状態を更新
         runtimeState.connection.update(
             to: pointer,
             targetNodeID: targetNodeID,
@@ -529,6 +640,7 @@ public final class GraphStore<Data: Sendable>: Sendable {
             updateEdgeConnection(id: edgeID, newConnection: conn)
         }
         
+        stopAutoPanTimer()
         runtimeState.connection.end()
         return result
     }
@@ -546,7 +658,15 @@ public final class GraphStore<Data: Sendable>: Sendable {
         }
     }
 
-    // --- Hover ---
+    /// すべてのインタラクション状態（オートパンのタイマー等を含む）を強制停止します。
+    public func cancelInteractions() {
+        stopAutoPanTimer()
+        stopDragging()
+        _ = stopConnecting()
+        runtimeState.marquee = nil
+    }
+    
+    // MARK: - Hover ---
     public func setHoveredNode(_ id: String?) {
         runtimeState.hover.hoveredNodeID = id
     }

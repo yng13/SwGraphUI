@@ -85,6 +85,9 @@ public struct HandleView<Data: Sendable>: View {
                                 at: pointerInGraph
                             )
                         } else {
+                            // オートパンへの通知 (Screen space)
+                            store.updateAutoPan(at: XYPosition(x: value.location.x, y: value.location.y))
+                            
                             let targetKey = store.findHandle(near: pointerInGraph)
                             store.updateConnecting(
                                 to: pointerInGraph,

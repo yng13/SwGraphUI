@@ -18,6 +18,7 @@
 - [x] **ドキュメント同期**: `reference-divergence.md` 上での未追従事項が更新されていること。
 
 ## 完了したマイルストーン
+- [x] M27a: Auto Pan Interaction (2026-04-08)
 - [x] M26: Snapshots / Save & Restore (2026-04-08)
 - [x] M25b: Aspect Ratio & Advanced Resizing (2026-04-08)
 - [x] M25a: Node Resizer (Free Resize) (2026-04-08)
