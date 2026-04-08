@@ -13,7 +13,7 @@ struct OverviewSample: GraphSample {
         graphStore.nodes = [
             BaseNode(id: "welcome", position: XYPosition(x: 250, y: 0), data: "Overview: Feature Gallery"),
             BaseNode(id: "n-source", position: XYPosition(x: 50, y: 120), data: "Common Source"),
-            BaseNode(id: "n-styled", position: XYPosition(x: 250, y: 120), data: "Styled Nodes"),
+            BaseNode(id: "n-styled", position: XYPosition(x: 250, y: 120), data: "Styled Nodes (Locked)", draggable: false),
             
             BaseNode(id: "n-target1", position: XYPosition(x: 50, y: 350), data: "Bezier (Default)"),
             BaseNode(id: "n-target2", position: XYPosition(x: 250, y: 350), data: "Straight Path"),

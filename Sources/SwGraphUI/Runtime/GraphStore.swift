@@ -360,6 +360,25 @@ public final class GraphStore<Data: Sendable>: Sendable {
         }
     }
     
+    /// 選択中のノードを相対的に移動させます。
+    /// - Parameter offset: グラフ絶対座標系での移動量。
+    public func moveSelectedNodes(by offset: XYPosition) {
+        let draggable = runtimeState.interactivity.nodesDraggable
+        guard draggable else { return }
+        
+        let selectedNodeIDs = runtimeState.selection.selectedNodeIDs
+        guard !selectedNodeIDs.isEmpty else { return }
+        
+        for i in 0..<nodes.count {
+            if selectedNodeIDs.contains(nodes[i].id) {
+                // 個別のノードの draggable 設定（非 Optional）を尊重
+                guard nodes[i].draggable else { continue }
+                nodes[i].position.x += offset.x
+                nodes[i].position.y += offset.y
+            }
+        }
+    }
+    
     /// 選択されているエッジを一括更新します（プロパティ変更用）。
     /// - Parameter block: 各エッジに適用する更新処理。
     public func updateSelectedEdges(_ block: (inout BaseEdge<Data>) -> Void) {

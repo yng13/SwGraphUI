@@ -5,12 +5,12 @@
 
 ## Proposed Changes
 
-### [Epic 4] 背景とオートパンの精緻化 (M27)
+### [Epic 4] 背景とインタラクションの精緻化 (M27-M28)
 - [x] M27a: Auto Pan Interaction (Logic & Timer Sync)
-- [x] M27b: Background Enhancement (Canvas, LOD, Variants) [DONE]
-    - [x] 縮小率に応じたドットの間引き (LOD)
-    - [x] dots / lines / cross バリアントのサポート
-    - [x] 視認性向上のための 5x5 アクセント
+- [x] M27b: Background Enhancement (LOD, Variants, Accent) [DONE]
+- [x] M28a: Inspector Density & Dark Mode Polish [DONE]
+- [ ] M28b: Interaction Polish (Keyboard Support [DONE], Undo/A11y [TODO])
+- [ ] M28c: Interaction Polish & A11y (Legacy)
 
 ## Exit Rule
 - [x] **Examples の充実**: `Basic interaction` (M20: Elements Lifecycle) が実装されていること。

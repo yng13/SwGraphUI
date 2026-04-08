@@ -230,6 +230,9 @@ struct ContentView: View {
                 onDeleteSelection: {
                     graphStore.deleteSelection()
                     appStore.appendLog(kind: "key.delete", payload: "selection removed via canvas focus")
+                },
+                onMoveNodes: { offset in
+                    graphStore.moveSelectedNodes(by: offset)
                 }
             )
         }

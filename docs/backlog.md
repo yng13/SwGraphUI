@@ -121,8 +121,10 @@
     - [x] 92pt ラベル幅 Property Grid / 1px アライメント補正
     - [x] 自前 TextField / CompactNumberField による Xcode 質感再現
     - [x] ダークモード視認性修正
-- [ ] **Milestone 28b: Interaction Polish & A11y**
-    - [ ] keyboard interaction (Undo/Redo, Arrow keys move)
+- [ ] **Milestone 28b: Interaction Polish & A11y [In Progress]**
+    - [x] Keyboard Interaction: Arrow keys move (1px/10px), Delete, Select All [DONE]
+    - [x] Keyboard Focus Guard: TextField 競合回避 [DONE]
+    - [ ] Undo/Redo: コマンドスタックの実装
     - [ ] a11y component 群の棚卸し
 - [ ] Layout 系 example 群
 - [ ] UI components 系 example 群

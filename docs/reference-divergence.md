@@ -51,7 +51,9 @@
 ### 未着手 / 未完
 
 - whiteboard 系 interaction
-- keyboard interaction / a11y component 群 (一部 bridge 実装済み)
+- keyboard interaction / a11y component 群
+    - [x] Keyboard: CanvasKeyboardBridge (NSEvent monitor) による捕捉を実装。Delete/SelectAll/Arrow-key move に対応。
+    - [ ] a11y: 未着手。
 
 ### 要再判断
 

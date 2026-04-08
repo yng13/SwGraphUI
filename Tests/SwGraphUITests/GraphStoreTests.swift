@@ -121,4 +121,39 @@ final class GraphStoreTests: XCTestCase {
         // 500x500 が 1000x1000 に収まるには zoom = 1000 / 500 = 2.0
         XCTAssertEqual(zoomAfterMeasure, 2.0, accuracy: 0.0001)
     }
+    
+    @MainActor
+    func testMoveSelectedNodes() {
+        let n1 = BaseNode(id: "1", position: XYPosition(x: 10, y: 10), data: "1")
+        let n2 = BaseNode(id: "2", position: XYPosition(x: 100, y: 100), data: "2")
+        let store = GraphStore(nodes: [n1, n2])
+        
+        // 1. ノード1のみ選択
+        store.selectNode("1")
+        
+        // 2. 移動 (+5, -2)
+        store.moveSelectedNodes(by: XYPosition(x: 5, y: -2))
+        
+        XCTAssertEqual(store.node(id: "1")?.position.x, 15)
+        XCTAssertEqual(store.node(id: "1")?.position.y, 8)
+        XCTAssertEqual(store.node(id: "2")?.position.x, 100, "非選択ノードは動いてはいけない")
+        
+        // 3. 複数選択での相対移動
+        store.toggleNodeSelection("2") // 1が選択されている状態で2も追加
+        store.moveSelectedNodes(by: XYPosition(x: 10, y: 10))
+        
+        XCTAssertEqual(store.node(id: "1")?.position.x, 25)
+        XCTAssertEqual(store.node(id: "2")?.position.x, 110)
+        
+        // 4. 個別のノードをドラッグ不可に設定
+        store.nodes[0].draggable = false // ノード1をロック
+        store.moveSelectedNodes(by: XYPosition(x: 100, y: 100))
+        XCTAssertEqual(store.node(id: "1")?.position.x, 25, "個別ロック中のノード1は動いてはいけない")
+        XCTAssertEqual(store.node(id: "2")?.position.x, 210, "ロックされていないノード2は動くべき")
+        
+        // 5. グローバルなドラッグ禁止状態でのガード
+        store.runtimeState.interactivity.nodesDraggable = false
+        store.moveSelectedNodes(by: XYPosition(x: 1000, y: 1000))
+        XCTAssertEqual(store.node(id: "2")?.position.x, 210, "グローバル禁止時は全ノード動いてはいけない")
+    }
 }
