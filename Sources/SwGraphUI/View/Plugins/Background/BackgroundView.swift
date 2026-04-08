@@ -17,7 +17,7 @@ public struct BackgroundView: View {
         gap: CGFloat = 20,
         variant: BackgroundVariant = .dots,
         size: CGFloat? = nil,
-        patternColor: Color = Color.black.opacity(0.28)
+        patternColor: Color = Color.primary.opacity(0.32)
     ) {
         self.viewport = viewport
         self.gap = gap

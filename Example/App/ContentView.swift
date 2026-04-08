@@ -179,7 +179,7 @@ struct ContentView: View {
                     }
                 )
                 .coordinateSpace(name: "graph")
-                .background(Color.white)
+                .background(Color(NSColor.underPageBackgroundColor))
                 .border(Color.blue.opacity(0.3), width: 2) // FitView対象領域を可視化
                 
                 // Plugins Area

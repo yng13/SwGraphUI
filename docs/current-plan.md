@@ -20,6 +20,7 @@
 - [x] **ドキュメント同期**: `reference-divergence.md` 上での未追従事項が更新されていること。
 
 ## 完了したマイルストーン
+- [x] M28a: Inspector Density & Dark Mode Polish (2026-04-08)
 - [x] M27b: Background Enhancement (2026-04-08)
 - [x] M27a: Auto Pan Interaction (2026-04-08)
 - [x] M26: Snapshots / Save & Restore (2026-04-08)

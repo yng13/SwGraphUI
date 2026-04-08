@@ -116,7 +116,12 @@
     - [x] BackgroundView (Grid / Dots / Lines)
     - [x] Dynamic grid scaling (zoom 連動)
     - [x] Background styling API
-- [ ] **Milestone 28: Interaction Polish & A11y**
+- [x] **Milestone 28a: Inspector Density & Dark Mode Polish [DONE]**
+    - [x] 脱 List 化 / ScrollView 移行による高密度レイアウト
+    - [x] 92pt ラベル幅 Property Grid / 1px アライメント補正
+    - [x] 自前 TextField / CompactNumberField による Xcode 質感再現
+    - [x] ダークモード視認性修正
+- [ ] **Milestone 28b: Interaction Polish & A11y**
     - [ ] keyboard interaction (Undo/Redo, Arrow keys move)
     - [ ] a11y component 群の棚卸し
 - [ ] Layout 系 example 群
