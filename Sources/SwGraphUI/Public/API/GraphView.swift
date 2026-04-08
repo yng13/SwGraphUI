@@ -260,7 +260,27 @@ public struct GraphView<Data: Sendable, NodeContent: View>: View {
 
     @ViewBuilder
     private var nodeLayer: some View {
-        ForEach(self.store.nodes) { (node: BaseNode<Data>) in
+        let lookup = store.nodeLookup
+        let indexedNodes = self.store.nodes.enumerated().map { ($0, $1) }
+        let sortedNodes = indexedNodes.sorted { (a, b) in
+            let (idxA, nodeA) = a
+            let (idxB, nodeB) = b
+            
+            // 1. zIndex (明示的な指定を最優先)
+            let zA = nodeA.zIndex ?? 0
+            let zB = nodeB.zIndex ?? 0
+            if zA != zB { return zA < zB }
+            
+            // 2. 階層の深さ (親を先に、子を後に。同一階層なら元の並びを維持)
+            let depthA = NodePositioningAlgorithms.calculateDepth(node: nodeA, nodeLookup: lookup)
+            let depthB = NodePositioningAlgorithms.calculateDepth(node: nodeB, nodeLookup: lookup)
+            if depthA != depthB { return depthA < depthB }
+            
+            // 3. 安定ソートのための元のインデックス
+            return idxA < idxB
+        }.map { $0.1 }
+
+        ForEach(sortedNodes) { (node: BaseNode<Data>) in
             NodeMeasurementWrapper(id: node.id, content: self.nodeBuilder(node))
                 .offset(
                     x: self.store.absolutePosition(for: node.id).x,

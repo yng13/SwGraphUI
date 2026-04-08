@@ -290,6 +290,8 @@ extension ContentView {
             CustomNodeView(node: node, store: graphStore, onConnect: onConnectHandler)
         case "resizer":
             ResizableNodeView(node: node)
+        case "group":
+            GroupNodeView(node: node)
         default:
             DefaultNodeView(node: node, store: graphStore, onConnect: onConnectHandler)
         }

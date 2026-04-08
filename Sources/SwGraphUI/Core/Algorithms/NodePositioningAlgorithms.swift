@@ -114,4 +114,23 @@ public enum NodePositioningAlgorithms {
         
         return GeometryAlgorithms.union(of: nodeRects) ?? .zero
     }
+
+    /// ノードの階層の深さを算出します（親がいない場合は0）。
+    public static func calculateDepth<Data: Sendable>(
+        node: BaseNode<Data>,
+        nodeLookup: [String: BaseNode<Data>]
+    ) -> Int {
+        var depth = 0
+        var currentParentID = node.parentID
+        var visited = Set<String>([node.id])
+        
+        while let parentID = currentParentID, let parent = nodeLookup[parentID] {
+            if visited.contains(parentID) { break }
+            visited.insert(parentID)
+            depth += 1
+            currentParentID = parent.parentID
+        }
+        
+        return depth
+    }
 }

@@ -116,6 +116,10 @@
     - [x] BackgroundView (Grid / Dots / Lines)
     - [x] Dynamic grid scaling (zoom 連動)
     - [x] Background styling API
+- [x] **Milestone 29: Subflows & Nesting [DONE]** (2026-04-09)
+    - [x] `zIndex` -> `depth` -> `index` による階層ソート (nodeLayer)
+    - [x] `NodePositioningAlgorithms.calculateDepth` の実装
+    - [x] `SubflowSample` & `GroupNodeView` の追加
 - [x] **Milestone 28a: Inspector Density & Dark Mode Polish [DONE]**
     - [x] 脱 List 化 / ScrollView 移行による高密度レイアウト
     - [x] 92pt ラベル幅 Property Grid / 1px アライメント補正

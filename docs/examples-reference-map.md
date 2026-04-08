@@ -17,7 +17,7 @@
 | Interaction | Lifecycle Demo | 近似 | `.reference/xyflow/examples/react/src/examples/DragNDrop/index.tsx`, `UpdateNode` | `BasicSample.swift` (M20/22: 追加/削除/編集。D&Dは未実装) |
 | Nodes | Custom Nodes | 部分一致 | `.reference/xyflow/examples/react/src/examples/CustomNode` | `CustomShowcaseSample.swift` (M21: Toolbar/Color/CPUノード) |
 | Nodes | Stress Test | 未追従 | `.reference/xyflow/examples/react/src/examples/Stress` | - |
-| Subflows | Sub Flow | 近似 | `.reference/xyflow/examples/react/src/examples/Subflow` | `HierarchySample.swift` |
+| Subflows | Sub Flow | 一致 | `.reference/xyflow/examples/react/src/examples/Subflow` | `SubflowSample.swift` (M29: Z-order/Depthソート) |
 | Interaction | Interaction (Playground) | 一部一致 | `.reference/xyflow/examples/react/src/examples/Interaction` | `InteractionSample.swift` (M22: サンプル独立化) |
 | Interaction | Save and Restore | 近似 | `.reference/xyflow/examples/react/src/examples/SaveRestore` | `SaveRestoreSample.swift` (M26: JSON Snapshot 形式) |
 | Interaction | Connection Events / Add Edge 相当 | 近似 | `.reference/xyflow/examples/react/src/examples/AddNodeOnEdgeDrop`, `UseConnection`, `UseNodeConnections` | M13 の handle 接続 + `ExampleAppStore.addEdge` |

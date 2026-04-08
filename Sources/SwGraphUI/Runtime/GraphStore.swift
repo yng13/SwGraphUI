@@ -30,6 +30,10 @@ public final class GraphStore<Data: Sendable>: Sendable {
         edges.filter { $0.selected }
     }
     
+    public var nodeLookup: [String: BaseNode<Data>] {
+        Dictionary(uniqueKeysWithValues: nodes.map { ($0.id, $0) })
+    }
+    
     public init(
         nodes: [BaseNode<Data>] = [],
         edges: [BaseEdge<Data>] = [],
@@ -126,8 +130,7 @@ public final class GraphStore<Data: Sendable>: Sendable {
 
     public func absolutePosition(for nodeID: String) -> XYPosition {
         guard let node = node(id: nodeID) else { return .zero }
-        let lookup = Dictionary(uniqueKeysWithValues: nodes.map { ($0.id, $0) })
-        return NodePositioningAlgorithms.evaluateAbsolutePosition(node, nodeLookup: lookup)
+        return NodePositioningAlgorithms.evaluateAbsolutePosition(node, nodeLookup: nodeLookup)
     }
 
     // MARK: - Edge Operations

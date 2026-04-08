@@ -180,7 +180,7 @@ M23 完了に伴うドキュメント、進捗管理ファイル、および開�
 ### 要件項目
 1.  **Core models Codable**: `BaseNode`, `BaseEdge`, `Viewport` 等の全てのコア幾何モデルに `Codable` 準拠を追加（完了）。
 2.  **Transient state exclusion**: `selected`, `dragging`, `measured` 等の実行時の一時的な状態をシリアライズから除外（完了）。
-3.  **GraphSnapshot**: 最小限ের 永続化データセットを保持するコンポジットモデルの導入（完了）。
+3.  **GraphSnapshot**: 最小限の 永続化データセットを保持するコンポジットモデルの導入（完了）。
 4.  **GraphStore API**: `snapshot()` で現在の状態をキャプチャし、`apply(snapshot:)` で安全に復元する API を提供（完了）。
 5.  **State Reset Logic**: スナップショット復元時に、接続ドラッグ中や矩形選択中などの過渡的なランタイム状態を強制リセットして不整合を防止（完了）。
 6.  **Example Integration**: インスペクターからスナップショットの保存・復元ができる操作ボタンと、専用サンプルコードの提供（完了）。

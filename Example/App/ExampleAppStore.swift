@@ -22,6 +22,7 @@ public final class ExampleAppStore {
         case customShowcase = "Custom Showcase"
         case snapshots = "Snapshots"
         case plugins = "Plugins"
+        case subflow = "Subflows & Nesting"
         
         public var id: String { rawValue }
     }
@@ -99,7 +100,8 @@ public final class ExampleAppStore {
         MiniMapAndControlsSample(),
         EdgeLabelSample(),
         NodeResizerSample(),
-        SaveRestoreSample()
+        SaveRestoreSample(),
+        SubflowSample()
     ]
     
     /// カテゴリに属するサンプルを返します

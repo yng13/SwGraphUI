@@ -42,6 +42,33 @@ SwGraphUI is organized into four main layers:
 - `Sources/SwGraphUI/View`
   Internal rendering and plugin-style views such as edge labels, minimap, controls, and node resizer.
 
+```mermaid
+flowchart TB
+    classDef layer fill:#f6f8fa,stroke:#0969da,color:#24292f,stroke-width:1px;
+    classDef runtime fill:#eef6ff,stroke:#1f6feb,color:#24292f,stroke-width:1px;
+    classDef core fill:#f6fff0,stroke:#2da44e,color:#24292f,stroke-width:1px;
+    classDef plugin fill:#faf5ff,stroke:#8250df,color:#24292f,stroke-width:1px;
+
+    A["App / Example Layer<br/>Sidebar, Inspector, Samples,<br/>Keyboard Bridge"]:::layer
+    B["GraphView<br/>SwiftUI-native graph canvas"]:::runtime
+    C["Plugin Views<br/>MiniMap, Controls, Background"]:::plugin
+    D["GraphStore<br/>Public commands and orchestration"]:::runtime
+    E["GraphRuntimeState<br/>viewport, selection, drag, connection,<br/>marquee, autoPan, interactivity"]:::runtime
+    F["Core Models<br/>BaseNode, BaseEdge, Handle,<br/>Viewport, GraphSnapshot, Geometry"]:::core
+    G["Core Algorithms<br/>Positioning, Edge Paths, Bounds,<br/>Resize, Auto Pan, Viewport math"]:::core
+
+    A --> B
+    A --> C
+    B --> D
+    C --> D
+    D --> E
+    D --> F
+    D --> G
+    E --> B
+    F --> B
+    G --> B
+```
+
 The design goal is:
 
 - keep the core logic data-first and testable
