@@ -27,6 +27,7 @@ public final class ExampleAppStore {
     }
     
     public var selectedCategory: SampleCategory = .basic
+    public var selectedSample: (any GraphSample)?
     
     /// スナップショットのメモリ保持用
     public var savedSnapshot: GraphSnapshot<String>?
@@ -106,9 +107,15 @@ public final class ExampleAppStore {
         allSamples.filter { $0.category == category }
     }
     
+    /// ID からサンプルを取得します。
+    public func sample(id: String) -> (any GraphSample)? {
+        allSamples.first { $0.id == id }
+    }
+    
     /// 指定したサンプルのデータを GraphStore に適用します。
     public func switchSample(to sample: any GraphSample, in graphStore: GraphStore<String>) {
         self.selectedCategory = sample.category
+        self.selectedSample = sample
         self.didAutoFitMeasuredSample = false // リセット
         appendLog(kind: "sample.select", payload: sample.title)
         

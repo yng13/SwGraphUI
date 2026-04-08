@@ -69,6 +69,14 @@ Platform support:
 - macOS 14+
 - iOS 17+
 
+Platform notes:
+
+- The core library is intended to work on both macOS and iOS.
+- The Example app is currently developed and verified primarily on macOS.
+- Some interactions are platform-specific:
+  - wheel zoom, hover-driven behavior, and keyboard shortcuts are macOS-centric
+  - pinch zoom and core canvas interactions are available on iOS, but the full Example workflow is not as thoroughly validated there yet
+
 ## Examples
 
 The package includes an `Example` app with focused samples such as:
@@ -173,6 +181,31 @@ ZStack(alignment: .bottomTrailing) {
         .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .bottomLeading)
 }
 ```
+
+## Running the Example in Xcode
+
+To run the included Example app from Xcode:
+
+1. Open the package folder in Xcode:
+
+```bash
+open /Users/kentaro/Projects/SwGraphUI/Package.swift
+```
+
+2. In Xcode, choose the `Example` scheme.
+3. Select a destination:
+   - for macOS, choose `My Mac`
+   - for iOS, choose an iOS Simulator or connected device
+4. Run with `Cmd+R`.
+
+If Xcode does not pick the scheme automatically, use:
+
+- `Product > Scheme > Example`
+
+Current recommendation:
+
+- use the Example app on macOS for the most complete validation flow
+- use iOS mainly to validate the core canvas, drag, connect, zoom, and rendering behavior
 
 ## Status
 
