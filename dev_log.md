@@ -227,3 +227,16 @@ Shift + クリックによる複数選択および、Shift + ドラッグによ�
     - `swift test`: 57件全テストをパス。
     - `AutoPanAlgorithmsTests`: 線形加速ロジックの境界値・ゼロサイズガードを網羅。
     - 実機確認: ミニマップおよびメインキャンバスにおけるスムーズなオートスクロールと、他のノード・要素の追従を確認。
+
+---
+## 2026-04-08: Milestone 28b: Interaction Polish (Undo/Redo) [DONE]
+
+### [M28b] Undo/Redo & Viewport Preservation
+- **概要**: コンテンツ操作（移動、削除、リサイズ、接続）の Undo/Redo 時に、ユーザーが意図したカメラ位置（Viewport）が書き換わらないようにロジックを精緻化。また、履歴を汚さないための guards を追加。
+- **技術的変更**:
+    - `GraphStore.registerUndo`: `ignoringViewport` 引数を追加し、Undo クロージャ内での `apply` 呼び出しにフラグを伝搬。
+    - `GraphStore.apply`: `shouldRegisterUndo` による Redo 登録時に、現在の `ignoringViewport` 状態を継承するように修正。これにより Undo -> Redo サイクル全体で Viewport が保護される。
+    - **No-op ガード**: `moveSelectedNodes(by:)` の移動量ゼロ判定、および `deleteSelection()` の空選択判定を追加。
+- **検証結果**:
+    - `swift test`: 58件（+1件）全テストをパス。
+    - マニュアル確認: ノード移動 -> 画面スクロール -> Undo において、ノード位置のみが戻り、画面表示位置が維持されることを確認。

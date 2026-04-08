@@ -199,3 +199,16 @@ M23 完了に伴うドキュメント、進捗管理ファイル、および開�
 4.  **UI Integration**: `GraphView`, `HandleView`, `ReconnectAnchor` からの画面座標通知フックの追加（完了）。
 5.  **Stop Conditions**: ドラッグ・接続の終了、矩形選択の開始、およびビューの非表示 (`onDisappear`) 時のタイマー停止処理（完了）。
 6.  **Verification**: 速度計算ロジックの単体テストをパスし、実機ビルドでスムーズな追従を確認（完了）。
+
+---
+
+## ✅ Milestone 28b: Interaction Polish (Undo/Redo) (2026-04-08) [DONE]
+
+### 概要
+ユーザー操作（ノードのドラッグ、削除、リサイズ、接続）に対する Undo/Redo 機能の精緻化と、ビューポート状態の保護。
+
+### 要件項目
+1.  **Viewport Preservation**: コンテンツの Undo/Redo 時に現在のビューポート（ズーム・パン）の状態が維持されること（完了）。
+2.  **No-op Guard**: 移動量ゼロのドラッグや、空の選択状態での削除など、状態に変化を与えない操作が Undo 履歴に積まれないこと（完了）。
+3.  **Redo Consistency**: Undo 時に登録される Redo アクションにおいても、Viewport 保護設定が正しく継承されること（完了）。
+4.  **Action Naming**: Undo メニューに適切なアクション名（"Move Nodes", "Delete Elements" 等）が表示されること（完了）。

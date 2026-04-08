@@ -1,8 +1,8 @@
 import Foundation
 
 /// グラフの特定の時点の状態を表すスナップショット。
-/// ノード、エッジ、およびビューポートの最小限の永続化可能データを保持します。
-public struct GraphSnapshot<Data: Sendable & Codable>: Codable {
+/// ノード、エッジ、およびビューポートの最小限のデータを保持します。
+public struct GraphSnapshot<Data: Sendable> {
     /// グラフ内の全ノード
     public let nodes: [BaseNode<Data>]
     /// グラフ内の全エッジ
@@ -20,3 +20,5 @@ public struct GraphSnapshot<Data: Sendable & Codable>: Codable {
         self.viewport = viewport
     }
 }
+
+extension GraphSnapshot: Codable where Data: Codable {}

@@ -16,6 +16,11 @@ public final class GraphStore<Data: Sendable>: Sendable {
     // MARK: - Interaction State
     private var autoPanTimer: Timer?
     
+    // MARK: - Undo/Redo State
+    public var undoManager: UndoManager?
+    private var dragStartSnapshot: GraphSnapshot<Data>?
+    private var resizeStartSnapshot: GraphSnapshot<Data>?
+    
     // MARK: - Selection Accessors
     public var selectedNodes: [BaseNode<Data>] {
         nodes.filter { $0.selected }
@@ -28,11 +33,13 @@ public final class GraphStore<Data: Sendable>: Sendable {
     public init(
         nodes: [BaseNode<Data>] = [],
         edges: [BaseEdge<Data>] = [],
-        runtimeState: GraphRuntimeState = .init()
+        runtimeState: GraphRuntimeState = .init(),
+        undoManager: UndoManager? = nil
     ) {
         self.nodes = nodes
         self.edges = edges
         self.runtimeState = runtimeState
+        self.undoManager = undoManager
     }
     
     // MARK: - Measurement & Positioning API
@@ -96,6 +103,25 @@ public final class GraphStore<Data: Sendable>: Sendable {
             // measured も同期。エッジ描画が即座に追従するようにします。
             nodes[index].measured = Dimensions(width: width, height: height)
         }
+    }
+    
+    public func startResizing(id: String) {
+        self.resizeStartSnapshot = self.snapshot()
+    }
+    
+    public func stopResizing() {
+        if let before = resizeStartSnapshot {
+            let after = self.snapshot()
+            // 幅・高さ・位置のいずれかに変化があれば登録
+            let hasChanged = zip(before.nodes, after.nodes).contains { b, a in
+                b.id != a.id || b.width != a.width || b.height != a.height || b.position != a.position
+            } || before.nodes.count != after.nodes.count
+            
+            if hasChanged {
+                registerUndo(title: "Resize Node", snapshot: before)
+            }
+        }
+        self.resizeStartSnapshot = nil
     }
 
     public func absolutePosition(for nodeID: String) -> XYPosition {
@@ -363,11 +389,22 @@ public final class GraphStore<Data: Sendable>: Sendable {
     /// 選択中のノードを相対的に移動させます。
     /// - Parameter offset: グラフ絶対座標系での移動量。
     public func moveSelectedNodes(by offset: XYPosition) {
+        if offset == .zero { return }
+        
         let draggable = runtimeState.interactivity.nodesDraggable
         guard draggable else { return }
         
         let selectedNodeIDs = runtimeState.selection.selectedNodeIDs
         guard !selectedNodeIDs.isEmpty else { return }
+        
+        // 少なくとも1つのノードが draggable であるか確認
+        let hasDraggableNodes = nodes.contains { node in
+            selectedNodeIDs.contains(node.id) && node.draggable
+        }
+        guard hasDraggableNodes else { return }
+
+        // キーボード移動など、1回のアクションとして Undo 登録
+        registerUndo(title: "Move Nodes", snapshot: self.snapshot(), ignoringViewport: true)
         
         for i in 0..<nodes.count {
             if selectedNodeIDs.contains(nodes[i].id) {
@@ -394,6 +431,12 @@ public final class GraphStore<Data: Sendable>: Sendable {
     public func deleteSelection() {
         let selectedNodeIDs = runtimeState.selection.selectedNodeIDs
         let selectedEdgeIDs = runtimeState.selection.selectedEdgeIDs
+        
+        // 選択が空の場合は何もしない
+        if selectedNodeIDs.isEmpty && selectedEdgeIDs.isEmpty { return }
+
+        // Undo 登録
+        registerUndo(title: "Delete Elements", snapshot: self.snapshot(), ignoringViewport: true)
         
         // ノードの削除
         nodes.removeAll { selectedNodeIDs.contains($0.id) }
@@ -479,6 +522,9 @@ public final class GraphStore<Data: Sendable>: Sendable {
     
     // --- Dragging ---
     public func startDragging(nodeIDs: [String], at pointer: XYPosition) {
+        // Undo 用に開始状態を記録
+        self.dragStartSnapshot = self.snapshot()
+        
         let targets = nodes.filter { nodeIDs.contains($0.id) }
         let lookup = Dictionary(uniqueKeysWithValues: nodes.map { ($0.id, $0) })
         runtimeState.drag.startDrag(nodes: targets, nodeLookup: lookup, pointer: pointer)
@@ -523,6 +569,21 @@ public final class GraphStore<Data: Sendable>: Sendable {
     
     public func stopDragging() {
         stopAutoPanTimer()
+        
+        // 移動があれば Undo 登録
+        if let before = dragStartSnapshot {
+            let after = self.snapshot()
+            // 座標の変化を確認 (タプル配列の直接比較ではなく zip 判定)
+            let hasMoved = zip(before.nodes, after.nodes).contains { b, a in
+                b.id != a.id || b.position != a.position
+            } || before.nodes.count != after.nodes.count
+            
+            if hasMoved {
+                registerUndo(title: "Move Nodes", snapshot: before)
+            }
+        }
+        self.dragStartSnapshot = nil
+        
         runtimeState.drag.stopDrag()
         for i in 0..<nodes.count {
             nodes[i].dragging = false
@@ -611,6 +672,9 @@ public final class GraphStore<Data: Sendable>: Sendable {
     public func stopConnecting() -> Connection? {
         guard let active = runtimeState.connection.active else { return nil }
         
+        // 接続成約の可能性があるため Snapshot を用意
+        let beforeSnapshot = self.snapshot()
+        
         print("[DEBUG] Reconnect Stop attempt: mode=\(active.mode), targetNode=\(active.targetNodeID ?? "nil")")
         
         var result: Connection? = nil
@@ -660,6 +724,12 @@ public final class GraphStore<Data: Sendable>: Sendable {
         }
         
         stopAutoPanTimer()
+        if result != nil {
+            // 接続成立時に Undo 登録
+            let actionName = (active.mode == .connect) ? "Add Edge" : "Reconnect Edge"
+            registerUndo(title: actionName, snapshot: beforeSnapshot)
+        }
+        
         runtimeState.connection.end()
         return result
     }
@@ -715,11 +785,26 @@ public final class GraphStore<Data: Sendable>: Sendable {
     public func setZoomOnPinch(_ enabled: Bool) {
         runtimeState.interactivity.zoomOnPinch = enabled
     }
-}
+    // MARK: - Undo Support Methods
+    
+    /// 指定されたタイトルで現在の状態を UndoManager に登録します。
+    /// - Parameter title: Undo メニューに表示されるアクション名。
+    /// - Parameter snapshot: Undo 時に戻す先の状態（省略時は現在のアクション前の状態など）。
+    /// - Parameter ignoringViewport: Undo 実行時にビューポートの状態を復元するかどうか。
+    private func registerUndo(title: String, snapshot: GraphSnapshot<Data>, ignoringViewport: Bool = true) {
+        guard let undoManager = undoManager else { return }
+        
+        undoManager.registerUndo(withTarget: self) { target in
+            // 指定された ignoringViewport 設定を尊重して適用
+            target.apply(snapshot: snapshot, shouldRegisterUndo: true, ignoringViewport: ignoringViewport)
+        }
+        
+        if !undoManager.isUndoing && !undoManager.isRedoing {
+            undoManager.setActionName(title)
+        }
+    }
 
-extension GraphStore where Data: Codable {
-    /// 現在のグラフの状態（ノード、エッジ、ビューポート）のスナップショットを取得します。
-    /// Data が Codable に準拠している必要があります。
+    /// 現在の状態のスナップショットを取得します。
     public func snapshot() -> GraphSnapshot<Data> {
         GraphSnapshot(
             nodes: nodes,
@@ -729,17 +814,26 @@ extension GraphStore where Data: Codable {
     }
 
     /// スナップショットを適用してグラフの状態を復元します。
-    /// 適用時、選択状態、ドラッグ状態、接続中の操作などのランタイム状態はすべてクリアされます。
-    public func apply(snapshot: GraphSnapshot<Data>) {
+    /// - Parameter snapshot: 適用するスナップショット。
+    /// - Parameter shouldRegisterUndo: 適用前に現在の状態を Undo 登録するかどうか。Redo をサポートするために内部で使用します。
+    public func apply(snapshot: GraphSnapshot<Data>, shouldRegisterUndo: Bool = false, ignoringViewport: Bool = false) {
+        if shouldRegisterUndo {
+            // 現在の状態を Redo 用に登録。
+            // apply に渡された ignoringViewport 設定を継承することで、Undo 時と同じ挙動を Redo でも保証する。
+            registerUndo(title: "", snapshot: self.snapshot(), ignoringViewport: ignoringViewport)
+        }
+        
         // 1. Core State の置換
         self.nodes = snapshot.nodes
         self.edges = snapshot.edges
         
         // 2. Viewport の復元
-        self.setViewport(snapshot.viewport)
+        if !ignoringViewport {
+            self.setViewport(snapshot.viewport)
+        }
         
         // 3. Runtime Interaction State のクリーンアップ
-        // 選択の解除
+        // 選択の解除 (UX 方針: 戻した後はクリア)
         clearSelection()
         // ドラッグ状態の強制終了
         stopDragging()
@@ -752,5 +846,13 @@ extension GraphStore where Data: Codable {
         
         // ハンドル計測値はリセット（復元後の再描画で再計測される）
         runtimeState.handleMeasurements.positions.removeAll()
+    }
+}
+
+// Codable 特化の旧 API 互換レイヤー、または削除
+extension GraphStore where Data: Codable {
+    /// 以前のシグネチャ維持（内部で汎用版を呼ぶ）
+    public func apply(snapshot: GraphSnapshot<Data>) {
+        apply(snapshot: snapshot, shouldRegisterUndo: false)
     }
 }

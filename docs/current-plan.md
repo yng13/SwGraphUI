@@ -9,7 +9,7 @@
 - [x] M27a: Auto Pan Interaction (Logic & Timer Sync)
 - [x] M27b: Background Enhancement (LOD, Variants, Accent) [DONE]
 - [x] M28a: Inspector Density & Dark Mode Polish [DONE]
-- [ ] M28b: Interaction Polish (Keyboard Support [DONE], Undo/A11y [TODO])
+- [x] M28b: Interaction Polish (Keyboard Support [DONE], Undo/Redo [DONE])
 - [ ] M28c: Interaction Polish & A11y (Legacy)
 
 ## Exit Rule
@@ -20,6 +20,7 @@
 - [x] **ドキュメント同期**: `reference-divergence.md` 上での未追従事項が更新されていること。
 
 ## 完了したマイルストーン
+- [x] M28b: Interaction Polish (Undo/Redo) (2026-04-08)
 - [x] M28a: Inspector Density & Dark Mode Polish (2026-04-08)
 - [x] M27b: Background Enhancement (2026-04-08)
 - [x] M27a: Auto Pan Interaction (2026-04-08)

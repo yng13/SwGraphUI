@@ -199,3 +199,18 @@ extension BaseNode: Codable where Data: Codable {
 }
 
 public typealias Node = BaseNode<EmptyPayload>
+
+extension BaseNode: Equatable where Data: Equatable {
+    public static func == (lhs: BaseNode<Data>, rhs: BaseNode<Data>) -> Bool {
+        lhs.id == rhs.id &&
+        lhs.position == rhs.position &&
+        lhs.width == rhs.width &&
+        lhs.height == rhs.height &&
+        lhs.selected == rhs.selected &&
+        lhs.dragging == rhs.dragging &&
+        lhs.draggable == rhs.draggable &&
+        lhs.hidden == rhs.hidden &&
+        lhs.parentID == rhs.parentID &&
+        lhs.data == rhs.data
+    }
+}

@@ -156,4 +156,49 @@ final class GraphStoreTests: XCTestCase {
         store.moveSelectedNodes(by: XYPosition(x: 1000, y: 1000))
         XCTAssertEqual(store.node(id: "2")?.position.x, 210, "グローバル禁止時は全ノード動いてはいけない")
     }
+    
+    @MainActor
+    func testUndoRedoNodeMovement() {
+        let store = GraphStore<String>(
+            nodes: [BaseNode(id: "1", position: .zero, data: "test")],
+            undoManager: UndoManager()
+        )
+        
+        // 1. 移動
+        store.startDragging(nodeIDs: ["1"], at: .zero)
+        store.updateDragging(to: XYPosition(x: 50, y: 50))
+        store.stopDragging()
+        
+        XCTAssertEqual(store.node(id: "1")?.position.x, 50)
+        
+        // 2. Undo
+        store.undoManager?.undo()
+        XCTAssertEqual(store.node(id: "1")?.position.x, 0, "Undo で元の位置に戻るべき")
+        
+        // 3. Redo
+        store.undoManager?.redo()
+        XCTAssertEqual(store.node(id: "1")?.position.x, 50, "Redo で移動後の位置に戻るべき")
+    }
+    
+    @MainActor
+    func testUndoRedoDeletion() {
+        let store = GraphStore<String>(
+            nodes: [BaseNode(id: "1", position: .zero, data: "test")],
+            undoManager: UndoManager()
+        )
+        
+        // 1. 選択して削除
+        store.selectNode("1")
+        store.deleteSelection()
+        XCTAssertTrue(store.nodes.isEmpty)
+        
+        // 2. Undo
+        store.undoManager?.undo()
+        XCTAssertEqual(store.nodes.count, 1, "Undo でノードが復活すべき")
+        XCTAssertEqual(store.nodes[0].id, "1")
+        
+        // 3. Redo
+        store.undoManager?.redo()
+        XCTAssertTrue(store.nodes.isEmpty, "Redo で再び削除されるべき")
+    }
 }

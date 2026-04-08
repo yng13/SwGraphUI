@@ -124,7 +124,7 @@
 - [ ] **Milestone 28b: Interaction Polish & A11y [In Progress]**
     - [x] Keyboard Interaction: Arrow keys move (1px/10px), Delete, Select All [DONE]
     - [x] Keyboard Focus Guard: TextField 競合回避 [DONE]
-    - [ ] Undo/Redo: コマンドスタックの実装
+    - [/] Undo/Redo: コマンドスタックの実装 [Polish]
     - [ ] a11y component 群の棚卸し
 - [ ] Layout 系 example 群
 - [ ] UI components 系 example 群

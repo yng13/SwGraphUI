@@ -80,6 +80,7 @@ private struct ResizeControlView<Data: Sendable>: View {
                     handleDrag(translation: value.translation)
                 }
                 .onEnded { _ in
+                    store.stopResizing()
                     startBounds = nil
                 }
         )
@@ -104,6 +105,7 @@ private struct ResizeControlView<Data: Sendable>: View {
         let zoom = store.runtimeState.viewport.viewport.zoom
         
         if startBounds == nil {
+            store.startResizing(id: node.id)
             startBounds = ResizeResult(
                 x: node.position.x,
                 y: node.position.y,

@@ -4,6 +4,7 @@ import SwGraphUI
 struct ContentView: View {
     @Bindable var appStore: ExampleAppStore
     let graphStore: GraphStore<String>
+    @Environment(\.undoManager) var undoManager
     
     var body: some View {
         #if os(macOS)
@@ -91,6 +92,12 @@ struct ContentView: View {
                 }
                 .help("Toggle Debug Logs")
             }
+        }
+        .onAppear {
+            graphStore.undoManager = undoManager
+        }
+        .onChange(of: undoManager) { old, new in
+            graphStore.undoManager = new
         }
     }
     #endif
