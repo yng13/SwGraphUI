@@ -103,10 +103,18 @@
 - [x] Milestone 23: UI Components (MiniMap, Controls) の精緻化 [Done]
 - [x] Milestone 24: Edge Text / Edge Label の精緻化 [Done]
 - [x] **Milestone 25a: Node Resizer (Free Resize) [Done]**
-- [ ] Milestone 25b: Aspect Ratio & Advanced Resizing
+- [x] **Milestone 25b: Aspect Ratio & Advanced Resizing [Done]** (2026-04-08)
+- [ ] **Milestone 26: Save / Restore**
+  - [ ] 現在の graph snapshot の encode / decode 方針を定義
+  - [ ] Example app に restore 導線を追加
+  - [ ] `examples-reference-map.md` の Save and Restore 対応を更新
+- [ ] **Milestone 27: Auto Pan & Interaction Polish**
+  - [ ] connect / reconnect / drag 中の auto pan
+  - [ ] keyboard interaction の整理
+  - [ ] a11y component 群の棚卸し
 - [ ] Layout 系 example 群
-- [ ] Whiteboard 系 example 群
 - [ ] UI components 系 example 群
+- [ ] Whiteboard 系 example 群 (後順位)
 
 ## Epic 5: 拡張機能
 
@@ -119,4 +127,6 @@
 - [ ] Example app に export 検証ハーネスを追加
 
 ## 直近の次アクション
-- [ ] Node Resizer (Aspect Ratio / Advanced) の実装 (M25b)
+- [ ] Milestone 26 (Snapshots / Save & Restore) のプロトタイプ設計
+- [ ] Save / Restore の基本導線と snapshot 復元の設計 (M26)
+- [ ] auto pan の責務境界整理 (M27)

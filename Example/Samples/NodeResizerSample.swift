@@ -4,19 +4,19 @@ import SwGraphUI
 struct NodeResizerSample: GraphSample {
     let title = "Node Resizer"
     let category: ExampleAppStore.SampleCategory = .basic
-    let description = "Drag handles to resize nodes manually."
+    let description = "Drag handles to resize. Hint: Hold 'Shift' while dragging corners to lock Aspect Ratio."
     
     @MainActor
     func setup(in graphStore: GraphStore<String>, appStore: ExampleAppStore) {
         graphStore.nodes = [
-            // デフォルトの最小制約 (80x50) を持たせたノード
+            // アスペクト比維持のデモ用ノード
             BaseNode(
                 id: "resizer-1", 
                 position: XYPosition(x: 50, y: 50), 
-                data: "Resizable (Min: 80x65)", 
+                data: "Shift + Corner to Lock Ratio", 
                 kind: "resizer", 
-                width: 120, 
-                height: 80,
+                width: 150, 
+                height: 100,
                 minWidth: 80,
                 minHeight: 65
             ),

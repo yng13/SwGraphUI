@@ -1,6 +1,19 @@
 # 開発ログ
 
 ## 2026-04-08
+### Milestone 25b: Aspect Ratio & Advanced Resizing 実装
+- **概要**: コーナードラッグ時の Shift キー押下によるアスペクト比維持リサイズの実装。
+- **技術的変更**:
+    - `ResizeCalculation.swift`: `preserveAspectRatio` ロジックを追加。主軸（移動量が大きい方）の拡大率に応じた従軸の補正と制約（min/max）の再評価を実装。
+    - `NodeResizer.swift`: `ModifierKeysProvider` を導入し、Shift キーの状態とハンドル位置を判定。
+    - `Reference-Divergence`: 「コーナードラッグのみ Shift で比率維持」という意図的差分を明文化。
+- **技術的判断**:
+    - モデル属性を増やさず「入力状態」として処理することで、特定ノードに縛られない汎用的な操作感を実現。
+- **検証結果**:
+    - `swift test`: `ResizeCalculationTests` に比率維持用の3件を追加し、合計 49 件（XCTest 19 + Swift Testing 30）の全パスを確認。
+    - `xcodebuild build`: 成功。
+    - 手動確認: Shift + コーナードラッグで比率がロックされ、辺ドラッグでは維持されないことを確認。
+
 ### Milestone 25a: Node Resizer (Free Resize) 実装
 - **概要**: ノードの自由リサイズ機能（8ハンドル、最小/最大制約、位置補正）のコア実装。
 - **技術的変更**:

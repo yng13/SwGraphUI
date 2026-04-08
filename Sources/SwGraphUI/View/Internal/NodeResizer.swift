@@ -57,6 +57,14 @@ private struct ResizeControlView<Data: Sendable>: View {
     let variant: ControlVariant
     
     @State private var startBounds: ResizeResult?
+    @State private var modifierKeys = ModifierKeysProvider()
+    
+    private var isCorner: Bool {
+        switch position {
+        case .topLeft, .topRight, .bottomLeft, .bottomRight: return true
+        default: return false
+        }
+    }
     
     var body: some View {
         Group {
@@ -110,6 +118,9 @@ private struct ResizeControlView<Data: Sendable>: View {
         let deltaX = translation.width / zoom
         let deltaY = translation.height / zoom
         
+        // コーナードラッグかつ Shift 押下時のみ比率維持
+        let preserve = modifierKeys.isShiftPressed && isCorner
+        
         let result = ResizeCalculation.calculate(
             original: start,
             handlePosition: position,
@@ -118,7 +129,8 @@ private struct ResizeControlView<Data: Sendable>: View {
             minWidth: node.minWidth,
             minHeight: node.minHeight,
             maxWidth: node.maxWidth,
-            maxHeight: node.maxHeight
+            maxHeight: node.maxHeight,
+            preserveAspectRatio: preserve
         )
         
         store.updateNodeDimensionsAfterResize(

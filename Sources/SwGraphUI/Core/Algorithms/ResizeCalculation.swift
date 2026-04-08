@@ -39,6 +39,7 @@ public struct ResizeCalculation {
     ///   - minHeight: 最小高さ制約
     ///   - maxWidth: 最大幅制約
     ///   - maxHeight: 最大高さ制約
+    ///   - preserveAspectRatio: 比率を維持するかどうか
     public static func calculate(
         original: ResizeResult,
         handlePosition: ResizeControlPosition,
@@ -47,39 +48,94 @@ public struct ResizeCalculation {
         minWidth: Double,
         minHeight: Double,
         maxWidth: Double = .infinity,
-        maxHeight: Double = .infinity
+        maxHeight: Double = .infinity,
+        preserveAspectRatio: Bool = false
     ) -> ResizeResult {
         var newX = original.x
         var newY = original.y
         var newWidth = original.width
         var newHeight = original.height
 
-        // 水平方向のリサイズ
-        switch handlePosition {
-        case .left, .topLeft, .bottomLeft:
-            // 左側をドラッグする場合：幅を変え、その分 X 座標をオフセットする
-            let nextWidth = max(minWidth, min(maxWidth, original.width - deltaX))
-            newX = original.x + (original.width - nextWidth)
-            newWidth = nextWidth
-        case .right, .topRight, .bottomRight:
-            // 右側をドラッグする場合：幅を変えるだけ
-            newWidth = max(minWidth, min(maxWidth, original.width + deltaX))
-        default:
-            break
-        }
+        if preserveAspectRatio {
+            // アスペクト比の算出
+            let ratio = original.width / original.height
+            
+            // 変化量が大きい方を主軸とする（より意図に近い拡大率を採用）
+            let absDeltaX = abs(deltaX)
+            let absDeltaY = abs(deltaY)
+            
+            if absDeltaX / original.width > absDeltaY / original.height {
+                // Width 主導
+                let isLeft = handlePosition == .left || handlePosition == .topLeft || handlePosition == .bottomLeft
+                let sign: Double = isLeft ? -1 : 1
+                let targetWidth = max(minWidth, min(maxWidth, original.width + deltaX * sign))
+                newWidth = targetWidth
+                newHeight = newWidth / ratio
+                
+                // Height 側の制約チェック
+                if newHeight < minHeight {
+                    newHeight = minHeight
+                    newWidth = newHeight * ratio
+                } else if newHeight > maxHeight {
+                    newHeight = maxHeight
+                    newWidth = newHeight * ratio
+                }
+            } else {
+                // Height 主導
+                let isTop = handlePosition == .top || handlePosition == .topLeft || handlePosition == .topRight
+                let sign: Double = isTop ? -1 : 1
+                let targetHeight = max(minHeight, min(maxHeight, original.height + deltaY * sign))
+                newHeight = targetHeight
+                newWidth = newHeight * ratio
+                
+                // Width 側の制約チェック
+                if newWidth < minWidth {
+                    newWidth = minWidth
+                    newHeight = newWidth / ratio
+                } else if newWidth > maxWidth {
+                    newWidth = maxWidth
+                    newHeight = newWidth / ratio
+                }
+            }
+            
+            // X/Y 座標の補正 (反対側を固定するため)
+            // 左側/上側のハンドル操作時のみオフセットが必要
+            switch handlePosition {
+            case .topLeft:
+                newX = original.x + (original.width - newWidth)
+                newY = original.y + (original.height - newHeight)
+            case .topRight:
+                newY = original.y + (original.height - newHeight)
+            case .bottomLeft:
+                newX = original.x + (original.width - newWidth)
+            default:
+                break
+            }
+        } else {
+            // 自由リサイズ (従来通り)
+            // 水平方向のリサイズ
+            switch handlePosition {
+            case .left, .topLeft, .bottomLeft:
+                let nextWidth = max(minWidth, min(maxWidth, original.width - deltaX))
+                newX = original.x + (original.width - nextWidth)
+                newWidth = nextWidth
+            case .right, .topRight, .bottomRight:
+                newWidth = max(minWidth, min(maxWidth, original.width + deltaX))
+            default:
+                break
+            }
 
-        // 垂直方向のリサイズ
-        switch handlePosition {
-        case .top, .topLeft, .topRight:
-            // 上側をドラッグする場合：高さを変え、その分 Y 座標をオフセットする
-            let nextHeight = max(minHeight, min(maxHeight, original.height - deltaY))
-            newY = original.y + (original.height - nextHeight)
-            newHeight = nextHeight
-        case .bottom, .bottomLeft, .bottomRight:
-            // 下側をドラッグする場合：高さを変えるだけ
-            newHeight = max(minHeight, min(maxHeight, original.height + deltaY))
-        default:
-            break
+            // 垂直方向のリサイズ
+            switch handlePosition {
+            case .top, .topLeft, .topRight:
+                let nextHeight = max(minHeight, min(maxHeight, original.height - deltaY))
+                newY = original.y + (original.height - nextHeight)
+                newHeight = nextHeight
+            case .bottom, .bottomLeft, .bottomRight:
+                newHeight = max(minHeight, min(maxHeight, original.height + deltaY))
+            default:
+                break
+            }
         }
 
         return ResizeResult(x: newX, y: newY, width: newWidth, height: newHeight)

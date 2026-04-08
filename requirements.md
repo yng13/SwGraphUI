@@ -112,7 +112,9 @@ M10a マイルストーンで発生した主要なインタラクションバグ
     - [x] 8方向ハンドルによる自由リサイズロジック (`ResizeCalculation`) の実装。
     - [x] 選択中ノードにリサイズハンドルを表示する `NodeResizer` コンポーネントの実装。
     - [x] リサイズ操作専用の `GraphStore` 更新メソッドによる、自動実測ループとの責務分離。
-- [ ] **M25b: Aspect Ratio & Advanced Resizing**
+- [x] **M25b: Aspect Ratio & Advanced Resizing**
+    - [x] Corner drag + Shift によるアスペクト比維持リサイズ。
+    - [x] 辺（Side）ドラッグの独立性（比率不変）。
 
 ---
 
