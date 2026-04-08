@@ -1,7 +1,7 @@
 import SwiftUI
 import SwGraphUI
 
-/// Xcode の属性インスペクター風のビュー (M28a: Core Density Refinement)
+/// Xcode の属性インスペクター風のビュー (M28a-Polish: 1px Alignment & Density Precision)
 struct InspectorView: View {
     @Bindable var appStore: ExampleAppStore
     let graphStore: GraphStore<String>
@@ -10,8 +10,9 @@ struct InspectorView: View {
     private enum Constants {
         static let labelWidth: CGFloat = 92
         static let headerHeight: CGFloat = 22
-        static let rowHeight: CGFloat = 22
-        static let horizontalPadding: CGFloat = 4
+        static let rowHeight: CGFloat = 20 // 22から20にさらに凝縮
+        static let horizontalPadding: CGFloat = 6 // Xcode準拠
+        static let contentIndent: CGFloat = 4 // ラベルとコンテンツの間
         static let fontSize: CGFloat = 11
         static let headerBackground = Color.primary.opacity(0.05)
     }
@@ -21,24 +22,25 @@ struct InspectorView: View {
             VStack(spacing: 0) {
                 // Viewport Section
                 InspectorHeader("Viewport")
-                VStack(spacing: 4) {
+                VStack(spacing: 1) {
                     InspectorRow("Zoom") {
-                        HStack(spacing: 4) {
+                        HStack(spacing: 2) {
                             Button {
                                 let center = XYPosition(x: appStore.currentGraphSize.width / 2, y: appStore.currentGraphSize.height / 2)
                                 graphStore.zoom(at: center, factor: 1.2)
-                            } label: { Image(systemName: "plus.magnifyingglass") }
+                            } label: { Image(systemName: "plus") }
                             
                             Button {
                                 let center = XYPosition(x: appStore.currentGraphSize.width / 2, y: appStore.currentGraphSize.height / 2)
                                 graphStore.zoom(at: center, factor: 0.8)
-                            } label: { Image(systemName: "minus.magnifyingglass") }
+                            } label: { Image(systemName: "minus") }
                             
                             Button {
                                 graphStore.fitView(in: appStore.currentGraphSize)
                             } label: { Image(systemName: "scope") }
                         }
                         .buttonStyle(.bordered)
+                        .offset(y: -0.5) // ボタンの垂直位置微調整
                         #if os(macOS)
                         .controlSize(.small)
                         #endif
@@ -48,7 +50,7 @@ struct InspectorView: View {
                 
                 // Selection Section
                 InspectorHeader("Selection Summary")
-                VStack(spacing: 2) {
+                VStack(spacing: 0) {
                     InspectorRow("Nodes") {
                         Text("\(graphStore.selectedNodes.count)").font(.system(size: Constants.fontSize, design: .monospaced))
                     }
@@ -57,7 +59,7 @@ struct InspectorView: View {
                     }
                     
                     InspectorRow("") {
-                        HStack {
+                        HStack(spacing: 4) {
                             Button("Clear") { graphStore.clearSelection() }
                             Button("Delete", role: .destructive) {
                                 let nodes = graphStore.selectedNodes.count
@@ -85,12 +87,20 @@ struct InspectorView: View {
                 
                 // Global Options
                 InspectorHeader("Global View Options")
-                VStack(spacing: 2) {
+                VStack(spacing: 0) {
                     InspectorRow("MiniMap") {
-                        Toggle("", isOn: $appStore.isMiniMapVisible).labelsHidden()
+                        Toggle("", isOn: $appStore.isMiniMapVisible)
+                            .labelsHidden()
+                            .toggleStyle(.switch)
+                            .scaleEffect(0.7) // Xcode風に小型化
+                            .offset(x: -8, y: 0.5)
                     }
                     InspectorRow("Controls") {
-                        Toggle("", isOn: $appStore.isControlsVisible).labelsHidden()
+                        Toggle("", isOn: $appStore.isControlsVisible)
+                            .labelsHidden()
+                            .toggleStyle(.switch)
+                            .scaleEffect(0.7)
+                            .offset(x: -8, y: 0.5)
                     }
                     InspectorRow("Background") {
                         Picker("", selection: $appStore.backgroundVariant) {
@@ -99,6 +109,7 @@ struct InspectorView: View {
                             Text("Cross").tag(BackgroundVariant.cross)
                         }
                         .labelsHidden()
+                        .offset(y: -1)
                         #if os(macOS)
                         .controlSize(.small)
                         #endif
@@ -108,13 +119,12 @@ struct InspectorView: View {
                 
                 // Persistence
                 InspectorHeader("Persistence")
-                VStack(spacing: 4) {
+                VStack(spacing: 0) {
                     InspectorRow("State") {
-                        HStack {
-                            Button("Take Snapshot") {
+                        HStack(spacing: 4) {
+                            Button("Snapshot") {
                                 let snapshot = graphStore.snapshot()
                                 appStore.savedSnapshot = snapshot
-                                appStore.appendLog(kind: "snapshot.save", payload: "Captured to memory")
                             }
                             Button("Restore") {
                                 if let snapshot = appStore.savedSnapshot {
@@ -144,7 +154,7 @@ struct InspectorView: View {
         let representative = edges.first!
         
         InspectorHeader("Edge Style")
-        VStack(spacing: 2) {
+        VStack(spacing: 0) {
             InspectorRow("Kind") {
                 Picker("", selection: Binding(
                     get: { representative.kind ?? "bezier" },
@@ -156,6 +166,7 @@ struct InspectorView: View {
                     Text("SmoothStep").tag("smoothstep")
                 }
                 .labelsHidden()
+                .offset(y: -1)
                 #if os(macOS)
                 .controlSize(.small)
                 #endif
@@ -163,15 +174,16 @@ struct InspectorView: View {
             
             if (representative.kind ?? "bezier") == "bezier" {
                 InspectorRow("Curvature") {
-                    HStack {
+                    HStack(spacing: 4) {
                         Slider(value: Binding(
                             get: { representative.curvature ?? 0.25 },
                             set: { val in graphStore.updateSelectedEdges { $0.curvature = val } }
                         ), in: 0...1)
                         Text(String(format: "%.2f", representative.curvature ?? 0.25))
                             .font(.system(size: 9, design: .monospaced))
-                            .frame(width: 30)
+                            .frame(width: 26)
                     }
+                    .offset(y: -1)
                     #if os(macOS)
                     .controlSize(.small)
                     #endif
@@ -182,24 +194,23 @@ struct InspectorView: View {
                 Toggle("", isOn: Binding(
                     get: { representative.animated },
                     set: { val in graphStore.updateSelectedEdges { $0.animated = val } }
-                )).labelsHidden()
+                ))
+                .labelsHidden()
+                .toggleStyle(.checkbox) // Xcode風チェックボックス
+                .offset(y: 0.5)
             }
             
             InspectorRow("Label") {
-                TextField("Title", text: Binding(
+                InspectorTextField(text: Binding(
                     get: { representative.label ?? "" },
                     set: { val in graphStore.updateSelectedEdges { $0.label = val.isEmpty ? nil : val } }
                 ))
-                .textFieldStyle(.roundedBorder)
-                #if os(macOS)
-                .controlSize(.small)
-                #endif
             }
         }
         .padding(.vertical, 4)
         
         InspectorHeader("Markers")
-        VStack(spacing: 2) {
+        VStack(spacing: 0) {
             markerRow(title: "Start", isEnd: false, edges: edges)
             markerRow(title: "End", isEnd: true, edges: edges)
         }
@@ -209,14 +220,14 @@ struct InspectorView: View {
     @ViewBuilder
     private var nodeInfoSection: some View {
         InspectorHeader("Node Info")
-        VStack(spacing: 6) {
+        VStack(spacing: 0) {
             ForEach(graphStore.selectedNodes) { node in
-                VStack(spacing: 2) {
+                VStack(spacing: 0) {
                     InspectorRow("ID") {
                         Text(node.id).font(.system(size: Constants.fontSize, design: .monospaced)).bold()
                     }
                     InspectorRow("Label") {
-                        TextField("", text: Binding(
+                        InspectorTextField(text: Binding(
                             get: { node.data },
                             set: { val in
                                 graphStore.updateSelectedNodes { target in
@@ -224,10 +235,6 @@ struct InspectorView: View {
                                 }
                             }
                         ))
-                        .textFieldStyle(.roundedBorder)
-                        #if os(macOS)
-                        .controlSize(.small)
-                        #endif
                     }
                     InspectorRow("Position") {
                         Text("\(Int(node.position.x)), \(Int(node.position.y))")
@@ -236,7 +243,7 @@ struct InspectorView: View {
                     }
                 }
                 if node.id != graphStore.selectedNodes.last?.id {
-                    Divider().padding(.leading, Constants.labelWidth + 8).opacity(0.3)
+                    Divider().padding(.leading, Constants.labelWidth + 8).opacity(0.1).padding(.vertical, 2)
                 }
             }
         }
@@ -249,7 +256,7 @@ struct InspectorView: View {
         let marker = isEnd ? representative.markerEnd : representative.markerStart
         
         InspectorRow(title) {
-            HStack(spacing: 8) {
+            HStack(spacing: 4) {
                 Toggle("", isOn: Binding(
                     get: { marker != nil },
                     set: { val in
@@ -258,36 +265,33 @@ struct InspectorView: View {
                             else { edge.markerStart = val ? EdgeMarker(type: .arrowClosed) : nil }
                         }
                     }
-                )).labelsHidden()
+                ))
+                .labelsHidden()
+                .toggleStyle(.checkbox)
+                .offset(y: 0.5)
                 
                 if let marker = marker {
-                    HStack(spacing: 4) {
-                        Text("W:").font(.system(size: 9)).foregroundStyle(.secondary)
-                        TextField("", value: Binding(
+                    HStack(spacing: 2) {
+                        Text("W").font(.system(size: 8)).foregroundStyle(.secondary)
+                        CompactNumberField(value: Binding(
                             get: { marker.width ?? 6.0 },
                             set: { val in
                                 graphStore.updateSelectedEdges { edge in
                                     if isEnd { edge.markerEnd?.width = val } else { edge.markerStart?.width = val }
                                 }
                             }
-                        ), formatter: NumberFormatter())
-                        .frame(width: 30)
+                        ))
                         
-                        Text("H:").font(.system(size: 9)).foregroundStyle(.secondary)
-                        TextField("", value: Binding(
+                        Text("H").font(.system(size: 8)).foregroundStyle(.secondary)
+                        CompactNumberField(value: Binding(
                             get: { marker.height ?? 6.0 },
                             set: { val in
                                 graphStore.updateSelectedEdges { edge in
                                     if isEnd { edge.markerEnd?.height = val } else { edge.markerStart?.height = val }
                                 }
                             }
-                        ), formatter: NumberFormatter())
-                        .frame(width: 30)
+                        ))
                     }
-                    .textFieldStyle(.plain)
-                    #if os(macOS)
-                    .controlSize(.small)
-                    #endif
                 }
             }
         }
@@ -295,17 +299,52 @@ struct InspectorView: View {
     
     // MARK: - Components
     
-    /// Xcode 風のプロパティ行
+    /// Xcode 風の入力欄
+    private struct InspectorTextField: View {
+        @Binding var text: String
+        var body: some View {
+            TextField("", text: $text)
+                .textFieldStyle(.plain)
+                .font(.system(size: 11))
+                .padding(.horizontal, 4)
+                .frame(height: 18)
+                .background(
+                    RoundedRectangle(cornerRadius: 3)
+                        .stroke(Color.primary.opacity(0.1), lineWidth: 0.5)
+                        .background(Color(NSColor.controlBackgroundColor).opacity(0.5))
+                )
+                #if os(macOS)
+                .controlSize(.small)
+                #endif
+        }
+    }
+    
+    /// 数値用小型入力欄
+    private struct CompactNumberField: View {
+        @Binding var value: Double
+        var body: some View {
+            TextField("", value: $value, formatter: NumberFormatter())
+                .textFieldStyle(.plain)
+                .font(.system(size: 10, design: .monospaced))
+                .multilineTextAlignment(.center)
+                .frame(width: 28, height: 16)
+                .background(
+                    RoundedRectangle(cornerRadius: 2)
+                        .stroke(Color.primary.opacity(0.1), lineWidth: 0.5)
+                )
+        }
+    }
+    
+    /// Xcode 風のプロパティ行 (1px Polish)
     @ViewBuilder
     private func InspectorRow<Content: View>(_ label: String, @ViewBuilder content: @escaping () -> Content) -> some View {
-        HStack(alignment: .center, spacing: 8) {
+        HStack(alignment: .center, spacing: Constants.contentIndent) {
             Text(label)
                 .font(.system(size: Constants.fontSize))
                 .foregroundStyle(.secondary)
                 .frame(width: Constants.labelWidth, alignment: .trailing)
             
             content()
-                .font(.system(size: Constants.fontSize))
             
             Spacer()
         }
@@ -313,7 +352,7 @@ struct InspectorView: View {
         .frame(minHeight: Constants.rowHeight)
     }
     
-    /// Xcode 風のセクションヘッダー
+    /// Xcode 風のセクションヘッダー (Density Polish)
     @ViewBuilder
     private func InspectorHeader(_ title: String) -> some View {
         HStack {
