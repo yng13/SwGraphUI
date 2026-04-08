@@ -37,6 +37,7 @@
 - **Background**: Dots/Lines バリアントとズームに応じた LOD 制御 (M27b)
 - **NodeResizer**: 8方向のインタラクティブなノードリサイズと制約適用 (M25a / M25b: Corner + Shift Lock)
 - **Auto Pan**: ドラッグ・接続操作時の自動スクロールと座標同期 (M27a)
+- **Keyboard Interaction**: CanvasKeyboardBridge による Delete/SelectAll/Arrow-key move (M28b Keyboard 基盤)
 
 ### 意図的差分
 
@@ -51,9 +52,8 @@
 ### 未着手 / 未完
 
 - whiteboard 系 interaction
-- keyboard interaction / a11y component 群
-    - [x] Keyboard: CanvasKeyboardBridge (NSEvent monitor) による捕捉を実装。Delete/SelectAll/Arrow-key move に対応。
-    - [ ] a11y: 未着手。
+- **Undo / Redo**: コマンドスタックによる履歴管理 (M28b 残課題)
+- **A11y**: AccessibilityNode 群の提供 (M28b 残課題)
 
 ### 要再判断
 
