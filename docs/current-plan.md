@@ -18,6 +18,7 @@
 - [x] **ドキュメント同期**: `reference-divergence.md` 上での未追従事項が更新されていること。
 
 ## 完了したマイルストーン
+- [x] M25a: Node Resizer (Free Resize) (2026-04-08)
 - [x] M24: Edge Text / Edge Label の精緻化
 - [x] M23: UI Components (MiniMap, Controls) の精緻化
 - [x] M22: Example App Refactoring & Modularization

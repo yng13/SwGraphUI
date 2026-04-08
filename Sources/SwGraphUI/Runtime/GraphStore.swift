@@ -72,12 +72,26 @@ public final class GraphStore<Data: Sendable>: Sendable {
         }
     }
 
+    /// 自動測定ロジックによってノードの実測サイズを更新します。
     public func updateNodeDimensions(id: String, dimensions: Dimensions) {
         if let index = nodes.firstIndex(where: { $0.id == id }) {
             // 差分ガード：値が同じ場合は更新をスキップして再描画を抑制
             if nodes[index].measured != dimensions {
                 nodes[index].measured = dimensions
             }
+        }
+    }
+
+    /// リサイズ操作によってノードの寸法と位置を更新します。
+    /// このメソッドは自動測定ループとは別に、ユーザーの意図的な変形を即座に反映するために使用します。
+    public func updateNodeDimensionsAfterResize(id: String, width: Double, height: Double, position: XYPosition) {
+        if let index = nodes.firstIndex(where: { $0.id == id }) {
+            nodes[index].width = width
+            nodes[index].height = height
+            nodes[index].position = position
+            
+            // measured も同期。エッジ描画が即座に追従するようにします。
+            nodes[index].measured = Dimensions(width: width, height: height)
         }
     }
 

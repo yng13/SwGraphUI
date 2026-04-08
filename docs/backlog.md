@@ -102,7 +102,8 @@
 - [x] **Milestone 22: Example App Refactoring & Modularization [Done]** (1サンプル 1ソース化)
 - [x] Milestone 23: UI Components (MiniMap, Controls) の精緻化 [Done]
 - [x] Milestone 24: Edge Text / Edge Label の精緻化 [Done]
-- [ ] Milestone 25: Node Resizer
+- [x] **Milestone 25a: Node Resizer (Free Resize) [Done]**
+- [ ] Milestone 25b: Aspect Ratio & Advanced Resizing
 - [ ] Layout 系 example 群
 - [ ] Whiteboard 系 example 群
 - [ ] UI components 系 example 群
@@ -118,4 +119,4 @@
 - [ ] Example app に export 検証ハーネスを追加
 
 ## 直近の次アクション
-- [ ] Node Resizer の実装 (M25)
+- [ ] Node Resizer (Aspect Ratio / Advanced) の実装 (M25b)

@@ -89,7 +89,8 @@ public final class ExampleAppStore {
         InteractionSample(),
         CustomShowcaseSample(),
         MiniMapAndControlsSample(),
-        EdgeLabelSample()
+        EdgeLabelSample(),
+        NodeResizerSample()
     ]
     
     /// カテゴリに属するサンプルを返します

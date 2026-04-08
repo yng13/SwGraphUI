@@ -28,6 +28,7 @@ public struct BaseNode<Data: Sendable>: Sendable, Identifiable {
     public var origin: NodeOrigin?
     public var handles: [NodeHandle]
     public var connectable: Bool
+    public var resizable: Bool
 
     // MARK: - Library-managed/Interaction state
     public var hidden: Bool
@@ -39,6 +40,10 @@ public struct BaseNode<Data: Sendable>: Sendable, Identifiable {
     public var dragHandle: String?
     public var width: Double?
     public var height: Double?
+    public var minWidth: Double
+    public var minHeight: Double
+    public var maxWidth: Double
+    public var maxHeight: Double
     public var initialWidth: Double?
     public var initialHeight: Double?
     public var measured: Dimensions?
@@ -58,6 +63,7 @@ public struct BaseNode<Data: Sendable>: Sendable, Identifiable {
         origin: NodeOrigin? = nil,
         handles: [NodeHandle] = [],
         connectable: Bool = true,
+        resizable: Bool = true,
         hidden: Bool = false,
         selected: Bool = false,
         dragging: Bool = false,
@@ -67,6 +73,10 @@ public struct BaseNode<Data: Sendable>: Sendable, Identifiable {
         dragHandle: String? = nil,
         width: Double? = nil,
         height: Double? = nil,
+        minWidth: Double = 10,
+        minHeight: Double = 10,
+        maxWidth: Double = .infinity,
+        maxHeight: Double = .infinity,
         initialWidth: Double? = nil,
         initialHeight: Double? = nil,
         measured: Dimensions? = nil
@@ -90,10 +100,15 @@ public struct BaseNode<Data: Sendable>: Sendable, Identifiable {
         self.draggable = draggable
         self.selectable = selectable
         self.connectable = connectable
+        self.resizable = resizable
         self.deletable = deletable
         self.dragHandle = dragHandle
         self.width = width
         self.height = height
+        self.minWidth = minWidth
+        self.minHeight = minHeight
+        self.maxWidth = maxWidth
+        self.maxHeight = maxHeight
         self.initialWidth = initialWidth
         self.initialHeight = initialHeight
         self.measured = measured

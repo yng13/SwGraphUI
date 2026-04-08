@@ -272,6 +272,8 @@ extension ContentView {
             ColorNodeView(node: node, store: graphStore, onConnect: onConnectHandler)
         case "custom":
             CustomNodeView(node: node, store: graphStore, onConnect: onConnectHandler)
+        case "resizer":
+            ResizableNodeView(node: node)
         default:
             DefaultNodeView(node: node, store: graphStore, onConnect: onConnectHandler)
         }

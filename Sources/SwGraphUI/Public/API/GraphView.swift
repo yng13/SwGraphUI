@@ -136,6 +136,7 @@ public struct GraphView<Data: Sendable, NodeContent: View>: View {
                 store.updateHandlePosition(key: entry.key, absolutePosition: absoluteCenter)
             }
         }
+        .environment(store)
     }
 
     // MARK: - Layer Components

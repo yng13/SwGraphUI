@@ -1,5 +1,31 @@
+# 開発ログ
+
+## 2026-04-08
+### Milestone 25a: Node Resizer (Free Resize) 実装
+- **概要**: ノードの自由リサイズ機能（8ハンドル、最小/最大制約、位置補正）のコア実装。
+- **技術的変更**:
+    - `BaseNode`: `minWidth/Height`, `maxWidth/Height`, `resizable` プロパティを追加。
+    - `ResizeCalculation.swift`: 8方向リサイズと、左・上ハンドル時の `position` 補正ロジックを実装。
+    - `NodeResizer.swift`: 選択ノードにのみ表示される SwiftUI オーバーレイ。`DragGesture` と `GraphStore` を統合。
+    - `GraphView.swift`: `.environment(store)` を追加し、内部コンポーネントへの Store 供給を確実化（ランタイムクラッシュの修正）。
+    - `GraphStore`: リサイズ専用の `updateNodeDimensionsAfterResize` メソッドを新設し、自動測定ループとの競合を回避。
+    - `NodeResizerSample.swift`: リサイズ機能のデモを追加。カスタムノードに `.frame()` を適用し、リサイズが視覚的に反映されるように修正。
+- **技術的判断**:
+    - `ResizeCalculation` を純粋なロジックとして分離し、`Swift Testing` による単体テストで堅牢性を担保。
+    - `NodeResizer` をカスタムノードのレイヤーとして透過的に重ねられる設計を採用（React Flow 準拠）。
+- **検証結果**:
+    - `swift test`: `ResizeCalculationTests` (27件) を追加し、既存の XCTest (19件) と合わせて合計 46 件のテストに合格。
+    - `xcodebuild build`: 成功。
+    - 手動確認: NodeResizer 表示時の `_swift_runtime_on_report` クラッシュが解消され、80x65 へのリサイズ時に境界線とハンドルが正しく表示されることを確認。
+
+### Milestone 24: Edge Label Refinement
+- **概要**: エッジラベルの視認性向上と、グラスモーフィズム効果の適用。
+- **技術的変更**:
+    - `EdgeLabelView`: macOS (`NSVisualEffectView`) と iOS (`ThinMaterial`) で異なるアダプティブ背景を実装。
+    - パディングを 6.0 に拡大し、背景不透明度を調整 (macOS: 0.5, iOS: 0.2)。
+    - `EdgePathAlgorithms`: `step` および `smoothStep` のパス中央計算を精緻化。
+
 ---
-## [Epic 4] Milestone 21: Custom Node / Edge Showcase (2026-04-06) [DONE]
 
 ### 概要
 ノード・エッジのカスタマイズ性を実証する「Custom Showcase」を実装。パブリック API を拡張し、再接続やラベル等の基本機能を維持したまま意匠（ツールバー、動的配色、カスタムパス）を柔軟に変更可能にした。
@@ -137,16 +163,6 @@ Shift + クリックによる複数選択および、Shift + ドラッグによ�
 ## [M10a] Layout & IDE Harness (2026-04-04) [DONE]
 
 ### 概要
-Example アプリの 3 カラム IDE レイアウト、パン・ズーム基盤、およびデバッグ用 `CodeView` の実装。
-
----
-## [Epic 4] Milestone 23: MiniMap & Controls の実装と洗練 (2026-04-07) [DONE]
-
-### 概要
-グラフ補助ツールとしての MiniMap と操作パネルを作成し、表示の不整合やレイアウトのガタつきを解消。また、`InteractivityState` による詳細なジェスチャ制御を導入。
-
-### 技術的変更
-- **Component Refinement**
     - `DefaultNodeView`: モデルの `width/height` プロパティを反映。メイン画面と MiniMap のサイズ同期。
     - `ControlsView`: パネルの縦伸び問題を `.fixedSize()` で修正。
     - `MiniMapView`: `NodeOrigin` を反映させ、階層ノードの絶対位置計算を正確化。`.clipped()` を追加。

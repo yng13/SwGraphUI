@@ -106,6 +106,14 @@ M10a マイルストーンで発生した主要なインタラクションバグ
 3.  **Store API Separation**: `GraphStore.zoom(at:factor:)` にて `ViewportManager` を直接呼び出すことで、責務の分離と `runtimeState.viewport` への暗黙依存の排除（完了）。
 4.  **Local Wheel Bridge**: キャンバス内 Hover に連動する `ScrollMonitor` を利用し、グローバルではなく View ローカルでのマウスホイール捕捉を実現（完了）。
 
+## ✅ Milestone 25a: Node Resizer (Free Resize) [DONE]
+- [x] **M25a: Node Resizer (Free Resize)**
+    - [x] `BaseNode` への `minWidth/Height`, `maxWidth/Height` プロパティの追加。
+    - [x] 8方向ハンドルによる自由リサイズロジック (`ResizeCalculation`) の実装。
+    - [x] 選択中ノードにリサイズハンドルを表示する `NodeResizer` コンポーネントの実装。
+    - [x] リサイズ操作専用の `GraphStore` 更新メソッドによる、自動実測ループとの責務分離。
+- [ ] **M25b: Aspect Ratio & Advanced Resizing**
+
 ---
 
 ## ✅ Milestone 18: Edge Reconnection & Polish (Hotfixed) [DONE]
