@@ -1,4 +1,4 @@
-public enum HandleType: String, Sendable {
+public enum HandleType: String, Sendable, Codable {
     case source
     case target
     
@@ -35,7 +35,7 @@ public struct Handle: Sendable, Equatable {
     }
 }
 
-public struct NodeHandle: Sendable, Equatable {
+public struct NodeHandle: Sendable, Equatable, Codable {
     public var id: String?
     public var placement: Position
     public var type: HandleType

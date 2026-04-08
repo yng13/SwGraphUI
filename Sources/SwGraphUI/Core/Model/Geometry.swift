@@ -1,6 +1,6 @@
 import Foundation
 
-public enum Position: String, CaseIterable, Sendable {
+public enum Position: String, CaseIterable, Sendable, Codable {
     case left
     case top
     case right
@@ -20,7 +20,7 @@ public enum Position: String, CaseIterable, Sendable {
     }
 }
 
-public struct XYPosition: Sendable, Equatable {
+public struct XYPosition: Sendable, Equatable, Codable {
     public var x: Double
     public var y: Double
 
@@ -78,7 +78,7 @@ public struct XYZPosition: Sendable, Equatable {
     }
 }
 
-public struct Dimensions: Sendable, Equatable {
+public struct Dimensions: Sendable, Equatable, Codable {
     public var width: Double
     public var height: Double
 
@@ -136,7 +136,7 @@ public struct SnapGrid: Sendable, Equatable {
     }
 }
 
-public struct Viewport: Sendable, Equatable {
+public struct Viewport: Sendable, Equatable, Codable {
     public var x: Double
     public var y: Double
     public var zoom: Double
@@ -160,7 +160,7 @@ public struct Transform: Sendable, Equatable {
     }
 }
 
-public struct CoordinateExtent: Sendable, Equatable {
+public struct CoordinateExtent: Sendable, Equatable, Codable {
     public var min: XYPosition
     public var max: XYPosition
 

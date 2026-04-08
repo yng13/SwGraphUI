@@ -73,18 +73,31 @@ struct InspectorView: View {
                 Toggle("Show Controls", isOn: $appStore.isControlsVisible)
             }
             
-            Section("Development") {
+            Section("Persistence (M26)") {
                 Button(action: {
-                    let nodes = graphStore.nodes.map { ["id": $0.id, "data": $0.data] }
-                    let edges = graphStore.edges.map { ["id": $0.id, "source": $0.source, "target": $0.target] }
-                    let snapshot: [String: Any] = ["nodes": nodes, "edges": edges]
-                    if let data = try? JSONSerialization.data(withJSONObject: snapshot, options: .prettyPrinted),
+                    let snapshot = graphStore.snapshot()
+                    appStore.savedSnapshot = snapshot
+                    
+                    let encoder = JSONEncoder()
+                    encoder.outputFormatting = .prettyPrinted
+                    if let data = try? encoder.encode(snapshot),
                        let json = String(data: data, encoding: .utf8) {
-                        appStore.appendLog(kind: "snapshot.save", payload: json)
+                        appStore.appendLog(kind: "snapshot.save", payload: "Snapshot captured to memory")
+                        print(json) // コンソールにも出力
                     }
                 }) {
-                    Label("Save Snapshot (Log)", systemImage: "square.and.arrow.down")
+                    Label("Take Snapshot", systemImage: "camera.viewfinder")
                 }
+
+                Button(action: {
+                    if let snapshot = appStore.savedSnapshot {
+                        graphStore.apply(snapshot: snapshot)
+                        appStore.appendLog(kind: "snapshot.restore", payload: "Snapshot applied")
+                    }
+                }) {
+                    Label("Restore Snapshot", systemImage: "arrow.clockwise.icloud")
+                }
+                .disabled(appStore.savedSnapshot == nil)
             }
         }
     }

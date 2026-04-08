@@ -104,10 +104,10 @@
 - [x] Milestone 24: Edge Text / Edge Label の精緻化 [Done]
 - [x] **Milestone 25a: Node Resizer (Free Resize) [Done]**
 - [x] **Milestone 25b: Aspect Ratio & Advanced Resizing [Done]** (2026-04-08)
-- [ ] **Milestone 26: Save / Restore**
-  - [ ] 現在の graph snapshot の encode / decode 方針を定義
-  - [ ] Example app に restore 導線を追加
-  - [ ] `examples-reference-map.md` の Save and Restore 対応を更新
+- [x] **Milestone 26: Save / Restore [DONE]**
+    - [x] 現在の graph snapshot の encode / decode 方針を定義 (Codable)
+    - [x] Example app に restore 導線を追加 (Inspector & Sample)
+    - [x] `examples-reference-map.md` の Save and Restore 対応を更新
 - [ ] **Milestone 27: Auto Pan & Interaction Polish**
   - [ ] connect / reconnect / drag 中の auto pan
   - [ ] keyboard interaction の整理
@@ -126,7 +126,6 @@
 - [ ] 文字ぼやけ回避の品質基準を定義
 - [ ] Example app に export 検証ハーネスを追加
 
-## 直近の次アクション
-- [ ] Milestone 26 (Snapshots / Save & Restore) のプロトタイプ設計
-- [ ] Save / Restore の基本導線と snapshot 復元の設計 (M26)
-- [ ] auto pan の責務境界整理 (M27)
+### 直近の次アクション
+- [ ] Milestone 27 (Auto Pan & Interaction Polish) のプランニング
+- [ ] Backgrounds / Grid システムの要件整理 (Epic 5)

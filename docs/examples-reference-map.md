@@ -19,7 +19,7 @@
 | Nodes | Stress Test | 未追従 | `.reference/xyflow/examples/react/src/examples/Stress` | - |
 | Subflows | Sub Flow | 近似 | `.reference/xyflow/examples/react/src/examples/Subflow` | `HierarchySample.swift` |
 | Interaction | Interaction (Playground) | 一部一致 | `.reference/xyflow/examples/react/src/examples/Interaction` | `InteractionSample.swift` (M22: サンプル独立化) |
-| Interaction | Save and Restore | 未追従 | `.reference/xyflow/examples/react/src/examples/SaveRestore` | - |
+| Interaction | Save and Restore | 近似 | `.reference/xyflow/examples/react/src/examples/SaveRestore` | `SaveRestoreSample.swift` (M26: JSON Snapshot 形式) |
 | Interaction | Connection Events / Add Edge 相当 | 近似 | `.reference/xyflow/examples/react/src/examples/AddNodeOnEdgeDrop`, `UseConnection`, `UseNodeConnections` | M13 の handle 接続 + `ExampleAppStore.addEdge` |
 | Interaction | Overlap Test | 近似 | - | `OverlapSample.swift` |
 | Edges | Edge Label Renderer | 近似 | `.reference/xyflow/examples/react/src/examples/EdgeLabelRenderer` | `EdgeLabelSample.swift` (M24: スタイル・配置精緻化) |
@@ -71,6 +71,6 @@
 ## 現時点の所見
 
 - SwGraphUI の Example app は、まだ examples 完成品ではなく開発ハーネス段階である
-- `Basic`, `Hierarchy`, `Custom & Measure`, `Edges` は受け入れ用の最小確認例として使える
-- `Save and Restore`, `Selection`, `Layout`, `Whiteboard`, `UI components` は未追従
+- `Basic`, `Hierarchy`, `Custom & Measure`, `Edges`, `Save and Restore` は受け入れ用の最小確認例として使える
+- `Selection`, `Layout`, `Whiteboard`, `UI components` は未追従
 - 今後は `examples/react` の route だけでなく、`packages/system`, `packages/svelte`, 公開ページ上の example 個票も併用して差分を詰める必要がある

@@ -2,20 +2,20 @@ public struct EmptyPayload: Sendable, Equatable, Codable {
     public init() {}
 }
 
-public enum MarkerType: String, Sendable {
+public enum MarkerType: String, Sendable, Codable {
     case arrow
     case arrowClosed = "arrowclosed"
 }
 
 /// エッジの再接続許可モード。
-public enum ReconnectMode: String, Sendable, CaseIterable {
+public enum ReconnectMode: String, Sendable, CaseIterable, Codable {
     case none
     case source
     case target
     case both
 }
 
-public struct EdgeMarker: Sendable, Equatable {
+public struct EdgeMarker: Sendable, Equatable, Codable {
     public var type: MarkerType
     public var color: String?
     public var width: Double?
@@ -43,7 +43,7 @@ public struct EdgeMarker: Sendable, Equatable {
     }
 }
 
-public enum ConnectionLineType: String, Sendable {
+public enum ConnectionLineType: String, Sendable, Codable {
     case bezier = "default"
     case straight
     case step
@@ -182,6 +182,71 @@ public struct BaseEdge<Data: Sendable>: Sendable, Identifiable {
         self.label = label
         self.labelStyle = labelStyle
         self.reconnectable = reconnectable
+    }
+}
+
+extension BaseEdge: Codable where Data: Codable {
+    enum CodingKeys: String, CodingKey {
+        case id, source, target, data, kind
+        case sourceHandle, targetHandle, sourcePosition, targetPosition
+        case animated, markerStart, markerEnd, zIndex, ariaLabel
+        case interactionWidth, curvature, label, labelStyle, reconnectable
+        case hidden, deletable, selectable
+    }
+
+    public init(from decoder: Decoder) throws {
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+        self.id = try container.decode(String.self, forKey: .id)
+        self.source = try container.decode(String.self, forKey: .source)
+        self.target = try container.decode(String.self, forKey: .target)
+        self.data = try container.decodeIfPresent(Data.self, forKey: .data)
+        self.kind = try container.decodeIfPresent(String.self, forKey: .kind)
+        self.sourceHandle = try container.decodeIfPresent(String.self, forKey: .sourceHandle)
+        self.targetHandle = try container.decodeIfPresent(String.self, forKey: .targetHandle)
+        self.sourcePosition = try container.decodeIfPresent(Position.self, forKey: .sourcePosition)
+        self.targetPosition = try container.decodeIfPresent(Position.self, forKey: .targetPosition)
+        self.animated = try container.decode(Bool.self, forKey: .animated)
+        self.markerStart = try container.decodeIfPresent(EdgeMarker.self, forKey: .markerStart)
+        self.markerEnd = try container.decodeIfPresent(EdgeMarker.self, forKey: .markerEnd)
+        self.zIndex = try container.decodeIfPresent(Int.self, forKey: .zIndex)
+        self.ariaLabel = try container.decodeIfPresent(String.self, forKey: .ariaLabel)
+        self.interactionWidth = try container.decodeIfPresent(Double.self, forKey: .interactionWidth)
+        self.curvature = try container.decodeIfPresent(Double.self, forKey: .curvature)
+        self.label = try container.decodeIfPresent(String.self, forKey: .label)
+        self.labelStyle = try container.decode(EdgeLabelStyle.self, forKey: .labelStyle)
+        self.reconnectable = try container.decode(ReconnectMode.self, forKey: .reconnectable)
+        self.hidden = try container.decode(Bool.self, forKey: .hidden)
+        self.deletable = try container.decode(Bool.self, forKey: .deletable)
+        self.selectable = try container.decode(Bool.self, forKey: .selectable)
+        
+        // 過渡的状態は常にデフォルト値で初期化
+        self.selected = false
+    }
+
+    public func encode(to encoder: Encoder) throws {
+        var container = encoder.container(keyedBy: CodingKeys.self)
+        try container.encode(id, forKey: .id)
+        try container.encode(source, forKey: .source)
+        try container.encode(target, forKey: .target)
+        try container.encodeIfPresent(data, forKey: .data)
+        try container.encodeIfPresent(kind, forKey: .kind)
+        try container.encodeIfPresent(sourceHandle, forKey: .sourceHandle)
+        try container.encodeIfPresent(targetHandle, forKey: .targetHandle)
+        try container.encodeIfPresent(sourcePosition, forKey: .sourcePosition)
+        try container.encodeIfPresent(targetPosition, forKey: .targetPosition)
+        try container.encode(animated, forKey: .animated)
+        try container.encodeIfPresent(markerStart, forKey: .markerStart)
+        try container.encodeIfPresent(markerEnd, forKey: .markerEnd)
+        try container.encodeIfPresent(zIndex, forKey: .zIndex)
+        try container.encodeIfPresent(ariaLabel, forKey: .ariaLabel)
+        try container.encodeIfPresent(interactionWidth, forKey: .interactionWidth)
+        try container.encodeIfPresent(curvature, forKey: .curvature)
+        try container.encodeIfPresent(label, forKey: .label)
+        try container.encode(labelStyle, forKey: .labelStyle)
+        try container.encode(reconnectable, forKey: .reconnectable)
+        try container.encode(hidden, forKey: .hidden)
+        try container.encode(deletable, forKey: .deletable)
+        try container.encode(selectable, forKey: .selectable)
     }
 }
 

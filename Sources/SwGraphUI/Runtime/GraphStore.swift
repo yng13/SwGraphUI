@@ -577,3 +577,41 @@ public final class GraphStore<Data: Sendable>: Sendable {
         runtimeState.interactivity.zoomOnPinch = enabled
     }
 }
+
+extension GraphStore where Data: Codable {
+    /// 現在のグラフの状態（ノード、エッジ、ビューポート）のスナップショットを取得します。
+    /// Data が Codable に準拠している必要があります。
+    public func snapshot() -> GraphSnapshot<Data> {
+        GraphSnapshot(
+            nodes: nodes,
+            edges: edges,
+            viewport: runtimeState.viewport.viewport
+        )
+    }
+
+    /// スナップショットを適用してグラフの状態を復元します。
+    /// 適用時、選択状態、ドラッグ状態、接続中の操作などのランタイム状態はすべてクリアされます。
+    public func apply(snapshot: GraphSnapshot<Data>) {
+        // 1. Core State の置換
+        self.nodes = snapshot.nodes
+        self.edges = snapshot.edges
+        
+        // 2. Viewport の復元
+        self.setViewport(snapshot.viewport)
+        
+        // 3. Runtime Interaction State のクリーンアップ
+        // 選択の解除
+        clearSelection()
+        // ドラッグ状態の強制終了
+        stopDragging()
+        // 接続操作の強制終了
+        runtimeState.connection.end()
+        // ホバーの解除
+        setHoveredNode(nil)
+        // 矩形選択の解除
+        runtimeState.marquee = nil
+        
+        // ハンドル計測値はリセット（復元後の再描画で再計測される）
+        runtimeState.handleMeasurements.positions.removeAll()
+    }
+}

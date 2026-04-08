@@ -169,3 +169,18 @@ M23 完了に伴うドキュメント、進捗管理ファイル、および開�
 3.  **Visual Consistency**: macOS での `VisualEffectView` と iOS での `Material` フォールバック対応（完了）。
 4.  **Algorithmic Centering**: `step` / `smoothStep` における視覚的なパス中心へのラベル配置調整（完了）。
 5.  **Edge Label Showcase**: 多様なスタイルを確認可能な独立したサンプルの追加（完了）。
+
+---
+
+## ✅ Milestone 26: Snapshots / Save & Restore (2026-04-08) [DONE]
+
+### 概要
+グラフの全状態（ノード、エッジ、ビューポート）を JSON 形式でシリアライズ・保存し、任意のタイミングで完全に復元できる機能を実装。
+
+### 要件項目
+1.  **Core models Codable**: `BaseNode`, `BaseEdge`, `Viewport` 等の全てのコア幾何モデルに `Codable` 準拠を追加（完了）。
+2.  **Transient state exclusion**: `selected`, `dragging`, `measured` 等の実行時の一時的な状態をシリアライズから除外（完了）。
+3.  **GraphSnapshot**: 最小限ের 永続化データセットを保持するコンポジットモデルの導入（完了）。
+4.  **GraphStore API**: `snapshot()` で現在の状態をキャプチャし、`apply(snapshot:)` で安全に復元する API を提供（完了）。
+5.  **State Reset Logic**: スナップショット復元時に、接続ドラッグ中や矩形選択中などの過渡的なランタイム状態を強制リセットして不整合を防止（完了）。
+6.  **Example Integration**: インスペクターからスナップショットの保存・復元ができる操作ボタンと、専用サンプルコードの提供（完了）。

@@ -20,12 +20,16 @@ public final class ExampleAppStore {
         case overview = "Feature Overview"
         case interaction = "Interaction Playground"
         case customShowcase = "Custom Showcase"
+        case snapshots = "Snapshots"
         case plugins = "Plugins"
         
         public var id: String { rawValue }
     }
     
     public var selectedCategory: SampleCategory = .basic
+    
+    /// スナップショットのメモリ保持用
+    public var savedSnapshot: GraphSnapshot<String>?
     
     /// 実測が必要なサンプル（Custom等）において、初回実測後の自動 fitView が完了したか
     public var didAutoFitMeasuredSample: Bool = false
@@ -90,7 +94,8 @@ public final class ExampleAppStore {
         CustomShowcaseSample(),
         MiniMapAndControlsSample(),
         EdgeLabelSample(),
-        NodeResizerSample()
+        NodeResizerSample(),
+        SaveRestoreSample()
     ]
     
     /// カテゴリに属するサンプルを返します

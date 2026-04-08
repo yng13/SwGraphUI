@@ -1,4 +1,4 @@
-public struct NodeOrigin: Sendable, Equatable {
+public struct NodeOrigin: Sendable, Equatable, Codable {
     public var x: Double
     public var y: Double
 
@@ -112,6 +112,89 @@ public struct BaseNode<Data: Sendable>: Sendable, Identifiable {
         self.initialWidth = initialWidth
         self.initialHeight = initialHeight
         self.measured = measured
+    }
+}
+
+extension BaseNode: Codable where Data: Codable {
+    enum CodingKeys: String, CodingKey {
+        case id, position, data, kind
+        case sourcePosition, targetPosition, parentID, zIndex, extent
+        case expandParent, ariaLabel, origin, handles, connectable, resizable
+        case hidden, draggable, selectable, deletable, dragHandle
+        case width, height, minWidth, minHeight, maxWidth, maxHeight
+        case initialWidth, initialHeight
+    }
+
+    public init(from decoder: Decoder) throws {
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+        self.id = try container.decode(String.self, forKey: .id)
+        self.position = try container.decode(XYPosition.self, forKey: .position)
+        self.data = try container.decode(Data.self, forKey: .data)
+        self.kind = try container.decodeIfPresent(String.self, forKey: .kind)
+        self.sourcePosition = try container.decodeIfPresent(Position.self, forKey: .sourcePosition)
+        self.targetPosition = try container.decodeIfPresent(Position.self, forKey: .targetPosition)
+        self.parentID = try container.decodeIfPresent(String.self, forKey: .parentID)
+        self.zIndex = try container.decodeIfPresent(Int.self, forKey: .zIndex)
+        self.extent = try container.decodeIfPresent(CoordinateExtent.self, forKey: .extent)
+        self.expandParent = try container.decode(Bool.self, forKey: .expandParent)
+        self.ariaLabel = try container.decodeIfPresent(String.self, forKey: .ariaLabel)
+        self.origin = try container.decodeIfPresent(NodeOrigin.self, forKey: .origin)
+        self.handles = try container.decode([NodeHandle].self, forKey: .handles)
+        self.connectable = try container.decode(Bool.self, forKey: .connectable)
+        self.resizable = try container.decode(Bool.self, forKey: .resizable)
+        self.hidden = try container.decode(Bool.self, forKey: .hidden)
+        self.draggable = try container.decode(Bool.self, forKey: .draggable)
+        self.selectable = try container.decode(Bool.self, forKey: .selectable)
+        self.deletable = try container.decode(Bool.self, forKey: .deletable)
+        self.dragHandle = try container.decodeIfPresent(String.self, forKey: .dragHandle)
+        self.width = try container.decodeIfPresent(Double.self, forKey: .width)
+        self.height = try container.decodeIfPresent(Double.self, forKey: .height)
+        self.minWidth = try container.decode(Double.self, forKey: .minWidth)
+        self.minHeight = try container.decode(Double.self, forKey: .minHeight)
+        self.maxWidth = try container.decodeIfPresent(Double.self, forKey: .maxWidth) ?? .infinity
+        self.maxHeight = try container.decodeIfPresent(Double.self, forKey: .maxHeight) ?? .infinity
+        self.initialWidth = try container.decodeIfPresent(Double.self, forKey: .initialWidth)
+        self.initialHeight = try container.decodeIfPresent(Double.self, forKey: .initialHeight)
+        
+        // 過渡的状態やランタイム計算値は常にデフォルト値で初期化
+        self.selected = false
+        self.dragging = false
+        self.measured = nil
+    }
+
+    public func encode(to encoder: Encoder) throws {
+        var container = encoder.container(keyedBy: CodingKeys.self)
+        try container.encode(id, forKey: .id)
+        try container.encode(position, forKey: .position)
+        try container.encode(data, forKey: .data)
+        try container.encodeIfPresent(kind, forKey: .kind)
+        try container.encodeIfPresent(sourcePosition, forKey: .sourcePosition)
+        try container.encodeIfPresent(targetPosition, forKey: .targetPosition)
+        try container.encodeIfPresent(parentID, forKey: .parentID)
+        try container.encodeIfPresent(zIndex, forKey: .zIndex)
+        try container.encodeIfPresent(extent, forKey: .extent)
+        try container.encode(expandParent, forKey: .expandParent)
+        try container.encodeIfPresent(ariaLabel, forKey: .ariaLabel)
+        try container.encodeIfPresent(origin, forKey: .origin)
+        try container.encode(handles, forKey: .handles)
+        try container.encode(connectable, forKey: .connectable)
+        try container.encode(resizable, forKey: .resizable)
+        try container.encode(hidden, forKey: .hidden)
+        try container.encode(draggable, forKey: .draggable)
+        try container.encode(selectable, forKey: .selectable)
+        try container.encode(deletable, forKey: .deletable)
+        try container.encodeIfPresent(dragHandle, forKey: .dragHandle)
+        try container.encodeIfPresent(width, forKey: .width)
+        try container.encodeIfPresent(height, forKey: .height)
+        try container.encode(minWidth, forKey: .minWidth)
+        try container.encode(minHeight, forKey: .minHeight)
+        
+        // infinity は JSON で扱えないため nil (null) としてエンコード
+        try container.encode(maxWidth == .infinity ? nil : maxWidth, forKey: .maxWidth)
+        try container.encode(maxHeight == .infinity ? nil : maxHeight, forKey: .maxHeight)
+        
+        try container.encodeIfPresent(initialWidth, forKey: .initialWidth)
+        try container.encodeIfPresent(initialHeight, forKey: .initialHeight)
     }
 }
 
