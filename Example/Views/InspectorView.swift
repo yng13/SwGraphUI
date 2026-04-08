@@ -1,259 +1,222 @@
 import SwiftUI
 import SwGraphUI
 
+/// Xcode の属性インスペクター風のビュー (M28a: Core Density Refinement)
 struct InspectorView: View {
     @Bindable var appStore: ExampleAppStore
     let graphStore: GraphStore<String>
     
+    // MARK: - Constants
+    private enum Constants {
+        static let labelWidth: CGFloat = 92
+        static let headerHeight: CGFloat = 22
+        static let rowHeight: CGFloat = 22
+        static let horizontalPadding: CGFloat = 4
+        static let fontSize: CGFloat = 11
+        static let headerBackground = Color.primary.opacity(0.05)
+    }
+    
     var body: some View {
-        List {
-            Section("Viewport") {
-                HStack(spacing: 12) {
-                    Button {
-                        let center = XYPosition(x: appStore.currentGraphSize.width / 2, y: appStore.currentGraphSize.height / 2)
-                        graphStore.zoom(at: center, factor: 1.2)
-                    } label: {
-                        Label("In", systemImage: "plus.magnifyingglass")
-                    }
-                    
-                    Button {
-                        let center = XYPosition(x: appStore.currentGraphSize.width / 2, y: appStore.currentGraphSize.height / 2)
-                        graphStore.zoom(at: center, factor: 0.8)
-                    } label: {
-                        Label("Out", systemImage: "minus.magnifyingglass")
-                    }
-                    
-                    Button {
-                        graphStore.fitView(in: appStore.currentGraphSize)
-                    } label: {
-                        Label("Fit", systemImage: "scope")
+        ScrollView {
+            VStack(spacing: 0) {
+                // Viewport Section
+                InspectorHeader("Viewport")
+                VStack(spacing: 4) {
+                    InspectorRow("Zoom") {
+                        HStack(spacing: 4) {
+                            Button {
+                                let center = XYPosition(x: appStore.currentGraphSize.width / 2, y: appStore.currentGraphSize.height / 2)
+                                graphStore.zoom(at: center, factor: 1.2)
+                            } label: { Image(systemName: "plus.magnifyingglass") }
+                            
+                            Button {
+                                let center = XYPosition(x: appStore.currentGraphSize.width / 2, y: appStore.currentGraphSize.height / 2)
+                                graphStore.zoom(at: center, factor: 0.8)
+                            } label: { Image(systemName: "minus.magnifyingglass") }
+                            
+                            Button {
+                                graphStore.fitView(in: appStore.currentGraphSize)
+                            } label: { Image(systemName: "scope") }
+                        }
+                        .buttonStyle(.bordered)
+                        #if os(macOS)
+                        .controlSize(.small)
+                        #endif
                     }
                 }
-                .buttonStyle(.bordered)
-                .controlSize(.small)
-                .labelStyle(.iconOnly)
-            }
-            
-            Section {
-                LabeledContent("Nodes", value: "\(graphStore.selectedNodes.count)")
-                LabeledContent("Edges", value: "\(graphStore.selectedEdges.count)")
+                .padding(.vertical, 4)
                 
-                HStack {
-                    Button("Clear", role: .cancel) {
-                        graphStore.clearSelection()
+                // Selection Section
+                InspectorHeader("Selection Summary")
+                VStack(spacing: 2) {
+                    InspectorRow("Nodes") {
+                        Text("\(graphStore.selectedNodes.count)").font(.system(size: Constants.fontSize, design: .monospaced))
+                    }
+                    InspectorRow("Edges") {
+                        Text("\(graphStore.selectedEdges.count)").font(.system(size: Constants.fontSize, design: .monospaced))
                     }
                     
-                    Button("Delete", role: .destructive) {
-                        let nodes = graphStore.selectedNodes.count
-                        let edges = graphStore.selectedEdges.count
-                        graphStore.deleteSelection()
-                        appStore.appendLog(kind: "selection.delete", payload: "nodes=\(nodes), edges=\(edges)")
+                    InspectorRow("") {
+                        HStack {
+                            Button("Clear") { graphStore.clearSelection() }
+                            Button("Delete", role: .destructive) {
+                                let nodes = graphStore.selectedNodes.count
+                                let edges = graphStore.selectedEdges.count
+                                graphStore.deleteSelection()
+                                appStore.appendLog(kind: "selection.delete", payload: "nodes=\(nodes), edges=\(edges)")
+                            }
+                            .disabled(graphStore.selectedNodes.isEmpty && graphStore.selectedEdges.isEmpty)
+                        }
+                        .buttonStyle(.bordered)
+                        #if os(macOS)
+                        .controlSize(.small)
+                        #endif
                     }
-                    .disabled(graphStore.selectedNodes.isEmpty && graphStore.selectedEdges.isEmpty)
                 }
-            } header: {
-                Text("Selection Summary")
-            }
-            
-            if !graphStore.selectedEdges.isEmpty {
-                edgeEditorSection
-            }
-            
-            if !graphStore.selectedNodes.isEmpty {
-                nodeInfoSection
-            }
-            
-            Section("Current Setup") {
-                LabeledContent("Category", value: appStore.selectedCategory.rawValue)
-                LabeledContent("Total Nodes", value: "\(graphStore.nodes.count)")
-            }
-            
-            Section("Global View Options") {
-                Toggle("Show MiniMap", isOn: $appStore.isMiniMapVisible)
-                Toggle("Show Controls", isOn: $appStore.isControlsVisible)
+                .padding(.vertical, 4)
                 
-                Picker("Background Style", selection: $appStore.backgroundVariant) {
-                    Text("Dots").tag(BackgroundVariant.dots)
-                    Text("Lines").tag(BackgroundVariant.lines)
-                    Text("Cross").tag(BackgroundVariant.cross)
+                if !graphStore.selectedEdges.isEmpty {
+                    edgeEditorSection
                 }
-            }
-            
-            Section("Persistence (M26)") {
-                Button(action: {
-                    let snapshot = graphStore.snapshot()
-                    appStore.savedSnapshot = snapshot
-                    
-                    let encoder = JSONEncoder()
-                    encoder.outputFormatting = .prettyPrinted
-                    if let data = try? encoder.encode(snapshot),
-                       let json = String(data: data, encoding: .utf8) {
-                        appStore.appendLog(kind: "snapshot.save", payload: "Snapshot captured to memory")
-                        print(json) // コンソールにも出力
+                
+                if !graphStore.selectedNodes.isEmpty {
+                    nodeInfoSection
+                }
+                
+                // Global Options
+                InspectorHeader("Global View Options")
+                VStack(spacing: 2) {
+                    InspectorRow("MiniMap") {
+                        Toggle("", isOn: $appStore.isMiniMapVisible).labelsHidden()
                     }
-                }) {
-                    Label("Take Snapshot", systemImage: "camera.viewfinder")
-                }
-
-                Button(action: {
-                    if let snapshot = appStore.savedSnapshot {
-                        graphStore.apply(snapshot: snapshot)
-                        appStore.appendLog(kind: "snapshot.restore", payload: "Snapshot applied")
+                    InspectorRow("Controls") {
+                        Toggle("", isOn: $appStore.isControlsVisible).labelsHidden()
                     }
-                }) {
-                    Label("Restore Snapshot", systemImage: "arrow.clockwise.icloud")
+                    InspectorRow("Background") {
+                        Picker("", selection: $appStore.backgroundVariant) {
+                            Text("Dots").tag(BackgroundVariant.dots)
+                            Text("Lines").tag(BackgroundVariant.lines)
+                            Text("Cross").tag(BackgroundVariant.cross)
+                        }
+                        .labelsHidden()
+                        #if os(macOS)
+                        .controlSize(.small)
+                        #endif
+                    }
                 }
-                .disabled(appStore.savedSnapshot == nil)
+                .padding(.vertical, 4)
+                
+                // Persistence
+                InspectorHeader("Persistence")
+                VStack(spacing: 4) {
+                    InspectorRow("State") {
+                        HStack {
+                            Button("Take Snapshot") {
+                                let snapshot = graphStore.snapshot()
+                                appStore.savedSnapshot = snapshot
+                                appStore.appendLog(kind: "snapshot.save", payload: "Captured to memory")
+                            }
+                            Button("Restore") {
+                                if let snapshot = appStore.savedSnapshot {
+                                    graphStore.apply(snapshot: snapshot)
+                                }
+                            }
+                            .disabled(appStore.savedSnapshot == nil)
+                        }
+                        .buttonStyle(.bordered)
+                        #if os(macOS)
+                        .controlSize(.small)
+                        #endif
+                    }
+                }
+                .padding(.vertical, 4)
+                
+                Spacer()
             }
         }
     }
+    
+    // MARK: - Sections
     
     @ViewBuilder
     private var edgeEditorSection: some View {
         let edges = graphStore.selectedEdges
         let representative = edges.first!
         
-        Section {
-            Picker("Kind", selection: Binding(
-                get: { representative.kind ?? "bezier" },
-                set: { newValue in
-                    graphStore.updateSelectedEdges { $0.kind = newValue }
+        InspectorHeader("Edge Style")
+        VStack(spacing: 2) {
+            InspectorRow("Kind") {
+                Picker("", selection: Binding(
+                    get: { representative.kind ?? "bezier" },
+                    set: { newValue in graphStore.updateSelectedEdges { $0.kind = newValue } }
+                )) {
+                    Text("Bezier").tag("bezier")
+                    Text("Straight").tag("straight")
+                    Text("Step").tag("step")
+                    Text("SmoothStep").tag("smoothstep")
                 }
-            )) {
-                Text("Bezier").tag("bezier")
-                Text("Straight").tag("straight")
-                Text("Step").tag("step")
-                Text("SmoothStep").tag("smoothstep")
+                .labelsHidden()
+                #if os(macOS)
+                .controlSize(.small)
+                #endif
             }
             
             if (representative.kind ?? "bezier") == "bezier" {
-                VStack(alignment: .leading, spacing: 4) {
+                InspectorRow("Curvature") {
                     HStack {
-                        Text("Curvature")
-                        Spacer()
+                        Slider(value: Binding(
+                            get: { representative.curvature ?? 0.25 },
+                            set: { val in graphStore.updateSelectedEdges { $0.curvature = val } }
+                        ), in: 0...1)
                         Text(String(format: "%.2f", representative.curvature ?? 0.25))
-                            .font(.system(.caption, design: .monospaced))
-                            .foregroundStyle(.secondary)
+                            .font(.system(size: 9, design: .monospaced))
+                            .frame(width: 30)
                     }
-                    Slider(value: Binding(
-                        get: { representative.curvature ?? 0.25 },
-                        set: { val in graphStore.updateSelectedEdges { $0.curvature = val } }
-                    ), in: 0...1)
+                    #if os(macOS)
+                    .controlSize(.small)
+                    #endif
                 }
             }
             
-            Toggle("Animated", isOn: Binding(
-                get: { representative.animated },
-                set: { val in graphStore.updateSelectedEdges { $0.animated = val } }
-            ))
-            
-            TextField("Label", text: Binding(
-                get: { representative.label ?? "" },
-                set: { val in graphStore.updateSelectedEdges { $0.label = val.isEmpty ? nil : val } }
-            ))
-            
-            Picker("Reconnect", selection: Binding(
-                get: { representative.reconnectable },
-                set: { val in graphStore.updateSelectedEdges { $0.reconnectable = val } }
-            )) {
-                ForEach(ReconnectMode.allCases, id: \.self) { mode in
-                    Text(mode.rawValue.capitalized).tag(mode)
-                }
+            InspectorRow("Animated") {
+                Toggle("", isOn: Binding(
+                    get: { representative.animated },
+                    set: { val in graphStore.updateSelectedEdges { $0.animated = val } }
+                )).labelsHidden()
             }
-        } header: {
-            Text("Edge Style")
+            
+            InspectorRow("Label") {
+                TextField("Title", text: Binding(
+                    get: { representative.label ?? "" },
+                    set: { val in graphStore.updateSelectedEdges { $0.label = val.isEmpty ? nil : val } }
+                ))
+                .textFieldStyle(.roundedBorder)
+                #if os(macOS)
+                .controlSize(.small)
+                #endif
+            }
         }
+        .padding(.vertical, 4)
         
-        Section {
-            markerControl(title: "Start Marker", isEnd: false, edges: edges)
-            Divider()
-            markerControl(title: "End Marker", isEnd: true, edges: edges)
-        } header: {
-            Text("Markers")
-        } footer: {
-            if edges.count > 1 {
-                Text("Modifying \(edges.count) edges (Bulk apply)")
-                    .font(.caption)
-                    .foregroundStyle(.blue)
-            }
+        InspectorHeader("Markers")
+        VStack(spacing: 2) {
+            markerRow(title: "Start", isEnd: false, edges: edges)
+            markerRow(title: "End", isEnd: true, edges: edges)
         }
-    }
-    
-    @ViewBuilder
-    private func markerControl(title: String, isEnd: Bool, edges: [BaseEdge<String>]) -> some View {
-        let representative = edges.first!
-        let marker = isEnd ? representative.markerEnd : representative.markerStart
-        
-        VStack(alignment: .leading, spacing: 8) {
-            Toggle(title, isOn: Binding(
-                get: { marker != nil },
-                set: { val in
-                    graphStore.updateSelectedEdges { edge in
-                        if isEnd {
-                            edge.markerEnd = val ? EdgeMarker(type: .arrowClosed) : nil
-                        } else {
-                            edge.markerStart = val ? EdgeMarker(type: .arrowClosed) : nil
-                        }
-                    }
-                }
-            ))
-            
-            if let marker = marker {
-                VStack(spacing: 4) {
-                    HStack {
-                        Text("Width")
-                        Spacer()
-                        Text("\(Int(marker.width ?? 6.0))px")
-                            .font(.caption.monospaced())
-                    }
-                    Slider(value: Binding(
-                        get: { marker.width ?? 6.0 },
-                        set: { val in
-                            graphStore.updateSelectedEdges { edge in
-                                if isEnd {
-                                    edge.markerEnd?.width = val
-                                } else {
-                                    edge.markerStart?.width = val
-                                }
-                            }
-                        }
-                    ), in: 2...20, step: 1)
-                    
-                    HStack {
-                        Text("Height")
-                        Spacer()
-                        Text("\(Int(marker.height ?? 6.0))px")
-                            .font(.caption.monospaced())
-                    }
-                    Slider(value: Binding(
-                        get: { marker.height ?? 6.0 },
-                        set: { val in
-                            graphStore.updateSelectedEdges { edge in
-                                if isEnd {
-                                    edge.markerEnd?.height = val
-                                } else {
-                                    edge.markerStart?.height = val
-                                }
-                            }
-                        }
-                    ), in: 2...20, step: 1)
-                }
-                .padding(.leading, 12)
-                .font(.caption)
-            }
-        }
+        .padding(.vertical, 4)
     }
     
     @ViewBuilder
     private var nodeInfoSection: some View {
-        Section("Node Info") {
+        InspectorHeader("Node Info")
+        VStack(spacing: 6) {
             ForEach(graphStore.selectedNodes) { node in
-                VStack(alignment: .leading, spacing: 10) {
-                    Text(node.id).font(.headline).monospaced()
-                    
-                    VStack(alignment: .leading, spacing: 4) {
-                        Text("Label").font(.caption).foregroundStyle(.secondary)
-                        TextField("Node Data", text: Binding(
+                VStack(spacing: 2) {
+                    InspectorRow("ID") {
+                        Text(node.id).font(.system(size: Constants.fontSize, design: .monospaced)).bold()
+                    }
+                    InspectorRow("Label") {
+                        TextField("", text: Binding(
                             get: { node.data },
                             set: { val in
                                 graphStore.updateSelectedNodes { target in
@@ -262,16 +225,105 @@ struct InspectorView: View {
                             }
                         ))
                         .textFieldStyle(.roundedBorder)
+                        #if os(macOS)
+                        .controlSize(.small)
+                        #endif
                     }
-                    
-                    VStack(alignment: .leading, spacing: 2) {
-                        Text("Type: \(node.kind ?? "default")").font(.caption)
-                        Text("Pos: \(Int(node.position.x)), \(Int(node.position.y))").font(.caption)
+                    InspectorRow("Position") {
+                        Text("\(Int(node.position.x)), \(Int(node.position.y))")
+                            .font(.system(size: Constants.fontSize - 1, design: .monospaced))
                             .foregroundStyle(.secondary)
                     }
                 }
-                .padding(.vertical, 4)
+                if node.id != graphStore.selectedNodes.last?.id {
+                    Divider().padding(.leading, Constants.labelWidth + 8).opacity(0.3)
+                }
             }
         }
+        .padding(.vertical, 4)
+    }
+    
+    @ViewBuilder
+    private func markerRow(title: String, isEnd: Bool, edges: [BaseEdge<String>]) -> some View {
+        let representative = edges.first!
+        let marker = isEnd ? representative.markerEnd : representative.markerStart
+        
+        InspectorRow(title) {
+            HStack(spacing: 8) {
+                Toggle("", isOn: Binding(
+                    get: { marker != nil },
+                    set: { val in
+                        graphStore.updateSelectedEdges { edge in
+                            if isEnd { edge.markerEnd = val ? EdgeMarker(type: .arrowClosed) : nil }
+                            else { edge.markerStart = val ? EdgeMarker(type: .arrowClosed) : nil }
+                        }
+                    }
+                )).labelsHidden()
+                
+                if let marker = marker {
+                    HStack(spacing: 4) {
+                        Text("W:").font(.system(size: 9)).foregroundStyle(.secondary)
+                        TextField("", value: Binding(
+                            get: { marker.width ?? 6.0 },
+                            set: { val in
+                                graphStore.updateSelectedEdges { edge in
+                                    if isEnd { edge.markerEnd?.width = val } else { edge.markerStart?.width = val }
+                                }
+                            }
+                        ), formatter: NumberFormatter())
+                        .frame(width: 30)
+                        
+                        Text("H:").font(.system(size: 9)).foregroundStyle(.secondary)
+                        TextField("", value: Binding(
+                            get: { marker.height ?? 6.0 },
+                            set: { val in
+                                graphStore.updateSelectedEdges { edge in
+                                    if isEnd { edge.markerEnd?.height = val } else { edge.markerStart?.height = val }
+                                }
+                            }
+                        ), formatter: NumberFormatter())
+                        .frame(width: 30)
+                    }
+                    .textFieldStyle(.plain)
+                    #if os(macOS)
+                    .controlSize(.small)
+                    #endif
+                }
+            }
+        }
+    }
+    
+    // MARK: - Components
+    
+    /// Xcode 風のプロパティ行
+    @ViewBuilder
+    private func InspectorRow<Content: View>(_ label: String, @ViewBuilder content: @escaping () -> Content) -> some View {
+        HStack(alignment: .center, spacing: 8) {
+            Text(label)
+                .font(.system(size: Constants.fontSize))
+                .foregroundStyle(.secondary)
+                .frame(width: Constants.labelWidth, alignment: .trailing)
+            
+            content()
+                .font(.system(size: Constants.fontSize))
+            
+            Spacer()
+        }
+        .padding(.horizontal, Constants.horizontalPadding)
+        .frame(minHeight: Constants.rowHeight)
+    }
+    
+    /// Xcode 風のセクションヘッダー
+    @ViewBuilder
+    private func InspectorHeader(_ title: String) -> some View {
+        HStack {
+            Text(title)
+                .font(.system(size: Constants.fontSize, weight: .bold))
+                .foregroundStyle(.secondary)
+            Spacer()
+        }
+        .padding(.horizontal, 8)
+        .frame(height: Constants.headerHeight)
+        .background(Constants.headerBackground)
     }
 }
