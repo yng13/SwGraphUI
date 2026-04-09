@@ -164,6 +164,19 @@ struct InspectorView: View {
                 }
                 .padding(.vertical, 4)
                 
+                // Export Options
+                InspectorHeader("Export Options")
+                VStack(spacing: 0) {
+                    InspectorRow("Include Grid") {
+                        Toggle("", isOn: $appStore.isExportBackgroundEnabled)
+                            .labelsHidden()
+                            .toggleStyle(.switch)
+                            .scaleEffect(0.7)
+                            .offset(x: -8, y: 0.5)
+                    }
+                }
+                .padding(.vertical, 4)
+                
                 Spacer()
             }
         }

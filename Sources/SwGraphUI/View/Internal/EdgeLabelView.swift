@@ -37,14 +37,23 @@ struct EdgeLabelView: View {
         return .primary
     }
     
+    @Environment(\.isGraphExporting) private var isGraphExporting
+    
     @ViewBuilder
     private var backgroundView: some View {
         if style.showBg {
             #if os(macOS)
-            VisualEffectView()
-                .overlay(resolvedBgColor.opacity(0.5))
-                .clipShape(RoundedRectangle(cornerRadius: style.bgBorderRadius))
-                .shadow(color: .black.opacity(0.08), radius: 1)
+            Group {
+                if isGraphExporting {
+                    // エクスポート時は半透明マテリアルを避け、下の線や文字と重ならないよう不透明寄りの背景に固定します。
+                    exportBgColor
+                } else {
+                    VisualEffectView()
+                        .overlay(resolvedBgColor.opacity(0.5))
+                }
+            }
+            .clipShape(RoundedRectangle(cornerRadius: style.bgBorderRadius))
+            .shadow(color: .black.opacity(0.08), radius: 1)
             #else
             backgroundForMobile
                 .clipShape(RoundedRectangle(cornerRadius: style.bgBorderRadius))
@@ -58,6 +67,17 @@ struct EdgeLabelView: View {
             return Color(hex: hex)
         }
         return Color.secondary.opacity(0.1)
+    }
+
+    private var exportBgColor: Color {
+        if let hex = style.bgStyle {
+            return Color(hex: hex)
+        }
+        #if os(macOS)
+        return Color(nsColor: .textBackgroundColor)
+        #else
+        return Color(.systemBackground)
+        #endif
     }
 
     #if os(iOS)

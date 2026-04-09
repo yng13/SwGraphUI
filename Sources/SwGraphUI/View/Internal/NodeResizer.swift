@@ -16,9 +16,12 @@ public struct NodeResizer<Data: Sendable>: View {
         self.isVisible = isVisible
     }
     
+    @Environment(\.isGraphExporting) private var isGraphExporting
+    
     public var body: some View {
         // 選択中かつモデルがリサイズを許可している場合のみ表示
-        if node.selected && isVisible && node.resizable {
+        // エクスポート時（isGraphExporting == true）は非表示
+        if node.selected && isVisible && node.resizable && !isGraphExporting {
             ZStack {
                 // ガイド枠線
                 Rectangle()

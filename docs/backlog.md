@@ -140,15 +140,13 @@
 
 - [x] 印刷/PDF エクスポートの要件定義 (`docs/export-strategy.md`)
 - [x] PNG エクスポートの要件定義 (`docs/export-strategy.md`)
-- [ ] export 用レイアウト計算の責務境界を定義
+- [x] export 用レイアウト計算の責務境界を定義 (`PNGExporter`) [DONE]
+- [x] PNG を指定 scale で再レンダリングする backend 実装 [DONE]
 - [ ] PDF/印刷をベクタ優先で出力する backend 方針を定義
-- [ ] PNG を指定 scale で再レンダリングする backend 方針を定義
 - [ ] 文字ぼやけ回避の品質基準を定義
-- [ ] Example app に export 検証ハーネスを追加
+- [x] Example app に export 検証用ボタンを追加 [DONE]
 
 ### 直近の次アクション
-- [x] Milestone 27a (Auto Pan Interaction) [DONE]
-- [x] Milestone 27b (Background Enhancement) [DONE]
-    - [x] LOD (ズーム間引き) の実装
-    - [x] Dots / Lines / Cross バリアント対応
-    - [x] 5x5 メジャーグリッドアクセントの導入
+- [x] Milestone 29 (Subflow Drag Audit) [DONE]
+- [x] Epic 5 (PNG Export Implementation) [DONE]
+- [ ] Milestone 28b (A11y Audit & Support)

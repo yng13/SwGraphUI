@@ -8,9 +8,11 @@ struct ToolbarNodeView: View {
     let onDelete: () -> Void
     let onConnect: ((Connection) -> Void)?
     
+    @Environment(\.isGraphExporting) private var isGraphExporting
+    
     var body: some View {
         VStack(spacing: 0) {
-            if node.selected {
+            if node.selected && !isGraphExporting {
                 HStack(spacing: 8) {
                     Button(action: onUpdate) {
                         Image(systemName: "pencil")

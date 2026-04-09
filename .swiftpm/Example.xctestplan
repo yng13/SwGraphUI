@@ -1,0 +1,29 @@
+{
+  "configurations" : [
+    {
+      "id" : "4A351CE8-5B81-4FAA-9343-8D50708EF8CC",
+      "name" : "Test Scheme Action",
+      "options" : {
+
+      }
+    }
+  ],
+  "defaultOptions" : {
+    "performanceAntipatternCheckerEnabled" : true,
+    "targetForVariableExpansion" : {
+      "containerPath" : "container:",
+      "identifier" : "Example",
+      "name" : "Example"
+    }
+  },
+  "testTargets" : [
+    {
+      "target" : {
+        "containerPath" : "container:",
+        "identifier" : "SwGraphUITests",
+        "name" : "SwGraphUITests"
+      }
+    }
+  ],
+  "version" : 1
+}

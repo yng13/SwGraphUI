@@ -226,4 +226,18 @@ M23 完了に伴うドキュメント、進捗管理ファイル、および開�
 1.  **Viewport Preservation**: コンテンツの Undo/Redo 時に現在のビューポート（ズーム・パン）の状態が維持されること（完了）。
 2.  **No-op Guard**: 移動量ゼロのドラッグや、空の選択状態での削除など、状態に変化を与えない操作が Undo 履歴に積まれないこと（完了）。
 3.  **Redo Consistency**: Undo 時に登録される Redo アクションにおいても、Viewport 保護設定が正しく継承されること（完了）。
-4.  **Action Naming**: Undo メニューに適切なアクション名（"Move Nodes", "Delete Elements" 等）が表示されること（完了）。
+4.  **
+---
+
+## [Epic 5] High-Quality PNG Export (2026-04-09) [DONE]
+
+### 概要
+表示中のグラフ全体（または特定領域）を、解像度（1x, 2x, 3x）や背景有無を指定して高品質なPNG画像として書き出す機能を実装。
+
+### 要件項目
+1.  **PNGExporter**: `ImageRenderer` ベースの書き出しエンジン。
+2.  **GraphExportSettings**: スケール、マージン、背景色（透明/不透明）、グリッド有無の制御。
+3.  **GraphLayerStack**: 描画ロジックを `GraphView` と `GraphExportView` で共有し、表示の一貫性を確保。
+4.  **isGraphExporting (Environment)**: エクスポート時にハンドルやツールバー等のインタラクティブ要素を自動的に非表示にする制御。
+5.  **Bounds Calculation**: ノードボックスとエッジ接続点を包含する絶対座標ベースの動的な描画範囲計算。
+6.  **Background Control**: 画面上のグリッド設定（Dots/Lines/Cross）を維持しつつ、ダークモードに適応した背景描画。

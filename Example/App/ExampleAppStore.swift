@@ -3,6 +3,8 @@ import Observation
 import SwGraphUI
 #if os(macOS)
 import SwiftUI
+import AppKit
+import UniformTypeIdentifiers
 #endif
 
 /// サンプルアプリ固有の状態（ログ、表示オプション、サンプル切り替え）を管理するストア。
@@ -57,6 +59,9 @@ public final class ExampleAppStore {
     
     /// 背景の描画スタイル (dots, lines, cross)
     public var backgroundVariant: BackgroundVariant = .dots
+    
+    /// エクスポート時に背景を含めるか
+    public var isExportBackgroundEnabled: Bool = false
     
     // MARK: - Debug Logging
     
@@ -161,6 +166,51 @@ public final class ExampleAppStore {
         
         graphStore.edges.append(newEdge)
     }
+    
+    // MARK: - Export
+    
+    #if os(macOS)
+    /// グラフの内容を PNG として書き出します（macOS専用）
+    public func exportToPNG(
+        in graphStore: GraphStore<String>,
+        @ViewBuilder nodeBuilder: @escaping (BaseNode<String>) -> AnyView
+    ) {
+        let exporter = PNGExporter(store: graphStore)
+        // 設定を適用 (scale: 2.0, margin: 32, 背景トグル反映)
+        let settings = GraphExportSettings(
+            scale: 2.0,
+            margin: 32.0,
+            includeBackground: isExportBackgroundEnabled,
+            backgroundVariant: backgroundVariant,
+            isTransparent: false
+        )
+        
+        guard let data = exporter.export(
+            settings: settings,
+            nodeBuilder: { node in nodeBuilder(node) }
+        ) else {
+            appendLog(kind: "export.error", payload: "Failed to generate PNG data")
+            return
+        }
+        
+        let savePanel = NSSavePanel()
+        savePanel.allowedContentTypes = [.png]
+        savePanel.canCreateDirectories = true
+        savePanel.isExtensionHidden = false
+        savePanel.title = "Save Graph as PNG"
+        savePanel.nameFieldStringValue = "graph-export.png"
+        
+        let response = savePanel.runModal()
+        if response == .OK, let url = savePanel.url {
+            do {
+                try data.write(to: url)
+                self.appendLog(kind: "export.success", payload: "Saved to \(url.lastPathComponent)")
+            } catch {
+                self.appendLog(kind: "export.error", payload: error.localizedDescription)
+            }
+        }
+    }
+    #endif
     
     // MARK: - Initializer
     

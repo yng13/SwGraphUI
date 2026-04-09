@@ -91,6 +91,13 @@ struct ContentView: View {
                     Label("Toggle Logs", systemImage: "terminal")
                 }
                 .help("Toggle Debug Logs")
+
+                Divider()
+
+                Button(action: exportPNG) {
+                    Label("Export PNG", systemImage: "square.and.arrow.up")
+                }
+                .help("Export Graph as PNG")
             }
         }
         .onAppear {
@@ -242,6 +249,14 @@ struct ContentView: View {
                     graphStore.moveSelectedNodes(by: offset)
                 }
             )
+        }
+        #endif
+    }
+    
+    private func exportPNG() {
+        #if os(macOS)
+        appStore.exportToPNG(in: graphStore) { node in
+            AnyView(buildCustomNode(node))
         }
         #endif
     }

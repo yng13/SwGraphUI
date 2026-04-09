@@ -199,7 +199,8 @@ public struct DefaultEdgeOverlayView<Data: Sendable>: View {
                 }
 
                 // 2. 再接続ハンドル（ラベルより前面へ）
-                if edge.selected {
+                // エクスポート時（onReconnect == nil）は表示しない
+                if edge.selected, onReconnect != nil {
                     let sourceKey = HandleKey(nodeID: edge.source, handleID: edge.sourceHandle, type: .source, placement: edge.sourcePosition ?? .right)
                     let targetKey = HandleKey(nodeID: edge.target, handleID: edge.targetHandle, type: .target, placement: edge.targetPosition ?? .left)
                     let sourceHandlePos = store.resolvedHandlePosition(for: sourceKey)

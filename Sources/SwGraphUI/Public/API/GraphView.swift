@@ -214,15 +214,76 @@ public struct GraphView<Data: Sendable, NodeContent: View>: View {
         ZStack(alignment: .topLeading) {
             backgroundLayerPart
             
+            GraphLayerStack(
+                store: store,
+                nodeBuilder: nodeBuilder,
+                edgeBuilder: edgeBuilder,
+                onReconnect: onReconnect,
+                modifierKeys: modifierKeys,
+                nodeWrapper: { node, content in
+                    AnyView(
+                        content
+                            .gesture(
+                            DragGesture(minimumDistance: 0, coordinateSpace: .named("viewport_container"))
+                                .onChanged { [store = self.store, onEvent = self.onEvent] value in
+                                    guard store.runtimeState.interactivity.nodesDraggable else { return }
+                                    let translation = sqrt(pow(value.translation.width, 2) + pow(value.translation.height, 2))
+                                    if translation > 4 {
+                                        let viewport = store.runtimeState.viewport.viewport
+                                        let graphPointer = XYPosition(x: value.location.x, y: value.location.y).fromScreen(viewport: viewport)
+                                        
+                                        if !store.runtimeState.drag.isDragging {
+                                            store.startDragging(nodeIDs: [node.id], at: graphPointer)
+                                            onEvent?(.dragStart(nodeIDs: [node.id]))
+                                        } else {
+                                            store.updateAutoPan(at: XYPosition(x: value.location.x, y: value.location.y))
+                                            store.updateDragging(to: graphPointer)
+                                            onEvent?(.dragUpdate(nodeIDs: [node.id]))
+                                        }
+                                    }
+                                }
+                                .onEnded { [store = self.store, modifierKeys = self.modifierKeys, onEvent = self.onEvent] value in
+                                    if store.runtimeState.drag.isDragging {
+                                        store.stopDragging()
+                                        onEvent?(.dragStop(nodeIDs: [node.id]))
+                                    } else {
+                                        guard store.runtimeState.interactivity.elementsSelectable else { return }
+                                        if modifierKeys.isShiftPressed {
+                                            store.toggleNodeSelection(node.id)
+                                        } else {
+                                            store.selectNode(node.id)
+                                        }
+                                    }
+                                }
+                        )
+                    )
+                }
+            )
+        }
+        .scaleEffect(vp.zoom, anchor: .topLeading)
+        .offset(x: vp.x, y: vp.y)
+    }
+}
+
+/// グラフの描画レイヤー（エッジ、ノード、プレビュー）をまとめた共有スタック。
+/// インタラクティブな GraphView と、静的なエクスポートの両方で使用されます。
+internal struct GraphLayerStack<Data: Sendable, NodeContent: View>: View {
+    let store: GraphStore<Data>
+    let nodeBuilder: (BaseNode<Data>) -> NodeContent
+    let edgeBuilder: (BaseEdge<Data>, [PathSegment], Color, CGFloat, Bool, Bool) -> AnyView
+    let onReconnect: ((String, Connection) -> Void)?
+    let modifierKeys: ModifierKeysProvider?
+    let nodeWrapper: (BaseNode<Data>, AnyView) -> AnyView
+    
+    var body: some View {
+        ZStack(alignment: .topLeading) {
             edgeLayer
             previewLayer
             nodeLayer
             edgeOverlayLayer
         }
-        .scaleEffect(vp.zoom, anchor: .topLeading)
-        .offset(x: vp.x, y: vp.y)
     }
-
+    
     @ViewBuilder
     private var edgeLayer: some View {
         ForEach(store.edges) { edge in
@@ -230,14 +291,13 @@ public struct GraphView<Data: Sendable, NodeContent: View>: View {
                 edge: edge,
                 store: store,
                 onReconnect: onReconnect,
-                modifierKeys: modifierKeys,
+                modifierKeys: modifierKeys ?? ModifierKeysProvider(),
                 edgeBodyBuilder: { segments, color, width, animated, reconnecting in
                     edgeBuilder(edge, segments, color, width, animated, reconnecting)
                 }
             )
         }
     }
-
 
     @ViewBuilder
     private var edgeOverlayLayer: some View {
@@ -281,47 +341,11 @@ public struct GraphView<Data: Sendable, NodeContent: View>: View {
         }.map { $0.1 }
 
         ForEach(sortedNodes) { (node: BaseNode<Data>) in
-            NodeMeasurementWrapper(id: node.id, content: self.nodeBuilder(node))
-                .offset(
-                    x: self.store.absolutePosition(for: node.id).x,
-                    y: self.store.absolutePosition(for: node.id).y
-                )
-                .gesture(
-                    DragGesture(minimumDistance: 0, coordinateSpace: .named("viewport_container"))
-                        .onChanged { [store = self.store, onEvent = self.onEvent] value in
-                            guard store.runtimeState.interactivity.nodesDraggable else { return }
-                            let translation = sqrt(pow(value.translation.width, 2) + pow(value.translation.height, 2))
-                            if translation > 4 {
-                                let viewport = store.runtimeState.viewport.viewport
-                                let graphPointer = XYPosition(x: value.location.x, y: value.location.y).fromScreen(viewport: viewport)
-                                
-                                if !store.runtimeState.drag.isDragging {
-                                    store.startDragging(nodeIDs: [node.id], at: graphPointer)
-                                    onEvent?(.dragStart(nodeIDs: [node.id]))
-                                } else {
-                                    // オートパンへの通知 (Screen space)
-                                    store.updateAutoPan(at: XYPosition(x: value.location.x, y: value.location.y))
-                                    
-                                    store.updateDragging(to: graphPointer)
-                                    onEvent?(.dragUpdate(nodeIDs: [node.id]))
-                                }
-                            }
-                        }
-                        .onEnded { [store = self.store, modifierKeys = self.modifierKeys, onEvent = self.onEvent] value in
-                            if store.runtimeState.drag.isDragging {
-                                store.stopDragging()
-                                onEvent?(.dragStop(nodeIDs: [node.id]))
-                            } else {
-                                guard store.runtimeState.interactivity.elementsSelectable else { return }
-                                // 移動距離が閾値 (4px) 未満だった場合はタップとみなして選択
-                                if modifierKeys.isShiftPressed {
-                                    store.toggleNodeSelection(node.id)
-                                } else {
-                                    store.selectNode(node.id)
-                                }
-                            }
-                        }
-                )
+            let absolutePos = self.store.absolutePosition(for: node.id)
+            let content = NodeMeasurementWrapper(id: node.id, content: self.nodeBuilder(node))
+                .offset(x: absolutePos.x, y: absolutePos.y)
+            
+            nodeWrapper(node, AnyView(content))
         }
     }
 }
