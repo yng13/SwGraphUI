@@ -11,7 +11,7 @@ struct GroupNodeView: View {
                 .fill(Color.blue.opacity(0.05))
                 .overlay(
                     RoundedRectangle(cornerRadius: 12)
-                        .stroke(Color.blue.opacity(0.2), lineWidth: 2)
+                        .stroke(node.selected ? Color.blue : Color.blue.opacity(0.2), lineWidth: node.selected ? 3 : 2)
                 )
             
             Text(node.data)
