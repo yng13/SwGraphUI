@@ -241,3 +241,7 @@ M23 完了に伴うドキュメント、進捗管理ファイル、および開�
 4.  **isGraphExporting (Environment)**: エクスポート時にハンドルやツールバー等のインタラクティブ要素を自動的に非表示にする制御。
 5.  **Bounds Calculation**: ノードボックスとエッジ接続点を包含する絶対座標ベースの動的な描画範囲計算。
 6.  **Background Control**: 画面上のグリッド設定（Dots/Lines/Cross）を維持しつつ、ダークモードに適応した背景描画。
+7.  **PDF Export (Vector Output)**: `ImageRenderer` を利用したベクター形式の PDF 出力。
+    - 境界計算ロジックの共有 (`GraphExportSupport`)。
+    - シングルページかつ透過/単色背景のサポート。
+    - PDF マジックナンバーを含む整合性の保証。

@@ -210,6 +210,46 @@ public final class ExampleAppStore {
             }
         }
     }
+    
+    /// グラフの内容を PDF として書き出します（macOS専用）
+    public func exportToPDF(
+        in graphStore: GraphStore<String>,
+        @ViewBuilder nodeBuilder: @escaping (BaseNode<String>) -> AnyView
+    ) {
+        let exporter = PDFExporter(store: graphStore)
+        let settings = GraphExportSettings(
+            scale: 1.0,
+            margin: 32.0,
+            includeBackground: isExportBackgroundEnabled,
+            backgroundVariant: backgroundVariant,
+            isTransparent: false
+        )
+        
+        guard let data = exporter.export(
+            settings: settings,
+            nodeBuilder: { node in nodeBuilder(node) }
+        ) else {
+            appendLog(kind: "export.error", payload: "Failed to generate PDF data")
+            return
+        }
+        
+        let savePanel = NSSavePanel()
+        savePanel.allowedContentTypes = [.pdf]
+        savePanel.canCreateDirectories = true
+        savePanel.isExtensionHidden = false
+        savePanel.title = "Save Graph as PDF"
+        savePanel.nameFieldStringValue = "graph-export.pdf"
+        
+        let response = savePanel.runModal()
+        if response == .OK, let url = savePanel.url {
+            do {
+                try data.write(to: url)
+                self.appendLog(kind: "export.success", payload: "Saved to \(url.lastPathComponent)")
+            } catch {
+                self.appendLog(kind: "export.error", payload: error.localizedDescription)
+            }
+        }
+    }
     #endif
     
     // MARK: - Initializer

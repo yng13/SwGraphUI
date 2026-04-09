@@ -94,10 +94,17 @@ struct ContentView: View {
 
                 Divider()
 
-                Button(action: exportPNG) {
-                    Label("Export PNG", systemImage: "square.and.arrow.up")
+                Menu {
+                    Button(action: exportPNG) {
+                        Label("PNG Image", systemImage: "photo")
+                    }
+                    Button(action: exportPDF) {
+                        Label("PDF Vector", systemImage: "doc.richtext")
+                    }
+                } label: {
+                    Label("Export", systemImage: "square.and.arrow.up")
                 }
-                .help("Export Graph as PNG")
+                .help("Export Graph as PNG or PDF")
             }
         }
         .onAppear {
@@ -256,6 +263,14 @@ struct ContentView: View {
     private func exportPNG() {
         #if os(macOS)
         appStore.exportToPNG(in: graphStore) { node in
+            AnyView(buildCustomNode(node))
+        }
+        #endif
+    }
+    
+    private func exportPDF() {
+        #if os(macOS)
+        appStore.exportToPDF(in: graphStore) { node in
             AnyView(buildCustomNode(node))
         }
         #endif

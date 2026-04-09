@@ -275,14 +275,19 @@ Shift + クリックによる複数選択および、Shift + ドラッグによ�
     - `xcodebuild build`: 成功。
     - 手動確認: `SubflowSample` および `EdgeLabelSample` にて、背景の有無、ダークモード適応、オーバーレイ除外、ラベル表示の健全性を確認。
 
-### 2026-04-09
 - **PNG エクスポートの境界計算改善 (完了)**
-  - **概要**: 曲線エッジがエクスポート画像の端で欠ける問題を修正し、境界計算の堅牢性を確保。
+  - **概要**: 曲線エッジ（Bezier, SmoothStep, Step）がエクスポート画像の端で欠ける問題を修正。
   - **技術的変更**:
-    - `PNGExporter`: `calculateExportBounds()` を抽出し、`PathSegment` の制御点を含む全座標を走査するようロジックを刷新。
-    - 最終的な出力範囲に 4pt の安全マージンを適用し、線幅やシャドウによる欠落を防止。
-    - ユニットテスト `PNGExporterTests.swift` を導入。ベジェ曲線の制御点が正しく Bounds に含まれることを数学的に検証。
-  - **検証結果**:
-    - `swift test`: 合計 62 件（+2件）のパスを確認。
-    - `xcodebuild build`: 成功。
-    - 手動確認: 複雑なベジェ曲線を含むグラフにおいても、上下左右に適切な余白を持ってエクスポートされることを確認。
+    - `calculateExportBounds()` を刷新し、`PathSegment` の全走査により制御点や折れ曲がり点を Bounds に包含。
+    - ユニットテストを拡充し、各エッジタイプでの境界計算の正当性を検証。
+- **PDF エクスポート機能の新規実装 & リファクタリング (完了)**
+  - **概要**: 高品質なベクター形式（PDF）での書き出しをサポート。
+  - **技術的変更**:
+    - `GraphExportSupport`: PNG と PDF で共有される境界計算・幾何ユーティリティを抽出。
+    - `PDFExporter`: `ImageRenderer` と `CGContext` 連携によるベクター出力の実装。
+    - 名前衝突の修正: ジェネリクス名 `Data` を `NodeData` に変更し、`Foundation.Data` との衝突を解消。
+    - UI 統合: ツールバーのエクスポートボタンを Menu 形式に拡張。
+- **検証結果**:
+  - `swift test`: 合計 64 件（+2件）の全パスを確認。
+  - `PNGExporterTests` / `PDFExporterTests` の両方で正常動作を確認。
+  - `xcodebuild build`: 成功。
