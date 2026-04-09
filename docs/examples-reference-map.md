@@ -25,6 +25,7 @@
 | View | Backgrounds | 近似 | - | `BackgroundView.swift` & `InspectorView.swift` (Global Options) |
 | Edges | Edge Label Renderer | 近似 | `.reference/xyflow/examples/react/src/examples/EdgeLabelRenderer` | `EdgeLabelSample.swift` (M24: スタイル・配置精緻化) |
 | Edges | Edge Types | 部分一致 | `.reference/xyflow/examples/react/src/examples/EdgeTypes` | `CustomShowcaseSample.swift` (M21: CustomEdgeBody), `EdgeLabelSample.swift` |
+| Layout | Dagre Tree | 近似 | `.reference/xyflow/examples/react/src/examples/Dagre` | `DagreTreeSample.swift` (M31: 内製 tree layout アルゴリズムによる近似) |
 
 
 ## ローカル clone にあるが公開 core examples に直接対応しない route
@@ -72,6 +73,7 @@
 ## 現時点の所見
 
 - SwGraphUI の Example app は、まだ examples 完成品ではなく開発ハーネス段階である
-- `Basic`, `Hierarchy`, `Custom & Measure`, `Edges`, `Save and Restore` は受け入れ用の最小確認例として使える
-- `Selection`, `Layout`, `Whiteboard`, `UI components` は未追従
+- `Basic`, `Hierarchy`, `Custom & Measure`, `Edges`, `Save and Restore`, `Layout` は受け入れ用の最小確認例として使える
+- `Selection`, `Whiteboard`, `UI components` は未追従
+- `Layout` は `Dagre Tree` 相当の階層型配置を、外部ライブラリに頼らず Swift 内製アルゴリズムで近似実装した。
 - 今後は `examples/react` の route だけでなく、`packages/system`, `packages/svelte`, 公開ページ上の example 個票も併用して差分を詰める必要がある

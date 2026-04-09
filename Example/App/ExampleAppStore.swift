@@ -25,6 +25,7 @@ public final class ExampleAppStore {
         case snapshots = "Snapshots"
         case plugins = "Plugins"
         case subflow = "Subflows & Nesting"
+        case layout = "Layout"
         
         public var id: String { rawValue }
     }
@@ -106,7 +107,8 @@ public final class ExampleAppStore {
         EdgeLabelSample(),
         NodeResizerSample(),
         SaveRestoreSample(),
-        SubflowSample()
+        SubflowSample(),
+        DagreTreeSample()
     ]
     
     /// カテゴリに属するサンプルを返します

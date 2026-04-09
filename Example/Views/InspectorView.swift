@@ -20,6 +20,24 @@ struct InspectorView: View {
     var body: some View {
         ScrollView {
             VStack(spacing: 0) {
+                // Layout Section (M31)
+                if appStore.selectedCategory == .layout {
+                    InspectorHeader("Layout Actions")
+                    VStack(spacing: 0) {
+                        InspectorRow("Hierarchy") {
+                            HStack(spacing: 4) {
+                                Button("TB") { applyLayout(.topToBottom) }
+                                Button("LR") { applyLayout(.leftToRight) }
+                            }
+                            .buttonStyle(.bordered)
+                            #if os(macOS)
+                            .controlSize(.small)
+                            #endif
+                        }
+                    }
+                    .padding(.vertical, 4)
+                }
+                
                 // Viewport Section
                 InspectorHeader("Viewport")
                 VStack(spacing: 1) {
@@ -400,5 +418,22 @@ struct InspectorView: View {
         .padding(.horizontal, 8)
         .frame(height: Constants.headerHeight)
         .background(Constants.headerBackground)
+    }
+    
+    // MARK: - Layout Helpers
+    
+    private func applyLayout(_ direction: GraphLayoutDirection) {
+        withAnimation(.spring()) {
+            graphStore.applyLayout(direction: direction, spacing: 50.0)
+            
+            // レイアウト後に全体が見えるように画面フィット (少しディレイを置いてアニメーションを繋げる)
+            DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) {
+                withAnimation {
+                    graphStore.fitView(in: appStore.currentGraphSize, padding: .all(.points(50)))
+                }
+            }
+            
+            appStore.appendLog(kind: "layout", payload: "\(direction)")
+        }
     }
 }

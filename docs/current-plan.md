@@ -15,9 +15,13 @@
 - [x] **Milestone 30: Subflow Constraints & Selection Polish [DONE]** (2026-04-09)
     - [x] M30a: Parent Extent (移動制限) & DragManager 統合
     - [x] M30b: Selection Bounding Box (複数選択枠)
+- [x] **Milestone 31: Layout Examples (Dagre Tree etc.) [DONE]** (2026-04-09)
+    - [x] GraphLayoutAlgorithms (Hierarchical Tree Layout Logic)
+    - [x] GraphStore.applyLayout API
+    - [x] DagreTreeSample (Demo UI)
 - [x] **Milestone 28a: Inspector Density & Dark Mode Polish [DONE]**
 - [x] M28b: Interaction Polish (Keyboard Support [DONE], Undo/Redo [DONE])
-- [ ] M28c: Interaction Polish & A11y (Legacy)
+- [ ] M28c: Interaction Polish & A11y (Deferred)
 
 ## Exit Rule
 - [x] **Examples の充実**: `Basic interaction` (M20: Elements Lifecycle) が実装されていること。
@@ -27,6 +31,7 @@
 - [x] **ドキュメント同期**: `reference-divergence.md` 上での未追従事項が更新されていること。
 
 ## 完了したマイルストーン
+- [x] M31: Layout Examples (Dagre Tree etc.) (2026-04-09)
 - [x] M30: Subflow Constraints & Selection Polish (2026-04-09)
 - [x] M29: Subflows & Nesting (Z-order, Group nodes, Sample) (2026-04-09)
 - [x] M28b: Interaction Polish (Undo/Redo) (2026-04-08)

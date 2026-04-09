@@ -317,3 +317,25 @@ Shift + クリックによる複数選択および、Shift + ドラッグによ�
 
 ### ビルド確認
 - `swift build`: 成功
+
+---
+## 2026-04-09: Milestone 31: Layout Examples (Dagre Tree etc.) [DONE]
+
+### 概要
+複雑な接続関係を持つグラフを自動で整列させる階層型レイアウトエンジンを完成させ、Example App の IDE 環境に完全統合しました。
+
+### 技術的変更
+- **Library Core (GraphLayoutAlgorithms.swift)**:
+    - レイヤーごとの幅（Breadth）計算と、最大幅に基づく**センタリングロジック**を実装。
+    - 木構造だけでなく、DAG や複数ルートが存在する場合でも、重なりを抑えつつバランスの取れた配置が可能に。
+- **Example App (DagreTreeSample.swift)**:
+    - `GraphSample` プロトコルに準拠し、IDE の共通 `GraphStore` / `InspectorView` と連携するように刷新。
+    - `EmptyPayload` から `String` (NodeData) へ移行し、他のツール機能との互換性を確保。
+- **View Layer (InspectorView.swift)**:
+    - `Layout` カテゴリ選択時にのみ表示される "Layout Actions" セクションを追加。
+    - 座標更新時の `withAnimation(.spring())` と `fitView` の連鎖的な適用をサポート。
+
+### 検証結果
+- `swift test`: 新設した `GraphLayoutAlgorithmsTests` (2件) を含む合計 52 件のテストに合格。
+- `xcodebuild build`: 成功。
+- 手動確認: TB/LR レイアウト実行時にノードがスムーズに中央へ移動し、Undo によってレイアウト前の位置に正しく戻ることを確認。

@@ -1,0 +1,207 @@
+import Foundation
+import CoreGraphics
+
+/// 自動レイアウトの方向を定義します（SwiftUI.LayoutDirection との衝突を避けるため GraphLayoutDirection と命名）。
+public enum GraphLayoutDirection: Sendable, Codable {
+    case topToBottom
+    case bottomToTop
+    case leftToRight
+    case rightToLeft
+}
+
+/// 階層型（Tree/DAG 向け）自動レイアウトアルゴリズムを提供するユーティリティ。
+/// 循環参照のないグラフ構造（Tree または DAG）を受け入れ、ノード間隔とノードサイズを考慮した配置を算出します。
+public enum GraphLayoutAlgorithms {
+    
+    /// シンプルな階層型レイアウトを実行し、各ノードの新しい推奨座標を算出します。
+    /// - Parameters:
+    ///   - nodes: 対象ノード群（現在は parentID == nil のフラットな集合を想定）
+    ///   - edges: 接続エッジ群
+    ///   - direction: レイアウトの方向
+    ///   - spacing: ノード間の最低間隔
+    /// - Returns: ノードIDをキーとした新しい推奨座標のマップ
+    public static func layoutNodesTreeStyle<Data: Sendable>(
+        nodes: [BaseNode<Data>],
+        edges: [BaseEdge<Data>],
+        direction: GraphLayoutDirection = .topToBottom,
+        spacing: Double = 50.0
+    ) -> [String: XYPosition] {
+        guard !nodes.isEmpty else { return [:] }
+        
+        let nodeLookup = Dictionary(uniqueKeysWithValues: nodes.map { ($0.id, $0) })
+        
+        // 1. レイヤー分割 (Ranking)
+        let nodeLayers = assignLayers(nodes: nodes, edges: edges)
+        
+        // 2. 順序決定 (Ordering / sibling arrangement)
+        let orderedLayers = orderNodes(nodeLayers: nodeLayers, nodeLookup: nodeLookup)
+        
+        // 3. 座標割り当て (Coordinate Assignment)
+        return assignCoordinates(
+            orderedLayers: orderedLayers,
+            nodeLookup: nodeLookup,
+            direction: direction,
+            spacing: spacing
+        )
+    }
+    
+    // MARK: - Internal Phases
+    
+    /// ノードを依存関係（エッジ）に基づいて階層（ランク）に分割します。
+    private static func assignLayers<Data: Sendable>(
+        nodes: [BaseNode<Data>],
+        edges: [BaseEdge<Data>]
+    ) -> [Int: [String]] {
+        var layers: [Int: [String]] = [:]
+        var nodeInDegrees: [String: Int] = [:]
+        
+        for node in nodes {
+            nodeInDegrees[node.id] = 0
+        }
+        
+        for edge in edges {
+            nodeInDegrees[edge.target, default: 0] += 1
+        }
+        
+        // Root (In-degree == 0) をレイヤー 0 に
+        var queue: [(id: String, layer: Int)] = nodes
+            .filter { (nodeInDegrees[$0.id] ?? 0) == 0 }
+            .map { ($0.id, 0) }
+        
+        // 循環がない前提での簡易階層決定
+        var visited = Set<String>()
+        var nodeToLayer: [String: Int] = [:]
+        
+        while !queue.isEmpty {
+            let (id, layer) = queue.removeFirst()
+            if visited.contains(id) { continue }
+            visited.insert(id)
+            
+            nodeToLayer[id] = max(nodeToLayer[id, default: 0], layer)
+            
+            // このノードを source とするエッジの先を layer + 1 へ
+            let outEdges = edges.filter { $0.source == id }
+            for edge in outEdges {
+                queue.append((edge.target, layer + 1))
+            }
+        }
+        
+        for (id, layer) in nodeToLayer {
+            layers[layer, default: []].append(id)
+        }
+        
+        return layers
+    }
+    
+    /// 同一レイヤー内でのノードの並び順を決定します。
+    private static func orderNodes<Data: Sendable>(
+        nodeLayers: [Int: [String]],
+        nodeLookup: [String: BaseNode<Data>]
+    ) -> [Int: [String]] {
+        var sortedLayers: [Int: [String]] = [:]
+        for (layer, ids) in nodeLayers {
+            sortedLayers[layer] = ids.sorted() // 決定的挙動のため ID ソート
+        }
+        return sortedLayers
+    }
+    
+    /// レイヤーと順序に基づき、ノードサイズを考慮した最終座標を計算します。
+    private static func assignCoordinates<Data: Sendable>(
+        orderedLayers: [Int: [String]],
+        nodeLookup: [String: BaseNode<Data>],
+        direction: GraphLayoutDirection,
+        spacing: Double
+    ) -> [String: XYPosition] {
+        var results: [String: XYPosition] = [:]
+        
+        var layerOffsets: [Int: Double] = [:]
+        var currentOffset: Double = 0
+        
+        let sortedLayerIndices = orderedLayers.keys.sorted()
+        
+        for layerIdx in sortedLayerIndices {
+            let ids = orderedLayers[layerIdx] ?? []
+            var maxLayerBreadth: Double = 0
+            
+            for id in ids {
+                guard let node = nodeLookup[id] else { continue }
+                let size = getNodeSize(node)
+                
+                switch direction {
+                case .topToBottom, .bottomToTop:
+                    maxLayerBreadth = max(maxLayerBreadth, size.height)
+                case .leftToRight, .rightToLeft:
+                    maxLayerBreadth = max(maxLayerBreadth, size.width)
+                }
+            }
+            
+            layerOffsets[layerIdx] = currentOffset
+            currentOffset += maxLayerBreadth + spacing
+        }
+        
+        // 1. 各レイヤーの必要最小限の占有幅（Breadth）を計算
+        var layerTotalBreadths: [Int: Double] = [:]
+        var maxBreadth: Double = 0
+        
+        for layerIdx in sortedLayerIndices {
+            let ids = orderedLayers[layerIdx] ?? []
+            var currentLayerBreadth: Double = 0
+            for (i, id) in ids.enumerated() {
+                guard let node = nodeLookup[id] else { continue }
+                let size = getNodeSize(node)
+                switch direction {
+                case .topToBottom, .bottomToTop:
+                    currentLayerBreadth += size.width
+                case .leftToRight, .rightToLeft:
+                    currentLayerBreadth += size.height
+                }
+                if i < ids.count - 1 {
+                    currentLayerBreadth += spacing
+                }
+            }
+            layerTotalBreadths[layerIdx] = currentLayerBreadth
+            maxBreadth = max(maxBreadth, currentLayerBreadth)
+        }
+        
+        // 2. 座標割り当て
+        for layerIdx in sortedLayerIndices {
+            let ids = orderedLayers[layerIdx] ?? []
+            let longitudinalOffset = layerOffsets[layerIdx] ?? 0
+            let layerBreadth = layerTotalBreadths[layerIdx] ?? 0
+            
+            // 全体の中央に寄せるための開始オフセット
+            var lateralOffset: Double = (maxBreadth - layerBreadth) / 2.0
+            
+            for id in ids {
+                guard let node = nodeLookup[id] else { continue }
+                let size = getNodeSize(node)
+                
+                switch direction {
+                case .topToBottom:
+                    results[id] = XYPosition(x: lateralOffset, y: longitudinalOffset)
+                    lateralOffset += size.width + spacing
+                case .bottomToTop:
+                    results[id] = XYPosition(x: lateralOffset, y: -longitudinalOffset)
+                    lateralOffset += size.width + spacing
+                case .leftToRight:
+                    results[id] = XYPosition(x: longitudinalOffset, y: lateralOffset)
+                    lateralOffset += size.height + spacing
+                case .rightToLeft:
+                    results[id] = XYPosition(x: -longitudinalOffset, y: lateralOffset)
+                    lateralOffset += size.height + spacing
+                }
+            }
+        }
+        
+        return results
+    }
+    
+    private static func getNodeSize<Data: Sendable>(_ node: BaseNode<Data>) -> Dimensions {
+        if let measured = node.measured { return measured }
+        if let w = node.width, let h = node.height { return Dimensions(width: w, height: h) }
+        return Dimensions(
+            width: node.initialWidth ?? 0,
+            height: node.initialHeight ?? 0
+        )
+    }
+}

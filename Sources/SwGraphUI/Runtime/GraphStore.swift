@@ -170,14 +170,8 @@ public final class GraphStore<NodeData: Sendable>: Sendable {
         runtimeState.viewport = state
     }
     
-    /// 指定された中心点を基準に拡大・縮小します。
-    /// - Parameters:
-    ///   - screenPoint: 拡大の基準となるスクリーン上の点（デフォルトはビューポート中心）。
-    ///   - factor: 拡大係数（1.0を超える場合は拡大、1.0未満は縮小）。
     public func zoom(at screenPoint: XYPosition? = nil, factor: Double) {
-        // デフォルトは中心（仮。本来はサイズが必要だが、一旦 (0,0) を基準にするか呼び出し側で解決）
         let center = screenPoint ?? .zero
-        
         let newViewport = ViewportManager.calculateZoomAtPoint(
             current: runtimeState.viewport.viewport,
             factor: factor,
@@ -749,6 +743,22 @@ public final class GraphStore<NodeData: Sendable>: Sendable {
         
         runtimeState.connection.end()
         return result
+    }
+
+    public func applyLayout(direction: GraphLayoutDirection = .topToBottom, spacing: Double = 50.0) {
+        registerUndo(title: "Apply Layout", snapshot: self.snapshot(), ignoringViewport: true)
+        let newPositions = GraphLayoutAlgorithms.layoutNodesTreeStyle(
+            nodes: nodes,
+            edges: edges,
+            direction: direction,
+            spacing: spacing
+        )
+        for i in 0..<nodes.count {
+            let id = nodes[i].id
+            if let newPos = newPositions[id] {
+                nodes[i].position = newPos
+            }
+        }
     }
 
     private func updateEdgeConnection(id: String, newConnection: Connection) {
