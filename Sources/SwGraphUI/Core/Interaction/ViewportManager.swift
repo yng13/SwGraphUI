@@ -50,7 +50,15 @@ public enum ViewportManager {
         minZoom: Double,
         maxZoom: Double
     ) -> Viewport {
+        guard current.zoom.isFinite, current.zoom > 0,
+              factor.isFinite, factor > 0,
+              screenPoint.x.isFinite, screenPoint.y.isFinite else {
+            return current
+        }
         let zoom = Swift.min(Swift.max(current.zoom * factor, minZoom), maxZoom)
+        guard zoom.isFinite, zoom > 0 else {
+            return current
+        }
         
         let graphPoint = XYPosition(
             x: (screenPoint.x - current.x) / current.zoom,
@@ -59,7 +67,10 @@ public enum ViewportManager {
         
         let x = screenPoint.x - graphPoint.x * zoom
         let y = screenPoint.y - graphPoint.y * zoom
-        
+
+        guard x.isFinite, y.isFinite else {
+            return current
+        }
         return Viewport(x: x, y: y, zoom: zoom)
     }
 }

@@ -41,7 +41,12 @@ public struct XYPosition: Sendable, Equatable, Codable {
 
     /// グラフ空間の座標をスクリーン（UI）空間の座標に変換します。
     public func toScreen(viewport: Viewport) -> XYPosition {
-        XYPosition(
+        guard viewport.zoom.isFinite, viewport.zoom != 0,
+              viewport.x.isFinite, viewport.y.isFinite,
+              x.isFinite, y.isFinite else {
+            return .zero
+        }
+        return XYPosition(
             x: x * viewport.zoom + viewport.x,
             y: y * viewport.zoom + viewport.y
         )
@@ -49,7 +54,12 @@ public struct XYPosition: Sendable, Equatable, Codable {
 
     /// スクリーン（UI）空間の座標をグラフ空間の座標に逆変換します。
     public func fromScreen(viewport: Viewport) -> XYPosition {
-        XYPosition(
+        guard viewport.zoom.isFinite, viewport.zoom != 0,
+              viewport.x.isFinite, viewport.y.isFinite,
+              x.isFinite, y.isFinite else {
+            return .zero
+        }
+        return XYPosition(
             x: (x - viewport.x) / viewport.zoom,
             y: (y - viewport.y) / viewport.zoom
         )
@@ -88,6 +98,18 @@ public struct Dimensions: Sendable, Equatable, Codable {
     }
     
     public static let zero = Dimensions(width: 0, height: 0)
+    
+    /// グラフ（論理）空間の寸法をスクリーン（UI）空間の寸法に変換します。
+    public func toScreen(viewport: Viewport) -> Dimensions {
+        guard viewport.zoom.isFinite, viewport.zoom >= 0,
+              width.isFinite, height.isFinite else {
+            return .zero
+        }
+        return Dimensions(
+            width: width * viewport.zoom,
+            height: height * viewport.zoom
+        )
+    }
 }
 
 public struct Rect: Sendable, Equatable {
@@ -110,6 +132,14 @@ public struct Rect: Sendable, Equatable {
     public var height: Double { size.height }
 
     public static let zero = Rect(origin: .zero, size: .zero)
+
+    /// グラフ空間の矩形をスクリーン（UI）空間の矩形に変換します。
+    public func toScreen(viewport: Viewport) -> Rect {
+        Rect(
+            origin: origin.toScreen(viewport: viewport),
+            size: size.toScreen(viewport: viewport)
+        )
+    }
 }
 
 public struct Box: Sendable, Equatable {
@@ -181,5 +211,25 @@ public enum PathSegment: Sendable, Equatable {
     case line(to: XYPosition)
     case bezier(to: XYPosition, control1: XYPosition, control2: XYPosition)
     case quadratic(to: XYPosition, control: XYPosition)
+    
+    /// パスセグメントをスクリーン（UI）空間の座標に変換します。
+    public func toScreen(viewport: Viewport) -> PathSegment {
+        switch self {
+        case .move(let to):
+            return .move(to: to.toScreen(viewport: viewport))
+        case .line(let to):
+            return .line(to: to.toScreen(viewport: viewport))
+        case .bezier(let to, let c1, let c2):
+            return .bezier(
+                to: to.toScreen(viewport: viewport),
+                control1: c1.toScreen(viewport: viewport),
+                control2: c2.toScreen(viewport: viewport)
+            )
+        case .quadratic(let to, let c):
+            return .quadratic(
+                to: to.toScreen(viewport: viewport),
+                control: c.toScreen(viewport: viewport)
+            )
+        }
+    }
 }
-

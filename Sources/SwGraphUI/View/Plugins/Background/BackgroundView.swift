@@ -31,109 +31,59 @@ public struct BackgroundView: View {
             let zoom = viewport.zoom
             guard zoom > 0.001 else { return } // 極小ズームガード
             
-            // 共有コードを参考にしたメトリクス計算
-            // 画面上での最小間隔を維持するための step を算出する
             let baseScaledGap = max(gap * zoom, 1.0)
             let minScreenSpacing: CGFloat = (variant == .dots) ? 12 : 16
-            // 密度ステップ (1, 5, 25... と 5のべき乗にするとメジャーグリッドと整合しやすい)
+
+            // minor は密度に応じて間引くが、major は常に graph-space の 5x5 基準で別描画する
             var densityStep: Int = 1
             while CGFloat(densityStep) * baseScaledGap < minScreenSpacing {
                 densityStep *= 5
             }
-            
-            let scaledGap = baseScaledGap * CGFloat(densityStep)
-            
-            // 位相（原点からのズレ）の計算
-            let phaseX = positiveModulo(viewport.x, scaledGap)
-            let phaseY = positiveModulo(viewport.y, scaledGap)
-            
-            // 1パスにまとめて描画することでパフォーマンスを向上させる
+
+            let minorStepGraph = Double(gap) * Double(densityStep)
+            let majorStepGraph = Double(gap) * 5.0
+            let graphLeft = (-viewport.x) / zoom
+            let graphTop = (-viewport.y) / zoom
+            let graphRight = graphLeft + canvasSize.width / zoom
+            let graphBottom = graphTop + canvasSize.height / zoom
+
             var minorPath = Path()
             var majorPath = Path()
-            
-            // 基準となる論理インデックス
-            let baseI = Int(floor(viewport.x / (gap * zoom)))
-            let baseJ = Int(floor(viewport.y / (gap * zoom)))
-            
-            var x = phaseX
-            var iCount = 0
-            while x <= canvasSize.width + (scaledGap * 2) {
-                var y = phaseY
-                var jCount = 0
-                while y <= canvasSize.height + (scaledGap * 2) {
-                    // 現在のセルの論理インデックス (5x5 アクセント判定用)
-                    let logicalI = baseI - iCount * densityStep
-                    let logicalJ = baseJ - jCount * densityStep
-                    let isMajor = (logicalI % 5 == 0) && (logicalJ % 5 == 0)
-                    
-                    // ドット/クロスの基準サイズ
-                    let currentSize = size * (isMajor ? 1.5 : 1.0)
-                    
-                    switch variant {
-                    case .dots:
-                        let rect = CGRect(x: x - currentSize/2, y: y - currentSize/2, width: currentSize, height: currentSize)
-                        if isMajor { majorPath.addEllipse(in: rect) } else { minorPath.addEllipse(in: rect) }
-                        
-                    case .lines:
-                        break
-                        
-                    case .cross:
-                        let l = currentSize * 2.5 // 十字の長さ
-                        let p = Path { p in
-                            p.move(to: CGPoint(x: x - l, y: y)); p.addLine(to: CGPoint(x: x + l, y: y))
-                            p.move(to: CGPoint(x: x, y: y - l)); p.addLine(to: CGPoint(x: x, y: y + l))
-                        }
-                        if isMajor { majorPath.addPath(p) } else { minorPath.addPath(p) }
-                    }
-                    
-                    y += scaledGap
-                    jCount += 1
-                }
-                x += scaledGap
-                iCount += 1
-            }
-            
-            // 描画実行
+
             if variant == .lines {
-                let lineWidth = size
-                var minorLinePath = Path()
-                var majorLinePath = Path()
-                
-                var lx = phaseX
-                var iCount = 0
-                while lx <= canvasSize.width + (scaledGap * 2) {
-                    let logicalI = baseI - iCount * densityStep
-                    let isMajor = (logicalI % 5 == 0)
-                    if isMajor {
-                        majorLinePath.move(to: CGPoint(x: lx, y: 0)); majorLinePath.addLine(to: CGPoint(x: lx, y: canvasSize.height))
-                    } else {
-                        minorLinePath.move(to: CGPoint(x: lx, y: 0)); minorLinePath.addLine(to: CGPoint(x: lx, y: canvasSize.height))
-                    }
-                    lx += scaledGap
-                    iCount += 1
-                }
-                
-                var ly = phaseY
-                var jCount = 0
-                while ly <= canvasSize.height + (scaledGap * 2) {
-                    let logicalJ = baseJ - jCount * densityStep
-                    let isMajor = (logicalJ % 5 == 0)
-                    if isMajor {
-                        majorLinePath.move(to: CGPoint(x: 0, y: ly)); majorLinePath.addLine(to: CGPoint(x: canvasSize.width, y: ly))
-                    } else {
-                        minorLinePath.move(to: CGPoint(x: 0, y: ly)); minorLinePath.addLine(to: CGPoint(x: canvasSize.width, y: ly))
-                    }
-                    ly += scaledGap
-                    jCount += 1
-                }
-                
-                context.stroke(minorLinePath, with: .color(patternColor.opacity(0.6)), lineWidth: lineWidth)
-                context.stroke(majorLinePath, with: .color(patternColor.opacity(1.0)), lineWidth: lineWidth)
-            } else if variant == .cross {
+                buildLinePaths(
+                    minorPath: &minorPath,
+                    majorPath: &majorPath,
+                    graphLeft: graphLeft,
+                    graphTop: graphTop,
+                    graphRight: graphRight,
+                    graphBottom: graphBottom,
+                    minorStepGraph: minorStepGraph,
+                    majorStepGraph: majorStepGraph,
+                    viewport: viewport,
+                    canvasSize: canvasSize
+                )
+                context.stroke(minorPath, with: .color(patternColor.opacity(0.6)), lineWidth: size)
+                context.stroke(majorPath, with: .color(patternColor.opacity(1.0)), lineWidth: size)
+            } else {
+                buildPointPaths(
+                    minorPath: &minorPath,
+                    majorPath: &majorPath,
+                    graphLeft: graphLeft,
+                    graphTop: graphTop,
+                    graphRight: graphRight,
+                    graphBottom: graphBottom,
+                    minorStepGraph: minorStepGraph,
+                    majorStepGraph: majorStepGraph,
+                    viewport: viewport
+                )
+            }
+
+            if variant == .cross {
                 let lw = size * 0.8
                 context.stroke(minorPath, with: .color(patternColor.opacity(0.6)), lineWidth: lw)
                 context.stroke(majorPath, with: .color(patternColor.opacity(1.0)), lineWidth: lw * 1.5)
-            } else {
+            } else if variant == .dots {
                 // Dots
                 context.fill(minorPath, with: .color(patternColor.opacity(0.6)))
                 context.fill(majorPath, with: .color(patternColor.opacity(1.0)))
@@ -147,5 +97,99 @@ public struct BackgroundView: View {
         guard divisor > 0 else { return 0 }
         let remainder = value.truncatingRemainder(dividingBy: divisor)
         return remainder >= 0 ? remainder : remainder + divisor
+    }
+
+    private func buildPointPaths(
+        minorPath: inout Path,
+        majorPath: inout Path,
+        graphLeft: Double,
+        graphTop: Double,
+        graphRight: Double,
+        graphBottom: Double,
+        minorStepGraph: Double,
+        majorStepGraph: Double,
+        viewport: Viewport
+    ) {
+        let minorXs = axisValues(start: graphLeft, end: graphRight, step: minorStepGraph)
+        let minorYs = axisValues(start: graphTop, end: graphBottom, step: minorStepGraph)
+        let majorXs = Set(axisValues(start: graphLeft, end: graphRight, step: majorStepGraph))
+        let majorYs = Set(axisValues(start: graphTop, end: graphBottom, step: majorStepGraph))
+
+        for x in minorXs {
+            for y in minorYs {
+                let isMajor = majorXs.contains(x) && majorYs.contains(y)
+                let screenPoint = XYPosition(x: x, y: y).toScreen(viewport: viewport)
+                let currentSize = size * (isMajor ? 1.5 : 1.0)
+
+                switch variant {
+                case .dots:
+                    let rect = CGRect(
+                        x: screenPoint.x - Double(currentSize / 2),
+                        y: screenPoint.y - Double(currentSize / 2),
+                        width: Double(currentSize),
+                        height: Double(currentSize)
+                    )
+                    if isMajor { majorPath.addEllipse(in: rect) } else { minorPath.addEllipse(in: rect) }
+                case .cross:
+                    let length = Double(currentSize * 2.5)
+                    let path = Path { p in
+                        p.move(to: CGPoint(x: screenPoint.x - length, y: screenPoint.y))
+                        p.addLine(to: CGPoint(x: screenPoint.x + length, y: screenPoint.y))
+                        p.move(to: CGPoint(x: screenPoint.x, y: screenPoint.y - length))
+                        p.addLine(to: CGPoint(x: screenPoint.x, y: screenPoint.y + length))
+                    }
+                    if isMajor { majorPath.addPath(path) } else { minorPath.addPath(path) }
+                case .lines:
+                    break
+                }
+            }
+        }
+    }
+
+    private func buildLinePaths(
+        minorPath: inout Path,
+        majorPath: inout Path,
+        graphLeft: Double,
+        graphTop: Double,
+        graphRight: Double,
+        graphBottom: Double,
+        minorStepGraph: Double,
+        majorStepGraph: Double,
+        viewport: Viewport,
+        canvasSize: CGSize
+    ) {
+        let minorXs = axisValues(start: graphLeft, end: graphRight, step: minorStepGraph)
+        let minorYs = axisValues(start: graphTop, end: graphBottom, step: minorStepGraph)
+        let majorXs = Set(axisValues(start: graphLeft, end: graphRight, step: majorStepGraph))
+        let majorYs = Set(axisValues(start: graphTop, end: graphBottom, step: majorStepGraph))
+
+        for x in minorXs {
+            let screenX = XYPosition(x: x, y: 0).toScreen(viewport: viewport).x
+            if majorXs.contains(x) {
+                majorPath.move(to: CGPoint(x: screenX, y: 0))
+                majorPath.addLine(to: CGPoint(x: screenX, y: canvasSize.height))
+            } else {
+                minorPath.move(to: CGPoint(x: screenX, y: 0))
+                minorPath.addLine(to: CGPoint(x: screenX, y: canvasSize.height))
+            }
+        }
+
+        for y in minorYs {
+            let screenY = XYPosition(x: 0, y: y).toScreen(viewport: viewport).y
+            if majorYs.contains(y) {
+                majorPath.move(to: CGPoint(x: 0, y: screenY))
+                majorPath.addLine(to: CGPoint(x: canvasSize.width, y: screenY))
+            } else {
+                minorPath.move(to: CGPoint(x: 0, y: screenY))
+                minorPath.addLine(to: CGPoint(x: canvasSize.width, y: screenY))
+            }
+        }
+    }
+
+    private func axisValues(start: Double, end: Double, step: Double) -> [Double] {
+        guard step > 0, step.isFinite else { return [] }
+        let firstIndex = Int(floor(start / step)) - 1
+        let lastIndex = Int(ceil(end / step)) + 1
+        return (firstIndex...lastIndex).map { Double($0) * step }
     }
 }

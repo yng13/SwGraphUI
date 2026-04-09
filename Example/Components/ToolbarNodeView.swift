@@ -9,10 +9,11 @@ struct ToolbarNodeView: View {
     let onConnect: ((Connection) -> Void)?
     
     @Environment(\.isGraphExporting) private var isGraphExporting
+    @Environment(\.graphZoomLevel) private var zoomLevel
     
     var body: some View {
         VStack(spacing: 0) {
-            if node.selected && !isGraphExporting {
+            if node.selected && !isGraphExporting && zoomLevel <= 1.0 {
                 HStack(spacing: 8) {
                     Button(action: onUpdate) {
                         Image(systemName: "pencil")
@@ -38,7 +39,7 @@ struct ToolbarNodeView: View {
                 .background(
                     RoundedRectangle(cornerRadius: 8)
                         .fill(Color.black.opacity(0.8))
-                        .shadow(radius: 4)
+                        .shadow(radius: zoomLevel > 1.0 ? 0 : 4)
                 )
                 .transition(.move(edge: .bottom).combined(with: .opacity))
                 .offset(y: -10)

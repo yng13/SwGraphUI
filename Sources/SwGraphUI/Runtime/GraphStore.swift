@@ -160,6 +160,7 @@ public final class GraphStore<NodeData: Sendable>: Sendable {
 
     // MARK: - Viewport Operations
     public func setViewport(_ viewport: Viewport) {
+        guard viewport.x.isFinite, viewport.y.isFinite, viewport.zoom.isFinite, viewport.zoom > 0 else { return }
         runtimeState.viewport.setViewport(viewport)
     }
     
@@ -171,6 +172,7 @@ public final class GraphStore<NodeData: Sendable>: Sendable {
     }
     
     public func zoom(at screenPoint: XYPosition? = nil, factor: Double) {
+        guard factor.isFinite, factor > 0 else { return }
         let center = screenPoint ?? .zero
         let newViewport = ViewportManager.calculateZoomAtPoint(
             current: runtimeState.viewport.viewport,
@@ -217,6 +219,7 @@ public final class GraphStore<NodeData: Sendable>: Sendable {
     /// オートパンを更新し、必要に応じてタイマーを開始します。
     /// - Parameter screenPointer: 「viewport_container」座標系での現在のポインタ位置。
     public func updateAutoPan(at screenPointer: XYPosition) {
+        guard screenPointer.x.isFinite, screenPointer.y.isFinite else { return }
         runtimeState.autoPan.mousePosition = screenPointer
         
         guard let containerSize = runtimeState.autoPan.containerSize,

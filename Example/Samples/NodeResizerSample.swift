@@ -43,18 +43,20 @@ struct NodeResizerSample: GraphSample {
 /// NodeResizerSample で使用するノードの見た目
 struct ResizableNodeView: View {
     let node: BaseNode<String>
+    @Environment(\.graphZoomLevel) private var zoomLevel
     
     var body: some View {
-        let width = node.width.map { CGFloat($0) }
-        let height = node.height.map { CGFloat($0) }
+        let scale = max(CGFloat(zoomLevel), 0.0001)
+        let width = node.width.map { CGFloat($0) * scale }
+        let height = node.height.map { CGFloat($0) * scale }
         
         ZStack {
             // 背景（ここがノードの実体サイズを決定する。クリッピングの影響を受けないように個別に frame を適用）
-            RoundedRectangle(cornerRadius: 12)
+            RoundedRectangle(cornerRadius: 12 * scale)
                 .fill(Color(NSColor.windowBackgroundColor))
                 .shadow(color: .black.opacity(node.selected ? 0.2 : 0.1), radius: node.selected ? 8 : 2)
                 .overlay(
-                    RoundedRectangle(cornerRadius: 12)
+                    RoundedRectangle(cornerRadius: 12 * scale)
                         .stroke(node.selected ? Color.accentColor : Color.gray.opacity(0.3), lineWidth: node.selected ? 2 : 1)
                 )
                 .frame(width: width, height: height)
@@ -62,21 +64,21 @@ struct ResizableNodeView: View {
             // コンテンツ（ここでもサイズを固定し、はみ出しを内部でクリップする）
             VStack {
                 Text(node.id)
-                    .font(.caption)
+                    .font(.system(size: 12 * scale))
                     .foregroundColor(.secondary)
                 Spacer()
                 Text(node.data)
-                    .font(.subheadline)
+                    .font(.system(size: 15 * scale))
                     .multilineTextAlignment(.center)
-                    .padding(.horizontal, 8)
+                    .padding(.horizontal, 8 * scale)
                 Spacer()
                 if let measured = node.measured {
                     Text("\(Int(measured.width)) x \(Int(measured.height))")
-                        .font(.system(size: 10, design: .monospaced))
+                        .font(.system(size: 10 * scale, design: .monospaced))
                         .foregroundColor(.secondary)
                 }
             }
-            .padding(12)
+            .padding(12 * scale)
             .frame(width: width, height: height)
             .clipped()
         }

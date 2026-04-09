@@ -17,16 +17,19 @@ struct SelectionBoxView<Data: Sendable>: View {
             let lookup = store.nodeLookup
             let bounds = NodePositioningAlgorithms.getNodesBounds(selectedNodes, nodeLookup: lookup)
             
+            let viewport = store.runtimeState.viewport.viewport
+            let screenBounds = bounds.toScreen(viewport: viewport)
+            
             // 境界枠のレンダリング
             // ヒットテストを無効化し、背面のノードやリサイザーの操作を妨げないようにする
             Rectangle()
                 .fill(Color.primary.opacity(0.02)) // 非常に薄い塗り（領域の視認用）
                 .overlay(
                     Rectangle()
-                        .stroke(Color.primary.opacity(0.15), lineWidth: 1) // 中立的な細い実線
+                        .stroke(Color.primary.opacity(0.15), lineWidth: 1) // 中立的な細い実線（ヘアライン）
                 )
-                .frame(width: bounds.width, height: bounds.height)
-                .position(x: bounds.x + bounds.width / 2, y: bounds.y + bounds.height / 2)
+                .frame(width: screenBounds.width, height: screenBounds.height)
+                .position(x: screenBounds.origin.x + screenBounds.width / 2, y: screenBounds.origin.y + screenBounds.height / 2)
                 .allowsHitTesting(false)
         }
     }

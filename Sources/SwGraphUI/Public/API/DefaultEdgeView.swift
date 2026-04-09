@@ -10,7 +10,7 @@ public struct DefaultEdgeView<NodeData: Sendable>: View {
     let store: GraphStore<NodeData>
     let onReconnect: ((String, Connection) -> Void)?
     let modifierKeys: ModifierKeysProvider?
-    let edgeBodyBuilder: (([PathSegment], Color, CGFloat, Bool, Bool) -> AnyView)?
+    let edgeBodyBuilder: (([PathSegment], Color, CGFloat, Viewport, Bool, Bool) -> AnyView)?
 
     
     public init(
@@ -18,7 +18,7 @@ public struct DefaultEdgeView<NodeData: Sendable>: View {
         store: GraphStore<NodeData>,
         onReconnect: ((String, Connection) -> Void)? = nil,
         modifierKeys: ModifierKeysProvider? = nil,
-        edgeBodyBuilder: (([PathSegment], Color, CGFloat, Bool, Bool) -> AnyView)? = nil
+        edgeBodyBuilder: (([PathSegment], Color, CGFloat, Viewport, Bool, Bool) -> AnyView)? = nil
     ) {
         self.edge = edge
         self.store = store
@@ -66,13 +66,14 @@ public struct DefaultEdgeView<NodeData: Sendable>: View {
                 return false
             }()
 
+            let viewport = store.runtimeState.viewport.viewport
             let adjustedSegments = DefaultEdgeViewUtils.adjustSegmentsForBackoff(
                 baseResult.segments,
                 shortenedSource: shortenedSource,
                 shortenedTarget: shortenedTarget
             )
             
-            let path = DefaultEdgeViewUtils.segmentsToPath(adjustedSegments)
+            let path = DefaultEdgeViewUtils.segmentsToPath(adjustedSegments, viewport: viewport)
 
             return AnyView(ZStack {
                 // 1. ヒットエリア（太いパス判定）
@@ -94,6 +95,7 @@ public struct DefaultEdgeView<NodeData: Sendable>: View {
                             adjustedSegments,
                             edge.selected ? (isReconnecting ? Color.blue : Color.primary) : Color.gray,
                             strokeWidth,
+                            viewport,
                             edge.animated && !isReconnecting,
                             isReconnecting
                         )
@@ -102,6 +104,7 @@ public struct DefaultEdgeView<NodeData: Sendable>: View {
                             segments: adjustedSegments,
                             strokeColor: edge.selected ? (isReconnecting ? Color.blue : Color.primary) : Color.gray,
                             strokeWidth: strokeWidth,
+                            viewport: viewport,
                             animated: edge.animated && !isReconnecting,
                             isReconnecting: isReconnecting
                         )
@@ -112,32 +115,34 @@ public struct DefaultEdgeView<NodeData: Sendable>: View {
                 
                 // 3. 始点マーカー
                 if let marker = edge.markerStart {
+                    let screenPos = sourceHandlePos.toScreen(viewport: viewport)
                     ArrowHead(
-                        at: CGPoint(x: sourceHandlePos.x, y: sourceHandlePos.y),
+                        at: CGPoint(x: screenPos.x, y: screenPos.y),
                         angle: baseResult.sourceTangentAngle.map { Angle(radians: $0 + .pi) } ?? (
                             sourcePos == .top ? .degrees(270) :
                             sourcePos == .bottom ? .degrees(90) :
                             sourcePos == .left ? .degrees(180) : .degrees(0)
                         ),
                         color: edge.selected ? Color.primary : Color.gray,
-                        width: marker.width ?? 6.0,
-                        height: marker.height ?? 6.0
+                        width: (marker.width ?? 6.0) * viewport.zoom,
+                        height: (marker.height ?? 6.0) * viewport.zoom
                     )
                     .opacity(isReconnecting ? 0.3 : 1.0)
                 }
 
                 // 4. 終了マーカー（矢印）
                 if let marker = edge.markerEnd {
+                    let screenPos = targetHandlePos.toScreen(viewport: viewport)
                     ArrowHead(
-                        at: CGPoint(x: targetHandlePos.x, y: targetHandlePos.y),
+                        at: CGPoint(x: screenPos.x, y: screenPos.y),
                         angle: baseResult.targetTangentAngle.map { Angle(radians: $0) } ?? (
                             targetPos == .top ? .degrees(90) :
                             targetPos == .bottom ? .degrees(270) :
                             targetPos == .left ? .degrees(0) : .degrees(180)
                         ),
                         color: edge.selected ? Color.primary : Color.gray,
-                        width: marker.width ?? 6.0,
-                        height: marker.height ?? 6.0
+                        width: (marker.width ?? 6.0) * viewport.zoom,
+                        height: (marker.height ?? 6.0) * viewport.zoom
                     )
                     .opacity(isReconnecting ? 0.3 : 1.0)
                 }
@@ -191,11 +196,14 @@ public struct DefaultEdgeOverlayView<NodeData: Sendable>: View {
                 curvature: edge.curvature ?? 0.25
             )
 
+            let viewport = store.runtimeState.viewport.viewport
+            let screenLabelPos = XYPosition(x: baseResult.labelX, y: baseResult.labelY).toScreen(viewport: viewport)
+
             ZStack {
                 // 1. ラベル表示
                 if let label = edge.label, !label.isEmpty {
                     EdgeLabelView(label: label, style: edge.labelStyle)
-                        .position(x: baseResult.labelX, y: baseResult.labelY)
+                        .position(x: screenLabelPos.x, y: screenLabelPos.y)
                 }
 
                 // 2. 再接続ハンドル（ラベルより前面へ）
@@ -207,20 +215,22 @@ public struct DefaultEdgeOverlayView<NodeData: Sendable>: View {
                     let targetHandlePos = store.resolvedHandlePosition(for: targetKey)
 
                     if edge.reconnectable == .source || edge.reconnectable == .both {
+                        let screenPos = sourceHandlePos.toScreen(viewport: viewport)
                         ReconnectAnchor(
                             edge: edge,
                             handleType: .source,
-                            position: CGPoint(x: sourceHandlePos.x, y: sourceHandlePos.y),
+                            position: CGPoint(x: screenPos.x, y: screenPos.y),
                             store: store,
                             onReconnect: onReconnect
                         )
                         .zIndex(100)
                     }
                     if edge.reconnectable == .target || edge.reconnectable == .both {
+                        let screenPos = targetHandlePos.toScreen(viewport: viewport)
                         ReconnectAnchor(
                             edge: edge,
                             handleType: .target,
-                            position: CGPoint(x: targetHandlePos.x, y: targetHandlePos.y),
+                            position: CGPoint(x: screenPos.x, y: screenPos.y),
                             store: store,
                             onReconnect: onReconnect
                         )
@@ -278,10 +288,11 @@ private struct DefaultEdgeViewUtils {
         return result
     }
 
-    static func segmentsToPath(_ segments: [PathSegment]) -> Path {
+    static func segmentsToPath(_ segments: [PathSegment], viewport: Viewport) -> Path {
         Path { path in
             for segment in segments {
-                switch segment {
+                let screenSegment = segment.toScreen(viewport: viewport)
+                switch screenSegment {
                 case .move(let to): path.move(to: CGPoint(x: to.x, y: to.y))
                 case .line(let to): path.addLine(to: CGPoint(x: to.x, y: to.y))
                 case .bezier(let to, let c1, let c2):

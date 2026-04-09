@@ -10,24 +10,25 @@ struct EdgeLabelView: View {
         Text(label)
             .font(resolvedFont)
             .foregroundColor(resolvedTextColor)
-            .padding(.horizontal, style.bgPadding)
-            .padding(.vertical, style.bgPadding * 0.4)
+            .padding(.horizontal, style.bgPadding * zoomLevel)
+            .padding(.vertical, (style.bgPadding * 0.4) * zoomLevel)
             .background(backgroundView)
     }
     
     private var resolvedFont: Font {
-        if let size = style.fontSize {
-            return .system(size: size)
-        }
-        switch style.font?.lowercased() {
-        case "caption": return .caption
-        case "caption2": return .caption2
-        case "footnote": return .footnote
-        case "subheadline": return .subheadline
-        case "callout": return .callout
-        case "body": return .body
-        default: return .caption2
-        }
+        let baseSize: CGFloat = {
+            if let size = style.fontSize { return size }
+            switch style.font?.lowercased() {
+            case "caption": return 12
+            case "caption2": return 10
+            case "footnote": return 13
+            case "subheadline": return 15
+            case "callout": return 16
+            case "body": return 17
+            default: return 10
+            }
+        }()
+        return .system(size: baseSize * zoomLevel)
     }
     
     private var resolvedTextColor: Color {
@@ -38,14 +39,15 @@ struct EdgeLabelView: View {
     }
     
     @Environment(\.isGraphExporting) private var isGraphExporting
+    @Environment(\.graphZoomLevel) private var zoomLevel
     
     @ViewBuilder
     private var backgroundView: some View {
         if style.showBg {
             #if os(macOS)
             Group {
-                if isGraphExporting {
-                    // エクスポート時は半透明マテリアルを避け、下の線や文字と重ならないよう不透明寄りの背景に固定します。
+                if isGraphExporting || zoomLevel > 1.0 {
+                    // エクスポート時や拡大時はマテリアルによるにじみを避けるため不透明背景を使用
                     exportBgColor
                 } else {
                     VisualEffectView()
@@ -53,11 +55,11 @@ struct EdgeLabelView: View {
                 }
             }
             .clipShape(RoundedRectangle(cornerRadius: style.bgBorderRadius))
-            .shadow(color: .black.opacity(0.08), radius: 1)
+            .shadow(color: .black.opacity(zoomLevel > 1.0 ? 0 : 0.08), radius: zoomLevel > 1.0 ? 0 : 1)
             #else
             backgroundForMobile
                 .clipShape(RoundedRectangle(cornerRadius: style.bgBorderRadius))
-                .shadow(color: .black.opacity(0.1), radius: 2)
+                .shadow(color: .black.opacity(zoomLevel > 1.0 ? 0 : 0.1), radius: zoomLevel > 1.0 ? 0 : 2)
             #endif
         }
     }
@@ -83,12 +85,12 @@ struct EdgeLabelView: View {
     #if os(iOS)
     @ViewBuilder
     private var backgroundForMobile: some View {
-        if #available(iOS 15.0, *) {
+        if #available(iOS 15.0, *), zoomLevel <= 1.0 {
             Rectangle()
                 .fill(.thinMaterial)
                 .overlay(resolvedBgColor.opacity(0.2))
         } else {
-            resolvedBgColor
+            exportBgColor
         }
     }
     #endif

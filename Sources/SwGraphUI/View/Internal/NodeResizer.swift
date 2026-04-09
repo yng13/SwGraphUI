@@ -4,6 +4,7 @@ import SwiftUI
 /// カスタムノードの body 内でオーバーレイとして使用することを想定しています。
 public struct NodeResizer<NodeData: Sendable>: View {
     @Environment(GraphStore<NodeData>.self) private var store
+    @Environment(\.graphZoomLevel) private var zoomLevel
     let node: BaseNode<NodeData>
     let isVisible: Bool
     
@@ -22,6 +23,7 @@ public struct NodeResizer<NodeData: Sendable>: View {
         // 選択中かつモデルがリサイズを許可している場合のみ表示
         // エクスポート時（isGraphExporting == true）は非表示
         if node.selected && isVisible && node.resizable && !isGraphExporting {
+            let scale = max(CGFloat(zoomLevel), 0.0001)
             ZStack {
                 // ガイド枠線
                 Rectangle()
@@ -41,8 +43,8 @@ public struct NodeResizer<NodeData: Sendable>: View {
             }
             // 親側のレイアウトに左右されないよう、明示的にリサイザー枠のサイズを確定させる
             .frame(
-                width: node.width ?? node.measured?.width ?? 0,
-                height: node.height ?? node.measured?.height ?? 0
+                width: (node.width ?? node.measured?.width ?? 0) * scale,
+                height: (node.height ?? node.measured?.height ?? 0) * scale
             )
         }
     }

@@ -5,6 +5,7 @@ struct CustomEdgeBody: View {
     let segments: [PathSegment]
     let color: Color
     let width: CGFloat
+    let viewport: Viewport
     let animated: Bool
     let reconnecting: Bool
     
@@ -15,6 +16,7 @@ struct CustomEdgeBody: View {
                 segments: segments,
                 strokeColor: color.opacity(0.2),
                 strokeWidth: width + 4,
+                viewport: viewport,
                 animated: animated,
                 isReconnecting: reconnecting
             )
@@ -24,6 +26,7 @@ struct CustomEdgeBody: View {
                 segments: segments,
                 strokeColor: color,
                 strokeWidth: width,
+                viewport: viewport,
                 animated: animated,
                 isReconnecting: reconnecting
             )
@@ -34,6 +37,7 @@ struct CustomEdgeBody: View {
                     segments: segments,
                     strokeColor: .white.opacity(0.5),
                     strokeWidth: 1,
+                    viewport: viewport,
                     animated: animated,
                     isReconnecting: false
                 )
@@ -42,6 +46,7 @@ struct CustomEdgeBody: View {
                         segments: segments,
                         strokeColor: .black,
                         strokeWidth: width,
+                        viewport: viewport,
                         animated: false,
                         isReconnecting: false
                     )

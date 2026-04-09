@@ -14,6 +14,7 @@ public struct HandleView<NodeData: Sendable>: View {
     // ヒットエリア拡大用の定数
     private let hitAreaPadding: CGFloat = 8
     private let handleSize: CGFloat = 6
+    @Environment(\.graphZoomLevel) private var zoomLevel
     
     public init(
         nodeID: String,
@@ -34,15 +35,16 @@ public struct HandleView<NodeData: Sendable>: View {
     }
     
     public var body: some View {
+        let visibleSize = handleSize * max(CGFloat(zoomLevel), 0.0001)
         Circle()
             .fill(Color.gray.opacity(0.8))
-            .frame(width: handleSize, height: handleSize)
+            .frame(width: visibleSize, height: visibleSize)
             .padding(hitAreaPadding) // ヒットエリアを拡大
             .contentShape(Circle())
             .overlay(
                 Circle()
                     .stroke(Color.white, lineWidth: 1)
-                    .frame(width: handleSize, height: handleSize)
+                    .frame(width: visibleSize, height: visibleSize)
             )
             .background(
                 GeometryReader { geometry in

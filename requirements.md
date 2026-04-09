@@ -264,3 +264,24 @@ M23 完了に伴うドキュメント、進捗管理ファイル、および開�
     - レイアウト変更時のスムーズなアニメーション遷移と `fitView` 追従。
 3.  **Undo/Redo 連携**:
     - レイアウト適用を 1 つのアクションとして Undo 履歴に登録。
+
+## [M32] Runtime Zoom Quality / Coordinate-Based Crisp Rendering (2026-04-10) [DONE]
+
+### 概要
+`GraphView` のルート Transform（全体拡大）を廃止し、全ての描画要素の座標計算を「スクリーン座標系」での直接計算に移行することで、ズーム中も常に鮮明なテキストとベクタ線（Crisp Rendering）を実現する。
+
+### 要件項目
+1.  **[x] Coordinate-Based Transformation**:
+    - [x] `GraphView` ルルートの `.scaleEffect`, `.offset` を廃止し、ラスタライズの発生源を断つ。
+    - [x] 全ての描画レイヤー（Node, Edge, SelectionBox, Preview, ReconnectHandle）を一斉にスクリーン座標系での配置に移行。
+2.  **[x] Geometry Infrastructure**:
+    - [x] `Geometry.swift` に `Dimensions`, `Rect`, `PathSegment` 用の `toScreen(viewport:)` ヘルパーを拡充。
+    - [x] 変換精度の単体テスト（`GeometryTests.swift`）による品質担保。
+3.  **[x] Purpose-Specific Line Widths**:
+    - [x] エッジ（Edge）: ズームに追従して太くなる（`width * zoom`）。
+    - [x] オーバーレイ（SelectionBox, Marquee）: 常に鮮明な 1px（ヘアライン）を維持。
+4.  **[x] Adaptive Content Strategy**:
+    - [x] ノード内部のスケーリングを個別適用し、ボケの発生を段階的に評価。
+    - [x] エッジラベルはスクリーン空間での再レイアウト（再描画）を優先し、フォント品質を最大化。
+5.  **[x] Interaction Integrity**:
+    - [x] 座標変換の移行後も、ドラッグ、接続、矩形選択のポインタ精度が 1ピクセル単位で維持されること。

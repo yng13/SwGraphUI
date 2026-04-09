@@ -332,17 +332,19 @@ extension ContentView {
         _ segments: [PathSegment],
         _ color: Color,
         _ width: CGFloat,
+        _ viewport: Viewport,
         _ animated: Bool,
         _ reconnecting: Bool
     ) -> AnyView {
         if edge.kind == "custom" {
-            return AnyView(CustomEdgeBody(segments: segments, color: color, width: width, animated: animated, reconnecting: reconnecting))
+            return AnyView(CustomEdgeBody(segments: segments, color: color, width: width, viewport: viewport, animated: animated, reconnecting: reconnecting))
         } else {
             return AnyView(
                 EdgeRenderer(
                     segments: segments,
                     strokeColor: color,
                     strokeWidth: width,
+                    viewport: viewport,
                     animated: animated,
                     isReconnecting: reconnecting
                 )

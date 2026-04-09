@@ -12,7 +12,7 @@ public enum GraphEvent: Sendable {
 public struct GraphView<NodeData: Sendable, NodeContent: View>: View {
     public let store: GraphStore<NodeData>
     public let nodeBuilder: (BaseNode<NodeData>) -> NodeContent
-    public let edgeBuilder: (BaseEdge<NodeData>, [PathSegment], Color, CGFloat, Bool, Bool) -> AnyView
+    public let edgeBuilder: (BaseEdge<NodeData>, [PathSegment], Color, CGFloat, Viewport, Bool, Bool) -> AnyView
     public let backgroundBuilder: () -> AnyView
     public var onEvent: ((GraphEvent) -> Void)?
 
@@ -38,7 +38,7 @@ public struct GraphView<NodeData: Sendable, NodeContent: View>: View {
         onEvent: ((GraphEvent) -> Void)? = nil,
         onConnect: ((Connection) -> Void)? = nil,
         onReconnect: ((String, Connection) -> Void)? = nil,
-        edgeBuilder: ((BaseEdge<NodeData>, [PathSegment], Color, CGFloat, Bool, Bool) -> AnyView)? = nil,
+        edgeBuilder: ((BaseEdge<NodeData>, [PathSegment], Color, CGFloat, Viewport, Bool, Bool) -> AnyView)? = nil,
         @ViewBuilder nodeBuilder: @escaping (BaseNode<NodeData>) -> NodeContent,
         @ViewBuilder backgroundBuilder: @escaping () -> AnyView = { AnyView(EmptyView()) }
     ) {
@@ -48,8 +48,8 @@ public struct GraphView<NodeData: Sendable, NodeContent: View>: View {
         self.onReconnect = onReconnect
         self.nodeBuilder = nodeBuilder
         self.backgroundBuilder = backgroundBuilder
-        self.edgeBuilder = edgeBuilder ?? { _, segments, color, width, animated, reconnecting in
-            AnyView(EdgeRenderer(segments: segments, strokeColor: color, strokeWidth: width, animated: animated, isReconnecting: reconnecting))
+        self.edgeBuilder = edgeBuilder ?? { _, segments, color, width, viewport, animated, reconnecting in
+            AnyView(EdgeRenderer(segments: segments, strokeColor: color, strokeWidth: width, viewport: viewport, animated: animated, isReconnecting: reconnecting))
         }
     }
 
@@ -127,7 +127,13 @@ public struct GraphView<NodeData: Sendable, NodeContent: View>: View {
             MagnifyGesture()
                 .onChanged { value in
                     guard store.runtimeState.interactivity.zoomOnPinch else { return }
+                    guard value.magnification.isFinite, value.magnification > 0 else { return }
+                    guard lastMagnification.isFinite, lastMagnification > 0 else {
+                        lastMagnification = max(value.magnification, 1.0)
+                        return
+                    }
                     let factor = value.magnification / lastMagnification
+                    guard factor.isFinite, factor > 0 else { return }
                     let center = XYPosition(x: hoverLocation.x, y: hoverLocation.y)
                     store.zoom(at: center, factor: factor)
                     lastMagnification = value.magnification
@@ -269,9 +275,8 @@ public struct GraphView<NodeData: Sendable, NodeContent: View>: View {
                     )
                 }
             )
+            .environment(\.graphZoomLevel, vp.zoom)
         }
-        .scaleEffect(vp.zoom, anchor: .topLeading)
-        .offset(x: vp.x, y: vp.y)
     }
 }
 
@@ -280,7 +285,7 @@ public struct GraphView<NodeData: Sendable, NodeContent: View>: View {
 internal struct GraphLayerStack<NodeData: Sendable, NodeContent: View>: View {
     let store: GraphStore<NodeData>
     let nodeBuilder: (BaseNode<NodeData>) -> NodeContent
-    let edgeBuilder: (BaseEdge<NodeData>, [PathSegment], Color, CGFloat, Bool, Bool) -> AnyView
+    let edgeBuilder: (BaseEdge<NodeData>, [PathSegment], Color, CGFloat, Viewport, Bool, Bool) -> AnyView
     let onReconnect: ((String, Connection) -> Void)?
     let modifierKeys: ModifierKeysProvider?
     let nodeWrapper: (BaseNode<NodeData>, AnyView) -> AnyView
@@ -308,8 +313,8 @@ internal struct GraphLayerStack<NodeData: Sendable, NodeContent: View>: View {
                 store: store,
                 onReconnect: onReconnect,
                 modifierKeys: modifierKeys ?? ModifierKeysProvider(),
-                edgeBodyBuilder: { segments, color, width, animated, reconnecting in
-                    edgeBuilder(edge, segments, color, width, animated, reconnecting)
+                edgeBodyBuilder: { segments, color, width, viewport, animated, reconnecting in
+                    edgeBuilder(edge, segments, color, width, viewport, animated, reconnecting)
                 }
             )
         }
@@ -358,8 +363,11 @@ internal struct GraphLayerStack<NodeData: Sendable, NodeContent: View>: View {
 
         ForEach(sortedNodes) { (node: BaseNode<NodeData>) in
             let absolutePos = self.store.absolutePosition(for: node.id)
+            let viewport = self.store.runtimeState.viewport.viewport
+            let screenPos = absolutePos.toScreen(viewport: viewport)
+            
             let content = NodeMeasurementWrapper(id: node.id, content: self.nodeBuilder(node))
-                .offset(x: absolutePos.x, y: absolutePos.y)
+                .offset(x: screenPos.x, y: screenPos.y)
             
             nodeWrapper(node, AnyView(content))
         }
@@ -392,37 +400,43 @@ public struct DefaultNodeView<NodeData: Sendable>: View {
         self.store = store
         self.onConnect = onConnect
     }
+
+    @Environment(\.graphZoomLevel) private var zoomLevel
     
     public var body: some View {
-        let nodeWidth = node.width.map { CGFloat($0) }
-        let nodeHeight = node.height.map { CGFloat($0) }
+        let zoomScale = max(CGFloat(zoomLevel), 0.0001)
+        let nodeWidth = node.width.map { CGFloat($0) * zoomScale }
+        let nodeHeight = node.height.map { CGFloat($0) * zoomScale }
         
         VStack {
             Text(node.id)
-                .font(.caption)
+                .font(.system(size: 12 * zoomScale, weight: .bold))
                 .bold()
         }
-        .padding(10)
+        .padding(10 * zoomScale)
         .frame(width: nodeWidth, height: nodeHeight)
         .background(
-            RoundedRectangle(cornerRadius: 5)
+            RoundedRectangle(cornerRadius: 5 * zoomScale)
                 .fill(Self.backgroundColor)
-                .shadow(radius: 2)
+                .shadow(radius: zoomLevel > 1.0 ? 0 : 2)
         )
         .overlay(
-            RoundedRectangle(cornerRadius: 5)
+            RoundedRectangle(cornerRadius: 5 * zoomScale)
                 .stroke(node.selected ? Color.primary : Color.gray.opacity(0.3), lineWidth: node.selected ? 3 : 1)
         )
-        .shadow(color: Color.black.opacity(node.selected ? 0.2 : 0.1), radius: node.selected ? 5 : 2)
+        .shadow(
+            color: Color.black.opacity(node.selected ? (zoomLevel > 1.0 ? 0 : 0.2) : (zoomLevel > 1.0 ? 0 : 0.1)),
+            radius: node.selected ? (zoomLevel > 1.0 ? 0 : 5) : (zoomLevel > 1.0 ? 0 : 2)
+        )
         .overlay(
             HStack {
                 // 左側ターゲットハンドル
                 HandleView<NodeData>(nodeID: node.id, type: .target, placement: .left, store: store, onConnect: onConnect)
-                    .offset(x: -8)
+                    .offset(x: -8 * zoomScale)
                 Spacer()
                 // 右側ソースハンドル
                 HandleView<NodeData>(nodeID: node.id, type: .source, placement: .right, store: store, onConnect: onConnect)
-                    .offset(x: 8)
+                    .offset(x: 8 * zoomScale)
             }
         )
     }
@@ -457,9 +471,13 @@ struct ConnectionPreviewLine<NodeData: Sendable>: View {
             }
         }()
         
+        let viewport = store.runtimeState.viewport.viewport
+        let sourceScreen = sourcePos.toScreen(viewport: viewport)
+        let targetScreen = targetPos.toScreen(viewport: viewport)
+        
         Path { path in
-            path.move(to: CGPoint(x: sourcePos.x, y: sourcePos.y))
-            path.addLine(to: CGPoint(x: targetPos.x, y: targetPos.y))
+            path.move(to: CGPoint(x: sourceScreen.x, y: sourceScreen.y))
+            path.addLine(to: CGPoint(x: targetScreen.x, y: targetScreen.y))
         }
         .stroke(
             active.targetNodeID != nil ? Color.blue : Color.blue.opacity(0.6),

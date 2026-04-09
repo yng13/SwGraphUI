@@ -6,63 +6,71 @@ public struct EdgeRenderer: View {
     public let segments: [PathSegment]
     public let strokeColor: Color
     public let strokeWidth: CGFloat
+    public let viewport: Viewport
     public let animated: Bool
     public let isReconnecting: Bool
     
-    @State private var phase: CGFloat = 0
-    
-    public init(segments: [PathSegment], strokeColor: Color, strokeWidth: CGFloat, animated: Bool, isReconnecting: Bool) {
+    public init(segments: [PathSegment], strokeColor: Color, strokeWidth: CGFloat, viewport: Viewport, animated: Bool, isReconnecting: Bool) {
         self.segments = segments
         self.strokeColor = strokeColor
         self.strokeWidth = strokeWidth
+        self.viewport = viewport
         self.animated = animated
         self.isReconnecting = isReconnecting
     }
     
     public var body: some View {
-        Path { path in
-            for segment in segments {
-                switch segment {
-                case .move(let to):
-                    path.move(to: CGPoint(x: to.x, y: to.y))
-                case .line(let to):
-                    path.addLine(to: CGPoint(x: to.x, y: to.y))
-                case .bezier(let to, let c1, let c2):
-                    path.addCurve(
-                        to: CGPoint(x: to.x, y: to.y),
-                        control1: CGPoint(x: c1.x, y: c1.y),
-                        control2: CGPoint(x: c2.x, y: c2.y)
-                    )
-                case .quadratic(let to, let c):
-                    path.addQuadCurve(
-                        to: CGPoint(x: to.x, y: to.y),
-                        control: CGPoint(x: c.x, y: c.y)
-                    )
+        TimelineView(.animation) { context in
+            Path { path in
+                for segment in segments {
+                    let screenSegment = segment.toScreen(viewport: viewport)
+                    switch screenSegment {
+                    case .move(let to):
+                        path.move(to: CGPoint(x: to.x, y: to.y))
+                    case .line(let to):
+                        path.addLine(to: CGPoint(x: to.x, y: to.y))
+                    case .bezier(let to, let c1, let c2):
+                        path.addCurve(
+                            to: CGPoint(x: to.x, y: to.y),
+                            control1: CGPoint(x: c1.x, y: c1.y),
+                            control2: CGPoint(x: c2.x, y: c2.y)
+                        )
+                    case .quadratic(let to, let c):
+                        path.addQuadCurve(
+                            to: CGPoint(x: to.x, y: to.y),
+                            control: CGPoint(x: c.x, y: c.y)
+                        )
+                    }
                 }
             }
-        }
-        .stroke(strokeColor, style: strokeStyle)
-        .task(id: animated) {
-            if animated {
-                withAnimation(.linear(duration: 1).repeatForever(autoreverses: false)) {
-                    phase = -15
-                }
-            } else {
-                withAnimation(.default) {
-                    phase = 0
-                }
-            }
+            .stroke(strokeColor, style: strokeStyle(at: context.date))
         }
     }
     
-    private var strokeStyle: StrokeStyle {
+    private func strokeStyle(at date: Date) -> StrokeStyle {
+        let scaledWidth = strokeWidth * viewport.zoom
+        let scaledShortDash: CGFloat = 5 * viewport.zoom
+        let scaledLongDash: CGFloat = 10 * viewport.zoom
         if isReconnecting {
-            return StrokeStyle(lineWidth: strokeWidth, lineCap: .round, dash: [5, 5])
+            return StrokeStyle(
+                lineWidth: scaledWidth,
+                lineCap: .round,
+                dash: [scaledShortDash, scaledShortDash]
+            )
         }
         if animated {
-            return StrokeStyle(lineWidth: strokeWidth, lineCap: .round, dash: [10, 5], dashPhase: phase)
+            let elapsed = date.timeIntervalSinceReferenceDate
+            let dashCycle: CGFloat = scaledLongDash + scaledShortDash
+            let phase = CGFloat(-elapsed * 30 * viewport.zoom)
+                .truncatingRemainder(dividingBy: dashCycle)
+            return StrokeStyle(
+                lineWidth: scaledWidth,
+                lineCap: .round,
+                dash: [scaledLongDash, scaledShortDash],
+                dashPhase: phase
+            )
         } else {
-            return StrokeStyle(lineWidth: strokeWidth, lineCap: .round)
+            return StrokeStyle(lineWidth: scaledWidth, lineCap: .round)
         }
     }
 }

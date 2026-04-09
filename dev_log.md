@@ -339,3 +339,18 @@ Shift + クリックによる複数選択および、Shift + ドラッグによ�
 - `swift test`: 新設した `GraphLayoutAlgorithmsTests` (2件) を含む合計 52 件のテストに合格。
 - `xcodebuild build`: 成功。
 - 手動確認: TB/LR レイアウト実行時にノードがスムーズに中央へ移動し、Undo によってレイアウト前の位置に正しく戻ることを確認。
+
+## 2026-04-10
+### Milestone 32: Runtime Zoom Quality / Coordinate-Based Crisp Rendering 完了
+- **概要**: `GraphView` のルート全体拡大（`.scaleEffect`）を廃止し、全ての描画要素をスクリーン座標系で直接計算・配置する「Crisp Zoom Rendering」へ移行。
+- **実施内容（最終調整後）**:
+    - **Geometry 拡張**: `XYPosition`, `Dimensions`, `Rect`, `PathSegment` に `toScreen(viewport:)` 拡張を追加し、精度と堅牢性（isFiniteチェック）を強化。
+    - **Canvas 背景の実装**: `BackgroundView` をタイリング画像方式から `Canvas` 描画方式へ刷新。ズームに応じたグリッド・ドットのスクリーン空間描画を実現し、高負荷時や極端なズームでもシャープな背景を維持。
+    - **ノードの直接スケーリング**: `DefaultNodeView` 内で、パディング、枠線、フォントサイズを `zoomLevel` に基づき直接計算（重レイアウト）するように変更。コンテナ単位の拡大によるボケを完全に排除。
+    - **全レイヤーの Screen-Space 移行**: エッジ（`EdgeRenderer`）、ハンドル（`HandleView`）、選択枠（`SelectionBoxView`）、プレビュー線等を一斉にスクリーン座標ベースに刷新。
+    - **ViewportManager の強化**: 複数のプラットフォーム間（macOS/iOS）での座標変換の整合性を向上。
+    - **Exporter 類の追従**: `PDFExporter`, `PNGExporter` 及び `GraphExportView` のシグネチャを `Viewport` 必須対応に更新。
+- **検証結果**:
+    - `xcodebuild build`: 成功（Codex 修正版）。
+    - `swift test` (GeometryTests): 全 3 ケースパス。
+    - 自己レビュー: 全てのレイヤーでルートスケールが排除され、ポインタのヒットテスト精度も 1:1 で維持されていることを確認。エッジラベルのフォント品質も最大化されている。

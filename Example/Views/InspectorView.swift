@@ -42,34 +42,41 @@ struct InspectorView: View {
                 InspectorHeader("Viewport")
                 VStack(spacing: 1) {
                     InspectorRow("Zoom") {
-                        HStack(spacing: 0) {
-                            Button {
-                                let center = XYPosition(x: appStore.currentGraphSize.width / 2, y: appStore.currentGraphSize.height / 2)
-                                graphStore.zoom(at: center, factor: 1.2)
-                            } label: { 
-                                Image(systemName: "plus")
-                                    .frame(width: 20, height: 16)
+                        HStack(spacing: 6) {
+                            HStack(spacing: 0) {
+                                Button {
+                                    let center = XYPosition(x: appStore.currentGraphSize.width / 2, y: appStore.currentGraphSize.height / 2)
+                                    graphStore.zoom(at: center, factor: 1.2)
+                                } label: {
+                                    Image(systemName: "plus")
+                                        .frame(width: 20, height: 16)
+                                }
+
+                                Button {
+                                    let center = XYPosition(x: appStore.currentGraphSize.width / 2, y: appStore.currentGraphSize.height / 2)
+                                    graphStore.zoom(at: center, factor: 0.8)
+                                } label: {
+                                    Image(systemName: "minus")
+                                        .frame(width: 20, height: 16)
+                                }
+
+                                Button {
+                                    graphStore.fitView(in: appStore.currentGraphSize)
+                                } label: {
+                                    Image(systemName: "scope")
+                                        .frame(width: 20, height: 16)
+                                }
                             }
-                            
-                            Button {
-                                let center = XYPosition(x: appStore.currentGraphSize.width / 2, y: appStore.currentGraphSize.height / 2)
-                                graphStore.zoom(at: center, factor: 0.8)
-                            } label: { 
-                                Image(systemName: "minus")
-                                    .frame(width: 20, height: 16)
-                            }
-                            
-                            Button {
-                                graphStore.fitView(in: appStore.currentGraphSize)
-                            } label: { 
-                                Image(systemName: "scope")
-                                    .frame(width: 20, height: 16)
-                            }
+                            .buttonStyle(.plain)
+                            .background(Color.primary.opacity(0.05))
+                            .cornerRadius(4)
+                            .offset(y: -0.5)
+
+                            Text(currentZoomText)
+                                .font(.system(size: Constants.fontSize, design: .monospaced))
+                                .foregroundStyle(.secondary)
+                                .frame(width: 44, alignment: .trailing)
                         }
-                        .buttonStyle(.plain)
-                        .background(Color.primary.opacity(0.05))
-                        .cornerRadius(4)
-                        .offset(y: -0.5)
                     }
                 }
                 .padding(.vertical, 4)
@@ -199,8 +206,14 @@ struct InspectorView: View {
             }
         }
     }
-    
+
     // MARK: - Sections
+
+    private var currentZoomText: String {
+        let zoom = graphStore.runtimeState.viewport.viewport.zoom
+        let percentage = Int((zoom * 100).rounded())
+        return "\(percentage)%"
+    }
     
     @ViewBuilder
     private var edgeEditorSection: some View {
