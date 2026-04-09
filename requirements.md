@@ -285,3 +285,23 @@ M23 完了に伴うドキュメント、進捗管理ファイル、および開�
     - [x] エッジラベルはスクリーン空間での再レイアウト（再描画）を優先し、フォント品質を最大化。
 5.  **[x] Interaction Integrity**:
     - [x] 座標変換の移行後も、ドラッグ、接続、矩形選択のポインタ精度が 1ピクセル単位で維持されること。
+
+## [M28b] Undo/Redo Interaction Polish (2026-04-10) [DONE]
+
+### 概要
+Undo/Redo 実行時の要素状態（選択）とビューポートの保存ロジックを精緻化し、実用的な編集ワークフローを実現する。
+
+### 要件項目
+1.  **[x] Selection Persistence**:
+    - [x] Undo/Redo 復元後、モデルの `selected` フラグから実行時状態を再構築し、操作対象の選択を維持。
+2.  **[x] Viewport Undo (Lightweight)**:
+    - [x] `fitView` 操作を Undo 可能にする一方、他の要素データには干渉しない軽量な復元経路を確保。
+3.  **[x] Linguistic Consistency (Japanese)**:
+    - [x] **COMPLETED**: 選択解除状態での `Undo` 後の選択復元ロジック（`syncSelectionFromModel`）。
+    - [x] **COMPLETED**: `fitView` 専用の軽量 Undo パス（`registerViewportUndo`）。
+    - [x] **COMPLETED**: Undo アクション名の日本語化（「ノードの移動」「表示範囲を調整」等）。
+    - [x] **COMPLETED**: `apply(snapshot:)` における Undo と一般ロードの副作用分離（`restoringSelection` フラグ）。
+    - [x] **COMPLETED**: `moveSelectedNodes` における no-op ガード（履歴汚染防止）。
+    - [x] **COMPLETED**: ユニットテストによる回帰防止（`UndoRefinementTests.swift`）。
+4.  **[x] Interaction Stability**:
+    - [x] Undo -> Redo の往復において、選択状態と座標の整合性が 100% 維持されること。

@@ -90,7 +90,7 @@ public final class GraphStore<NodeData: Sendable>: Sendable {
                 nodeLookup: lookup
             )
             
-            // 常に制約を適用（ここではスナップはデフォルト設定に従うか、一旦 false にして厳密な位置指定を優先）
+            // 常に制約を適用
             let constrainedPos = DragManager.applyConstraints(
                 to: targetAbsPos,
                 node: node,
@@ -113,14 +113,13 @@ public final class GraphStore<NodeData: Sendable>: Sendable {
     }
 
     /// リサイズ操作によってノードの寸法と位置を更新します。
-    /// このメソッドは自動測定ループとは別に、ユーザーの意図的な変形を即座に反映するために使用します。
     public func updateNodeDimensionsAfterResize(id: String, width: Double, height: Double, position: XYPosition) {
         if let index = nodes.firstIndex(where: { $0.id == id }) {
             nodes[index].width = width
             nodes[index].height = height
             nodes[index].position = position
             
-            // measured も同期。エッジ描画が即座に追従するようにします。
+            // measured も同期。
             nodes[index].measured = Dimensions(width: width, height: height)
         }
     }
@@ -132,13 +131,12 @@ public final class GraphStore<NodeData: Sendable>: Sendable {
     public func stopResizing() {
         if let before = resizeStartSnapshot {
             let after = self.snapshot()
-            // 幅・高さ・位置のいずれかに変化があれば登録
             let hasChanged = zip(before.nodes, after.nodes).contains { b, a in
                 b.id != a.id || b.width != a.width || b.height != a.height || b.position != a.position
             } || before.nodes.count != after.nodes.count
             
             if hasChanged {
-                registerUndo(title: "Resize Node", snapshot: before)
+                registerUndo(title: "ノードのリサイズ", snapshot: before)
             }
         }
         self.resizeStartSnapshot = nil
@@ -165,7 +163,6 @@ public final class GraphStore<NodeData: Sendable>: Sendable {
     }
     
     public func pan(by delta: XYPosition) {
-        // 構造体の再代入を明示的に行い、@Observable の通知を確実にする
         var state = runtimeState.viewport
         state.panBy(dx: delta.x, dy: delta.y)
         runtimeState.viewport = state
@@ -184,12 +181,10 @@ public final class GraphStore<NodeData: Sendable>: Sendable {
         runtimeState.viewport.setViewport(newViewport)
     }
 
-    /// ビューポートを 1.2 倍拡大します。
     public func zoomIn() {
         zoom(factor: 1.2)
     }
 
-    /// ビューポートを 0.8 倍縮小します。
     public func zoomOut() {
         zoom(factor: 0.8)
     }
@@ -199,6 +194,8 @@ public final class GraphStore<NodeData: Sendable>: Sendable {
         padding: GeometryAlgorithms.Padding = .all(.relative(0.1))
     ) {
         let lookup = Dictionary(uniqueKeysWithValues: nodes.map { ($0.id, $0) })
+        let prevViewport = runtimeState.viewport.viewport
+        
         runtimeState.viewport.fitView(
             nodes: nodes,
             nodeLookup: lookup,
@@ -207,17 +204,17 @@ public final class GraphStore<NodeData: Sendable>: Sendable {
             minZoom: runtimeState.interactivity.minZoom,
             maxZoom: runtimeState.interactivity.maxZoom
         )
+        
+        if runtimeState.viewport.viewport != prevViewport {
+            registerViewportUndo(title: "表示範囲を調整", previousViewport: prevViewport)
+        }
     }
     
     // MARK: - Auto Pan Operations
-    
-    /// コンテナ（キャンバス）の寸法を更新します。
     public func setContainerSize(_ size: Dimensions) {
         runtimeState.autoPan.containerSize = size
     }
     
-    /// オートパンを更新し、必要に応じてタイマーを開始します。
-    /// - Parameter screenPointer: 「viewport_container」座標系での現在のポインタ位置。
     public func updateAutoPan(at screenPointer: XYPosition) {
         guard screenPointer.x.isFinite, screenPointer.y.isFinite else { return }
         runtimeState.autoPan.mousePosition = screenPointer
@@ -230,7 +227,7 @@ public final class GraphStore<NodeData: Sendable>: Sendable {
         let velocity = AutoPanAlgorithms.calculateVelocity(
             mousePosition: screenPointer,
             containerSize: containerSize,
-            speed: 25 // スピードを 15 -> 25 に強化
+            speed: 25
         )
         
         if velocity != .zero {
@@ -241,16 +238,11 @@ public final class GraphStore<NodeData: Sendable>: Sendable {
             runtimeState.autoPan.velocity = velocity
         } else {
             runtimeState.autoPan.isActive = false
-            // 速度が0の場合はタイマーは止めず、ポインタが閾値内に戻るのを待つか、
-            // インタラクション終了時に止めます。
         }
     }
     
     private func startAutoPanTimer() {
         guard autoPanTimer == nil else { return }
-        
-        // 50fps (20ms) で更新
-        // 直接 RunLoop.main.add することで、ドラッグ中 (.tracking) もタイマーがブロックされないようにする
         let timer = Timer(timeInterval: 0.02, repeats: true) { [weak self] _ in
             Task { @MainActor in
                 self?.handleAutoPanTick()
@@ -273,11 +265,10 @@ public final class GraphStore<NodeData: Sendable>: Sendable {
             return
         }
         
-        // 最新の速度を再計算
         let velocity = AutoPanAlgorithms.calculateVelocity(
             mousePosition: mousePos,
             containerSize: containerSize,
-            speed: 25 // スピードを 15 -> 25 に強化
+            speed: 25
         )
         
         guard velocity != .zero else {
@@ -287,12 +278,8 @@ public final class GraphStore<NodeData: Sendable>: Sendable {
         
         runtimeState.autoPan.isActive = true
         runtimeState.autoPan.velocity = velocity
-        
-        // ビューポートを移動
         pan(by: velocity)
         
-        // ポインタ・オブジェクトの同期
-        // ビューポートが動いた状態で、再度画面上のポインタからグラフ空間の座標を割り出す
         let viewport = runtimeState.viewport.viewport
         let newGraphPointer = mousePos.fromScreen(viewport: viewport)
         
@@ -301,22 +288,17 @@ public final class GraphStore<NodeData: Sendable>: Sendable {
         } else if runtimeState.connection.active != nil {
             updateConnecting(to: newGraphPointer)
         } else {
-            // インタラクションが見当たらない場合は停止
             stopAutoPanTimer()
         }
     }
 
-    // MARK: - Interaction Handlers
+    // MARK: - Interaction Handlers --- Selection ---
     
-    // --- Selection ---
-    
-    /// 新しいノードを追加し、そのノードを選択状態にします。
     public func addNode(_ node: BaseNode<NodeData>) {
         nodes.append(node)
         selectNode(node.id)
     }
 
-    /// 選択中の全てのノードを更新します。
     public func updateSelectedNodes(_ transform: (inout BaseNode<NodeData>) -> Void) {
         for i in 0..<nodes.count {
             if nodes[i].selected {
@@ -325,12 +307,9 @@ public final class GraphStore<NodeData: Sendable>: Sendable {
         }
     }
 
-    /// 指定されたノードを選択状態にします（排他選択）。
     public func selectNode(_ id: String) {
         runtimeState.selection.clear()
         runtimeState.selection.selectNode(id: id)
-        
-        // モデルフラグの同期
         for i in 0..<nodes.count {
             nodes[i].selected = (nodes[i].id == id)
         }
@@ -339,11 +318,8 @@ public final class GraphStore<NodeData: Sendable>: Sendable {
         }
     }
     
-    /// 指定されたノードの選択状態を反転させます（複数選択用）。
     public func toggleNodeSelection(_ id: String) {
         runtimeState.selection.toggleNode(id: id)
-        
-        // モデルフラグの同期
         for i in 0..<nodes.count {
             if nodes[i].id == id {
                 nodes[i].selected = runtimeState.selection.selectedNodeIDs.contains(id)
@@ -351,12 +327,9 @@ public final class GraphStore<NodeData: Sendable>: Sendable {
         }
     }
     
-    /// 指定されたエッジを選択状態にします（排他選択）。
     public func selectEdge(_ id: String) {
         runtimeState.selection.clear()
         runtimeState.selection.selectEdge(id: id)
-        
-        // モデルフラグの同期
         for i in 0..<nodes.count {
             nodes[i].selected = false
         }
@@ -365,11 +338,8 @@ public final class GraphStore<NodeData: Sendable>: Sendable {
         }
     }
     
-    /// 指定されたエッジの選択状態を反転させます（複数選択用）。
     public func toggleEdgeSelection(_ id: String) {
         runtimeState.selection.toggleEdge(id: id)
-        
-        // モデルフラグの同期
         for i in 0..<edges.count {
             if edges[i].id == id {
                 edges[i].selected = runtimeState.selection.selectedEdgeIDs.contains(id)
@@ -377,11 +347,8 @@ public final class GraphStore<NodeData: Sendable>: Sendable {
         }
     }
     
-    /// すべての選択を解除します。
     public func clearSelection() {
         runtimeState.selection.clear()
-        
-        // モデルフラグの同期
         for i in 0..<nodes.count {
             nodes[i].selected = false
         }
@@ -390,7 +357,6 @@ public final class GraphStore<NodeData: Sendable>: Sendable {
         }
     }
     
-    /// すべてを選択状態にします。
     public func selectAll() {
         for i in 0..<nodes.count {
             nodes[i].selected = true
@@ -401,29 +367,24 @@ public final class GraphStore<NodeData: Sendable>: Sendable {
             runtimeState.selection.selectEdge(id: edges[i].id)
         }
     }
-    /// 選択されているノードを一括移動させます（キーボード操作用）。
-    /// 親子関係がある場合、親のみを移動させることで二重移動を防止します。
+
     public func moveSelectedNodes(by offset: XYPosition) {
         guard runtimeState.interactivity.nodesDraggable else { return }
+        if offset == .zero { return }
         
-        // キーボード移動など、1回のアクションとして Undo 登録
-        registerUndo(title: "Move Nodes", snapshot: self.snapshot(), ignoringViewport: true)
-        
+        let beforeSnapshot = self.snapshot()
         let selectedNodeIDs = runtimeState.selection.selectedNodeIDs
         let lookup = self.nodeLookup
+        var hasMoved = false
         
         for i in 0..<nodes.count {
             let node = nodes[i]
             guard selectedNodeIDs.contains(node.id) && node.draggable else { continue }
             
-            // 重要: 選択セット内で「親も選択されている」場合、そのノード自身の相対座標（position）は動かさない。
-            // ただし、再描画を確実にトリガーするために、値が変わらなくても代入は行う（struct なので配列置換が発生する）
             if let parentID = node.parentID, selectedNodeIDs.contains(parentID) {
-                nodes[i].position = nodes[i].position
                 continue
             }
             
-            // 現在の絶対座標 + offset から制約適用後の相対座標を算出
             let currentAbsPos = NodePositioningAlgorithms.evaluateAbsolutePosition(node, nodeLookup: lookup)
             let targetAbsPos = currentAbsPos + offset
             
@@ -431,69 +392,57 @@ public final class GraphStore<NodeData: Sendable>: Sendable {
                 to: targetAbsPos,
                 node: node,
                 nodeLookup: lookup,
-                snapGrid: nil, // キーボード移動ではスナップさせない
+                snapGrid: nil,
                 applySnap: false
             )
             
-            nodes[i].position = constrainedPos
+            if nodes[i].position != constrainedPos {
+                nodes[i].position = constrainedPos
+                hasMoved = true
+            }
+        }
+        
+        if hasMoved {
+            registerUndo(title: "ノードの移動", snapshot: beforeSnapshot, ignoringViewport: true)
         }
     }
     
-    /// 選択されているエッジを一括更新します（プロパティ変更用）。
-    /// - Parameter block: 各エッジに適用する更新処理。
     public func updateSelectedEdges(_ block: (inout BaseEdge<NodeData>) -> Void) {
         for i in 0..<edges.count {
             if edges[i].selected {
                 block(&edges[i])
-                edges[i].selected = true // 選択状態を強制維持
+                edges[i].selected = true
             }
         }
     }
     
-    /// 選択されている要素を削除します。
     public func deleteSelection() {
         let selectedNodeIDs = runtimeState.selection.selectedNodeIDs
         let selectedEdgeIDs = runtimeState.selection.selectedEdgeIDs
-        
-        // 選択が空の場合は何もしない
         if selectedNodeIDs.isEmpty && selectedEdgeIDs.isEmpty { return }
 
-        // Undo 登録
-        registerUndo(title: "Delete Elements", snapshot: self.snapshot(), ignoringViewport: true)
-        
-        // ノードの削除
+        registerUndo(title: "要素の削除", snapshot: self.snapshot(), ignoringViewport: true)
         nodes.removeAll { selectedNodeIDs.contains($0.id) }
-        
-        // エッジの削除：選択されているもの、または削除されたノードに紐づくもの
         edges.removeAll { edge in
             selectedEdgeIDs.contains(edge.id) ||
             selectedNodeIDs.contains(edge.source) ||
             selectedNodeIDs.contains(edge.target)
         }
-        
         clearSelection()
     }
     
-    /// 矩形選択を開始します。
-    /// - Parameter pointer: スクリーン座標系での開始位置。
     public func startMarquee(at pointer: CGPoint) {
-        stopAutoPanTimer() // 矩形選択中はオートパンを行わない
+        stopAutoPanTimer()
         runtimeState.marquee = GraphRuntimeState.MarqueeState(startPos: pointer, currentPos: pointer)
     }
     
-    /// 矩形選択の範囲を更新します。
-    /// - Parameter pointer: スクリーン座標系での現在の位置。
     public func updateMarquee(to pointer: CGPoint) {
         runtimeState.marquee?.currentPos = pointer
     }
     
-    /// 矩形選択を終了し、範囲内の要素を選択します。
-    /// - Parameter isShiftPressed: Shiftキーが押されているか。
     public func endMarquee(isShiftPressed: Bool) {
         guard let marquee = runtimeState.marquee else { return }
         let viewport = runtimeState.viewport.viewport
-        
-        // スクリーン矩形をグラフ空間（絶対座標）矩形に変換
         let screenRect = marquee.rect
         let graphMarqueeRect = CGRect(
             x: (screenRect.origin.x - viewport.x) / viewport.zoom,
@@ -507,8 +456,6 @@ public final class GraphStore<NodeData: Sendable>: Sendable {
         }
         
         let lookup = Dictionary(uniqueKeysWithValues: nodes.map { ($0.id, $0) })
-        
-        // 1. ノードの判定
         for i in 0..<nodes.count {
             let node = nodes[i]
             let absPos = NodePositioningAlgorithms.evaluateAbsolutePosition(node, nodeLookup: lookup)
@@ -516,19 +463,11 @@ public final class GraphStore<NodeData: Sendable>: Sendable {
             let nodeRect = CGRect(x: absPos.x, y: absPos.y, width: size.width, height: size.height)
             
             if graphMarqueeRect.contains(nodeRect) {
-                if isShiftPressed {
-                    // Shiftありの場合は既存の状態に関わらず「追加」
-                    // (XYFlowのデフォルト挙動に合わせる。トグルではなく包含されたらON)
-                    runtimeState.selection.selectNode(id: node.id)
-                    nodes[i].selected = true
-                } else {
-                    runtimeState.selection.selectNode(id: node.id)
-                    nodes[i].selected = true
-                }
+                runtimeState.selection.selectNode(id: node.id)
+                nodes[i].selected = true
             }
         }
         
-        // 2. エッジの判定 (xyflow 準拠: 選択ノード集合に接続しているエッジを選択)
         let selectedNodeIDs = runtimeState.selection.selectedNodeIDs
         if !selectedNodeIDs.isEmpty {
             for i in 0..<edges.count {
@@ -539,20 +478,15 @@ public final class GraphStore<NodeData: Sendable>: Sendable {
                 }
             }
         }
-        
         runtimeState.marquee = nil
     }
     
     // --- Dragging ---
     public func startDragging(nodeIDs: [String], at pointer: XYPosition) {
-        // Undo 用に開始状態を記録
         self.dragStartSnapshot = self.snapshot()
-        
         let targets = nodes.filter { nodeIDs.contains($0.id) }
         let lookup = Dictionary(uniqueKeysWithValues: nodes.map { ($0.id, $0) })
         runtimeState.drag.startDrag(nodes: targets, nodeLookup: lookup, pointer: pointer)
-        
-        // ストア内の実体ノードのフラグを更新
         for i in 0..<nodes.count {
             if nodeIDs.contains(nodes[i].id) {
                 nodes[i].dragging = true
@@ -562,18 +496,13 @@ public final class GraphStore<NodeData: Sendable>: Sendable {
     
     public func updateDragging(to pointer: XYPosition) {
         runtimeState.drag.updateDrag(to: pointer)
-        
         let lookup = self.nodeLookup
-        
-        // DragManager を使用して制約（extent, snap）を考慮した次の座標を計算
         let nextPositions = DragManager.calculateNextPositions(
             draggedNodes: runtimeState.drag.draggedNodes,
             pointer: pointer,
             nodeLookup: lookup,
-            snapGrid: nil // TODO: 将来的に RuntimeState に SnapGrid を持たせる場合はここに追加
+            snapGrid: nil
         )
-        
-        // 実際の座標更新
         for (id, pos) in nextPositions {
             if let index = nodes.firstIndex(where: { $0.id == id }) {
                 nodes[index].position = pos
@@ -583,21 +512,16 @@ public final class GraphStore<NodeData: Sendable>: Sendable {
     
     public func stopDragging() {
         stopAutoPanTimer()
-        
-        // 移動があれば Undo 登録
         if let before = dragStartSnapshot {
             let after = self.snapshot()
-            // 座標の変化を確認 (タプル配列の直接比較ではなく zip 判定)
             let hasMoved = zip(before.nodes, after.nodes).contains { b, a in
                 b.id != a.id || b.position != a.position
             } || before.nodes.count != after.nodes.count
-            
             if hasMoved {
-                registerUndo(title: "Move Nodes", snapshot: before)
+                registerUndo(title: "ノードの移動", snapshot: before)
             }
         }
         self.dragStartSnapshot = nil
-        
         runtimeState.drag.stopDrag()
         for i in 0..<nodes.count {
             nodes[i].dragging = false
@@ -605,16 +529,12 @@ public final class GraphStore<NodeData: Sendable>: Sendable {
     }
     
     // --- Connection ---
-    
-    /// 指定された座標（グラフ空間）に近いハンドルを検索します。
     public func findHandle(near pointer: XYPosition, threshold: Double = ConnectionInteractionManager.snapDistance) -> HandleKey? {
         let viewport = runtimeState.viewport.viewport
         let fromNodeID = runtimeState.connection.active?.fromNodeID
-        
         var candidates: [ConnectionInteractionManager.HandleCandidate] = []
         
         for node in nodes {
-            // ノードが持つハンドルを特定
             let handleTargets: [(id: String?, type: HandleType, placement: Position, connectable: Bool)]
             if !node.handles.isEmpty {
                 handleTargets = node.handles.map { ($0.id, $0.type, $0.placement, $0.isConnectable) }
@@ -624,11 +544,9 @@ public final class GraphStore<NodeData: Sendable>: Sendable {
                     (nil, .target, node.targetPosition ?? .left, true)
                 ]
             }
-            
             for target in handleTargets {
                 let key = HandleKey(nodeID: node.id, handleID: target.id, type: target.type, placement: target.placement)
                 let pos = resolvedHandlePosition(for: key)
-                
                 candidates.append(.init(
                     key: key,
                     position: pos,
@@ -637,98 +555,32 @@ public final class GraphStore<NodeData: Sendable>: Sendable {
                 ))
             }
         }
-        
-        return ConnectionInteractionManager.findNearestHandle(
-            near: pointer,
-            candidates: candidates,
-            viewport: viewport,
-            threshold: threshold,
-            fromNodeID: fromNodeID
-        )
+        return ConnectionInteractionManager.findNearestHandle(near: pointer, candidates: candidates, viewport: viewport, threshold: threshold, fromNodeID: fromNodeID)
     }
     
-    public func startConnecting(
-        fromNodeID: String,
-        fromHandleID: String?,
-        fromHandleType: HandleType,
-        fromHandlePosition: Position,
-        fromPosition: XYPosition,
-        at pointer: XYPosition,
-        mode: ConnectionActionType = .connect
-    ) {
-        runtimeState.connection.start(
-            fromNodeID: fromNodeID,
-            fromHandleID: fromHandleID,
-            fromHandleType: fromHandleType,
-            fromHandlePosition: fromHandlePosition,
-            fromPosition: fromPosition,
-            at: pointer,
-            mode: mode
-        )
+    public func startConnecting(fromNodeID: String, fromHandleID: String?, fromHandleType: HandleType, fromHandlePosition: Position, fromPosition: XYPosition, at pointer: XYPosition, mode: ConnectionActionType = .connect) {
+        runtimeState.connection.start(fromNodeID: fromNodeID, fromHandleID: fromHandleID, fromHandleType: fromHandleType, fromHandlePosition: fromHandlePosition, fromPosition: fromPosition, at: pointer, mode: mode)
     }
     
-    public func updateConnecting(
-        to pointer: XYPosition,
-        targetNodeID: String? = nil,
-        targetHandleID: String? = nil,
-        targetHandlePosition: Position? = nil
-    ) {
-        // Viewport が動いている場合でも、引数の pointer (Graph space) に基づき状態を更新
-        runtimeState.connection.update(
-            to: pointer,
-            targetNodeID: targetNodeID,
-            targetHandleID: targetHandleID,
-            targetHandlePosition: targetHandlePosition
-        )
+    public func updateConnecting(to pointer: XYPosition, targetNodeID: String? = nil, targetHandleID: String? = nil, targetHandlePosition: Position? = nil) {
+        runtimeState.connection.update(to: pointer, targetNodeID: targetNodeID, targetHandleID: targetHandleID, targetHandlePosition: targetHandlePosition)
     }
     
     @discardableResult
     public func stopConnecting() -> Connection? {
         guard let active = runtimeState.connection.active else { return nil }
-        
-        // 接続成約の可能性があるため Snapshot を用意
         let beforeSnapshot = self.snapshot()
-        
-        print("[DEBUG] Reconnect Stop attempt: mode=\(active.mode), targetNode=\(active.targetNodeID ?? "nil")")
-        
         var result: Connection? = nil
         
-        if let targetNodeID = active.targetNodeID,
-           let targetHandlePosition = active.targetHandlePosition {
-            // mode に応じて source/target の実体を正しく構成
+        if let targetNodeID = active.targetNodeID, let targetHandlePosition = active.targetHandlePosition {
             switch active.mode {
             case .connect:
-                result = Connection(
-                    source: active.fromNodeID,
-                    target: targetNodeID,
-                    sourceHandle: active.fromHandleID,
-                    targetHandle: active.targetHandleID,
-                    sourcePosition: active.fromHandlePosition,
-                    targetPosition: targetHandlePosition
-                )
+                result = Connection(source: active.fromNodeID, target: targetNodeID, sourceHandle: active.fromHandleID, targetHandle: active.targetHandleID, sourcePosition: active.fromHandlePosition, targetPosition: targetHandlePosition)
             case .reconnect(_, let isSource):
                 if isSource {
-                    // ソース側をドラッグ中：
-                    // 移動端（マウス位置）が新しい「ソース」、固定端が既存の「ターゲット」
-                    result = Connection(
-                        source: targetNodeID,
-                        target: active.fromNodeID,
-                        sourceHandle: active.targetHandleID,
-                        targetHandle: active.fromHandleID,
-                        sourcePosition: targetHandlePosition,
-                        targetPosition: active.fromHandlePosition
-                    )
+                    result = Connection(source: targetNodeID, target: active.fromNodeID, sourceHandle: active.targetHandleID, targetHandle: active.fromHandleID, sourcePosition: targetHandlePosition, targetPosition: active.fromHandlePosition)
                 } else {
-                    // ターゲット側をドラッグ中：
-                    // 固定端が既存の「ソース」、移動端（マウス位置）が新しい「ターゲット」
-                    result = Connection(
-                        source: active.fromNodeID,
-                        target: targetNodeID,
-                        sourceHandle: active.fromHandleID,
-                        targetHandle: active.targetHandleID,
-                        sourcePosition: active.fromHandlePosition,
-                        targetPosition: targetHandlePosition
-                    )
+                    result = Connection(source: active.fromNodeID, target: targetNodeID, sourceHandle: active.fromHandleID, targetHandle: active.targetHandleID, sourcePosition: active.fromHandlePosition, targetPosition: targetHandlePosition)
                 }
             }
         }
@@ -739,26 +591,18 @@ public final class GraphStore<NodeData: Sendable>: Sendable {
         
         stopAutoPanTimer()
         if result != nil {
-            // 接続成立時に Undo 登録
-            let actionName = (active.mode == .connect) ? "Add Edge" : "Reconnect Edge"
+            let actionName = (active.mode == .connect) ? "エッジの追加" : "接続の変更"
             registerUndo(title: actionName, snapshot: beforeSnapshot)
         }
-        
         runtimeState.connection.end()
         return result
     }
 
     public func applyLayout(direction: GraphLayoutDirection = .topToBottom, spacing: Double = 50.0) {
-        registerUndo(title: "Apply Layout", snapshot: self.snapshot(), ignoringViewport: true)
-        let newPositions = GraphLayoutAlgorithms.layoutNodesTreeStyle(
-            nodes: nodes,
-            edges: edges,
-            direction: direction,
-            spacing: spacing
-        )
+        registerUndo(title: "レイアウトの適用", snapshot: self.snapshot(), ignoringViewport: true)
+        let newPositions = GraphLayoutAlgorithms.layoutNodesTreeStyle(nodes: nodes, edges: edges, direction: direction, spacing: spacing)
         for i in 0..<nodes.count {
-            let id = nodes[i].id
-            if let newPos = newPositions[id] {
+            if let newPos = newPositions[nodes[i].id] {
                 nodes[i].position = newPos
             }
         }
@@ -777,7 +621,6 @@ public final class GraphStore<NodeData: Sendable>: Sendable {
         }
     }
 
-    /// すべてのインタラクション状態（オートパンのタイマー等を含む）を強制停止します。
     public func cancelInteractions() {
         stopAutoPanTimer()
         stopDragging()
@@ -791,97 +634,79 @@ public final class GraphStore<NodeData: Sendable>: Sendable {
     }
 
     // --- Interactivity ---
+    public func setNodesDraggable(_ draggable: Bool) { runtimeState.interactivity.nodesDraggable = draggable }
+    public func setNodesConnectable(_ connectable: Bool) { runtimeState.interactivity.nodesConnectable = connectable }
+    public func setElementsSelectable(_ selectable: Bool) { runtimeState.interactivity.elementsSelectable = selectable }
+    public func setPanOnDrag(_ panOnDrag: Bool) { runtimeState.interactivity.panOnDrag = panOnDrag }
+    public func setZoomOnScroll(_ enabled: Bool) { runtimeState.interactivity.zoomOnScroll = enabled }
+    public func setZoomOnPinch(_ enabled: Bool) { runtimeState.interactivity.zoomOnPinch = enabled }
 
-    public func setNodesDraggable(_ draggable: Bool) {
-        runtimeState.interactivity.nodesDraggable = draggable
-    }
-
-    public func setNodesConnectable(_ connectable: Bool) {
-        runtimeState.interactivity.nodesConnectable = connectable
-    }
-
-    public func setElementsSelectable(_ selectable: Bool) {
-        runtimeState.interactivity.elementsSelectable = selectable
-    }
-
-    public func setPanOnDrag(_ panOnDrag: Bool) {
-        runtimeState.interactivity.panOnDrag = panOnDrag
-    }
-
-    public func setZoomOnScroll(_ enabled: Bool) {
-        runtimeState.interactivity.zoomOnScroll = enabled
-    }
-    
-    public func setZoomOnPinch(_ enabled: Bool) {
-        runtimeState.interactivity.zoomOnPinch = enabled
-    }
     // MARK: - Undo Support Methods
     
-    /// 指定されたタイトルで現在の状態を UndoManager に登録します。
-    /// - Parameter title: Undo メニューに表示されるアクション名。
-    /// - Parameter snapshot: Undo 時に戻す先の状態（省略時は現在のアクション前の状態など）。
-    /// - Parameter ignoringViewport: Undo 実行時にビューポートの状態を復元するかどうか。
+    private func syncSelectionFromModel() {
+        runtimeState.selection.clear()
+        for node in nodes where node.selected {
+            runtimeState.selection.selectNode(id: node.id)
+        }
+        for edge in edges where edge.selected {
+            runtimeState.selection.selectEdge(id: edge.id)
+        }
+    }
+    
+    private func registerViewportUndo(title: String, previousViewport: Viewport) {
+        guard let undoManager = undoManager else { return }
+        undoManager.registerUndo(withTarget: self) { target in
+            let currentVP = target.runtimeState.viewport.viewport
+            target.registerViewportUndo(title: title, previousViewport: currentVP)
+            target.setViewport(previousViewport)
+        }
+        if !undoManager.isUndoing && !undoManager.isRedoing {
+            undoManager.setActionName(title)
+        }
+    }
+    
     private func registerUndo(title: String, snapshot: GraphSnapshot<NodeData>, ignoringViewport: Bool = true) {
         guard let undoManager = undoManager else { return }
-        
         undoManager.registerUndo(withTarget: self) { target in
-            // 指定された ignoringViewport 設定を尊重して適用
-            target.apply(snapshot: snapshot, shouldRegisterUndo: true, ignoringViewport: ignoringViewport)
+            target.apply(snapshot: snapshot, shouldRegisterUndo: true, ignoringViewport: ignoringViewport, restoringSelection: true)
         }
-        
         if !undoManager.isUndoing && !undoManager.isRedoing {
             undoManager.setActionName(title)
         }
     }
 
-    /// 現在の状態のスナップショットを取得します。
     public func snapshot() -> GraphSnapshot<NodeData> {
-        GraphSnapshot(
-            nodes: nodes,
-            edges: edges,
-            viewport: runtimeState.viewport.viewport
-        )
+        GraphSnapshot(nodes: nodes, edges: edges, viewport: runtimeState.viewport.viewport)
     }
 
-    /// スナップショットを適用してグラフの状態を復元します。
-    /// - Parameter snapshot: 適用するスナップショット。
-    /// - Parameter shouldRegisterUndo: 適用前に現在の状態を Undo 登録するかどうか。Redo をサポートするために内部で使用します。
-    public func apply(snapshot: GraphSnapshot<NodeData>, shouldRegisterUndo: Bool = false, ignoringViewport: Bool = false) {
+    public func apply(
+        snapshot: GraphSnapshot<NodeData>,
+        shouldRegisterUndo: Bool = false,
+        ignoringViewport: Bool = false,
+        restoringSelection: Bool = false
+    ) {
         if shouldRegisterUndo {
-            // 現在の状態を Redo 用に登録。
-            // apply に渡された ignoringViewport 設定を継承することで、Undo 時と同じ挙動を Redo でも保証する。
             registerUndo(title: "", snapshot: self.snapshot(), ignoringViewport: ignoringViewport)
         }
-        
-        // 1. Core State の置換
         self.nodes = snapshot.nodes
         self.edges = snapshot.edges
-        
-        // 2. Viewport の復元
         if !ignoringViewport {
             self.setViewport(snapshot.viewport)
         }
-        
-        // 3. Runtime Interaction State のクリーンアップ
-        // 選択の解除 (UX 方針: 戻した後はクリア)
-        clearSelection()
-        // ドラッグ状態の強制終了
+        if restoringSelection {
+            syncSelectionFromModel()
+        } else {
+            clearSelection()
+        }
         stopDragging()
-        // 接続操作の強制終了
         runtimeState.connection.end()
-        // ホバーの解除
         setHoveredNode(nil)
-        // 矩形選択の解除
         runtimeState.marquee = nil
-        
-        // ハンドル計測値はリセット（復元後の再描画で再計測される）
         runtimeState.handleMeasurements.positions.removeAll()
     }
 }
 
-// Codable 特化の旧 API 互換レイヤー、または削除
 extension GraphStore where NodeData: Codable {
-    /// 以前のシグネチャ維持（内部で汎用版を呼ぶ）
     public func apply(snapshot: GraphSnapshot<NodeData>) {
         apply(snapshot: snapshot, shouldRegisterUndo: false)
     }

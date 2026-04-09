@@ -129,13 +129,20 @@
     - [x] 92pt ラベル幅 Property Grid / 1px アライメント補正
     - [x] 自前 TextField / CompactNumberField による Xcode 質感再現
     - [x] ダークモード視認性修正
-- [ ] **Milestone 28b: Interaction Polish & A11y [In Progress]**
+- [x] **Milestone 28b: Interaction Polish & Undo Refinement [DONE]** (2026-04-10)
     - [x] Keyboard Interaction: Arrow keys move (1px/10px), Delete, Select All [DONE]
     - [x] Keyboard Focus Guard: TextField 競合回避 [DONE]
-    - [/] Undo/Redo: コマンドスタックの実装 [Polish]
-    - [ ] a11y component 群の棚卸し (保留中/指示待ち)
-- [ ] Layout 系 example 群
-- [ ] UI components 系 example 群
+    - [x] Undo/Redo: コマンドスタックの実装と品質洗練（選択復元・軽量パス）[DONE]
+    - [ ] a11y component 群の棚卸し (後続フェーズへ送る)
+- [x] **Milestone 31: Layout Algorithms & Dagre Style [DONE]** (2026-04-09)
+    - [x] `GraphLayoutAlgorithms` (Tree/Hierarchy)
+    - [x] Rank-based centering / TB-LR support
+    - [x] `DagreTreeSample` 統合 & Undo 連携
+- [x] **Milestone 32: Runtime Zoom Quality / Crisp Rendering [DONE]** (2026-04-10)
+    - [x] ルート `.scaleEffect` 廃止と座標計算ベース描画への移行
+    - [x] `BackgroundView` の `Canvas` 描画刷新
+    - [x] ノード内要素の直接スケーリング（重レイアウト）
+    - [x] エッジラベルの True Crisp 化
 
 ## 保留中 (別途指示待ち)
 - [ ] Whiteboard 系 example 群 (後順位)
@@ -147,11 +154,12 @@
 - [x] PNG エクスポートの要件定義 (`docs/export-strategy.md`)
 - [x] export 用レイアウト計算の責務境界を定義 (`PNGExporter`) [DONE]
 - [x] PNG を指定 scale で再レンダリングする backend 実装 [DONE]
-- [ ] PDF/印刷をベクタ優先で出力する backend 方針を定義
-- [ ] 文字ぼやけ回避の品質基準を定義
+- [x] PDF/印刷をベクタ優先で出力する backend 方針を定義 (`docs/export-strategy.md`) [DONE]
+- [x] 文字ぼやけ回避の品質基準を定義 (`docs/export-strategy.md`) [DONE]
 - [x] Example app に export 検証用ボタンを追加 [DONE]
 
 ### 直近の次アクション
 - [x] Milestone 29 (Subflow Drag Audit) [DONE]
 - [x] Epic 5 (PNG Export Implementation) [DONE]
-- [ ] Layout 系 example 群の拡充 (Dagre 等 / M31)
+- [x] Milestone 31 (Layout Algorithms & Dagre Tree Style) [DONE]
+- [x] Milestone 32 (Crisp Zoom / Coordinate-based Rendering) [DONE]

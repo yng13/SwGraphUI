@@ -354,3 +354,15 @@ Shift + クリックによる複数選択および、Shift + ドラッグによ�
     - `xcodebuild build`: 成功（Codex 修正版）。
     - `swift test` (GeometryTests): 全 3 ケースパス。
     - 自己レビュー: 全てのレイヤーでルートスケールが排除され、ポインタのヒットテスト精度も 1:1 で維持されていることを確認。エッジラベルのフォント品質も最大化されている。
+
+### Milestone 28b: Undo/Redo Interaction Polish (2026-04-10) [DONE]
+- **概要**: Undo/Redo 時の選択状態の復元と、表示範囲調整（fitView）の履歴管理を精緻化。
+- **技術的実装**:
+    - **選択状態の Source of Truth 一元化**: `syncSelectionFromModel()` を実装し、モデルの `selected` フラグから `runtimeState.selection` を再構成。
+    - **Undo と Save/Restore の論理分離**: `apply(snapshot:restoringSelection:)` へのフラグ導入。Undo 時は選択を復元し、一般のファイルロード（Save/Restore）時は UX 指針に基づき選択をクリアする境界を明確化。
+    - **no-op ガードの徹底**: `moveSelectedNodes(by:)` において、変位がゼロ、または親子二重移動防止により実際の位置が変わらない場合に、Undo 履歴の登録とプロパティ代入の両方を抑制。
+    - **対称的 Viewport Undo**: `registerViewportUndo()` において、Undo 時に Redo 用の軽量履歴を再登録する対称設計を採用。
+    - **アクション名の日本語化**: `UndoManager` 表示名を日本語に統一（ノードの移動、表示範囲を調整、要素の削除 等）。
+- **検証結果**:
+    - `UndoRefinementTests.swift`: 全 4 ケース（対称性、同期、ガード、論理分離）のパスを確認。
+    - 自己レビュー: 破損した `GraphStore.swift` の完全修復と、Revision 5 の意図通りの実装を確認。
