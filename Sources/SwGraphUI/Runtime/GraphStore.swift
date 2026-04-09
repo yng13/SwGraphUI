@@ -5,10 +5,10 @@ import Observation
 /// ノード、エッジ、ビューポート、選択状態などを一括管理し、UIへのリアクティブな更新を提供します。
 @Observable
 @MainActor
-public final class GraphStore<Data: Sendable>: Sendable {
+public final class GraphStore<NodeData: Sendable>: Sendable {
     // MARK: - Core State
-    public var nodes: [BaseNode<Data>] = []
-    public var edges: [BaseEdge<Data>] = []
+    public var nodes: [BaseNode<NodeData>] = []
+    public var edges: [BaseEdge<NodeData>] = []
     
     // MARK: - Runtime State
     public var runtimeState: GraphRuntimeState
@@ -18,25 +18,25 @@ public final class GraphStore<Data: Sendable>: Sendable {
     
     // MARK: - Undo/Redo State
     public var undoManager: UndoManager?
-    private var dragStartSnapshot: GraphSnapshot<Data>?
-    private var resizeStartSnapshot: GraphSnapshot<Data>?
+    private var dragStartSnapshot: GraphSnapshot<NodeData>?
+    private var resizeStartSnapshot: GraphSnapshot<NodeData>?
     
     // MARK: - Selection Accessors
-    public var selectedNodes: [BaseNode<Data>] {
+    public var selectedNodes: [BaseNode<NodeData>] {
         nodes.filter { $0.selected }
     }
     
-    public var selectedEdges: [BaseEdge<Data>] {
+    public var selectedEdges: [BaseEdge<NodeData>] {
         edges.filter { $0.selected }
     }
     
-    public var nodeLookup: [String: BaseNode<Data>] {
+    public var nodeLookup: [String: BaseNode<NodeData>] {
         Dictionary(uniqueKeysWithValues: nodes.map { ($0.id, $0) })
     }
     
     public init(
-        nodes: [BaseNode<Data>] = [],
-        edges: [BaseEdge<Data>] = [],
+        nodes: [BaseNode<NodeData>] = [],
+        edges: [BaseEdge<NodeData>] = [],
         runtimeState: GraphRuntimeState = .init(),
         undoManager: UndoManager? = nil
     ) {
@@ -76,13 +76,29 @@ public final class GraphStore<Data: Sendable>: Sendable {
     }
 
     // MARK: - Node Operations
-    public func node(id: String) -> BaseNode<Data>? {
+    public func node(id: String) -> BaseNode<NodeData>? {
         nodes.first { $0.id == id }
     }
 
     public func updateNodePosition(id: String, position: XYPosition) {
-        if let index = nodes.firstIndex(where: { $0.id == id }) {
-            nodes[index].position = position
+        let lookup = self.nodeLookup
+        if let node = lookup[id], let index = nodes.firstIndex(where: { $0.id == id }) {
+            // 指定された相対座標を絶対座標に変換してから制約を適用
+            let targetAbsPos = NodePositioningAlgorithms.toAbsolutePosition(
+                position,
+                parent: node.parentID.flatMap { lookup[$0] },
+                nodeLookup: lookup
+            )
+            
+            // 常に制約を適用（ここではスナップはデフォルト設定に従うか、一旦 false にして厳密な位置指定を優先）
+            let constrainedPos = DragManager.applyConstraints(
+                to: targetAbsPos,
+                node: node,
+                nodeLookup: lookup,
+                applySnap: false
+            )
+            
+            nodes[index].position = constrainedPos
         }
     }
 
@@ -134,11 +150,11 @@ public final class GraphStore<Data: Sendable>: Sendable {
     }
 
     // MARK: - Edge Operations
-    public func edge(id: String) -> BaseEdge<Data>? {
+    public func edge(id: String) -> BaseEdge<NodeData>? {
         edges.first { $0.id == id }
     }
 
-    public func addEdge(_ edge: BaseEdge<Data>) {
+    public func addEdge(_ edge: BaseEdge<NodeData>) {
         edges.append(edge)
     }
 
@@ -298,13 +314,13 @@ public final class GraphStore<Data: Sendable>: Sendable {
     // --- Selection ---
     
     /// 新しいノードを追加し、そのノードを選択状態にします。
-    public func addNode(_ node: BaseNode<Data>) {
+    public func addNode(_ node: BaseNode<NodeData>) {
         nodes.append(node)
         selectNode(node.id)
     }
 
     /// 選択中の全てのノードを更新します。
-    public func updateSelectedNodes(_ transform: (inout BaseNode<Data>) -> Void) {
+    public func updateSelectedNodes(_ transform: (inout BaseNode<NodeData>) -> Void) {
         for i in 0..<nodes.count {
             if nodes[i].selected {
                 transform(&nodes[i])
@@ -388,40 +404,47 @@ public final class GraphStore<Data: Sendable>: Sendable {
             runtimeState.selection.selectEdge(id: edges[i].id)
         }
     }
-    
-    /// 選択中のノードを相対的に移動させます。
-    /// - Parameter offset: グラフ絶対座標系での移動量。
+    /// 選択されているノードを一括移動させます（キーボード操作用）。
+    /// 親子関係がある場合、親のみを移動させることで二重移動を防止します。
     public func moveSelectedNodes(by offset: XYPosition) {
-        if offset == .zero { return }
+        guard runtimeState.interactivity.nodesDraggable else { return }
         
-        let draggable = runtimeState.interactivity.nodesDraggable
-        guard draggable else { return }
-        
-        let selectedNodeIDs = runtimeState.selection.selectedNodeIDs
-        guard !selectedNodeIDs.isEmpty else { return }
-        
-        // 少なくとも1つのノードが draggable であるか確認
-        let hasDraggableNodes = nodes.contains { node in
-            selectedNodeIDs.contains(node.id) && node.draggable
-        }
-        guard hasDraggableNodes else { return }
-
         // キーボード移動など、1回のアクションとして Undo 登録
         registerUndo(title: "Move Nodes", snapshot: self.snapshot(), ignoringViewport: true)
         
+        let selectedNodeIDs = runtimeState.selection.selectedNodeIDs
+        let lookup = self.nodeLookup
+        
         for i in 0..<nodes.count {
-            if selectedNodeIDs.contains(nodes[i].id) {
-                // 個別のノードの draggable 設定（非 Optional）を尊重
-                guard nodes[i].draggable else { continue }
-                nodes[i].position.x += offset.x
-                nodes[i].position.y += offset.y
+            let node = nodes[i]
+            guard selectedNodeIDs.contains(node.id) && node.draggable else { continue }
+            
+            // 重要: 選択セット内で「親も選択されている」場合、そのノード自身の相対座標（position）は動かさない。
+            // ただし、再描画を確実にトリガーするために、値が変わらなくても代入は行う（struct なので配列置換が発生する）
+            if let parentID = node.parentID, selectedNodeIDs.contains(parentID) {
+                nodes[i].position = nodes[i].position
+                continue
             }
+            
+            // 現在の絶対座標 + offset から制約適用後の相対座標を算出
+            let currentAbsPos = NodePositioningAlgorithms.evaluateAbsolutePosition(node, nodeLookup: lookup)
+            let targetAbsPos = currentAbsPos + offset
+            
+            let constrainedPos = DragManager.applyConstraints(
+                to: targetAbsPos,
+                node: node,
+                nodeLookup: lookup,
+                snapGrid: nil, // キーボード移動ではスナップさせない
+                applySnap: false
+            )
+            
+            nodes[i].position = constrainedPos
         }
     }
     
     /// 選択されているエッジを一括更新します（プロパティ変更用）。
     /// - Parameter block: 各エッジに適用する更新処理。
-    public func updateSelectedEdges(_ block: (inout BaseEdge<Data>) -> Void) {
+    public func updateSelectedEdges(_ block: (inout BaseEdge<NodeData>) -> Void) {
         for i in 0..<edges.count {
             if edges[i].selected {
                 block(&edges[i])
@@ -785,7 +808,7 @@ public final class GraphStore<Data: Sendable>: Sendable {
     /// - Parameter title: Undo メニューに表示されるアクション名。
     /// - Parameter snapshot: Undo 時に戻す先の状態（省略時は現在のアクション前の状態など）。
     /// - Parameter ignoringViewport: Undo 実行時にビューポートの状態を復元するかどうか。
-    private func registerUndo(title: String, snapshot: GraphSnapshot<Data>, ignoringViewport: Bool = true) {
+    private func registerUndo(title: String, snapshot: GraphSnapshot<NodeData>, ignoringViewport: Bool = true) {
         guard let undoManager = undoManager else { return }
         
         undoManager.registerUndo(withTarget: self) { target in
@@ -799,7 +822,7 @@ public final class GraphStore<Data: Sendable>: Sendable {
     }
 
     /// 現在の状態のスナップショットを取得します。
-    public func snapshot() -> GraphSnapshot<Data> {
+    public func snapshot() -> GraphSnapshot<NodeData> {
         GraphSnapshot(
             nodes: nodes,
             edges: edges,
@@ -810,7 +833,7 @@ public final class GraphStore<Data: Sendable>: Sendable {
     /// スナップショットを適用してグラフの状態を復元します。
     /// - Parameter snapshot: 適用するスナップショット。
     /// - Parameter shouldRegisterUndo: 適用前に現在の状態を Undo 登録するかどうか。Redo をサポートするために内部で使用します。
-    public func apply(snapshot: GraphSnapshot<Data>, shouldRegisterUndo: Bool = false, ignoringViewport: Bool = false) {
+    public func apply(snapshot: GraphSnapshot<NodeData>, shouldRegisterUndo: Bool = false, ignoringViewport: Bool = false) {
         if shouldRegisterUndo {
             // 現在の状態を Redo 用に登録。
             // apply に渡された ignoringViewport 設定を継承することで、Undo 時と同じ挙動を Redo でも保証する。
@@ -844,9 +867,9 @@ public final class GraphStore<Data: Sendable>: Sendable {
 }
 
 // Codable 特化の旧 API 互換レイヤー、または削除
-extension GraphStore where Data: Codable {
+extension GraphStore where NodeData: Codable {
     /// 以前のシグネチャ維持（内部で汎用版を呼ぶ）
-    public func apply(snapshot: GraphSnapshot<Data>) {
+    public func apply(snapshot: GraphSnapshot<NodeData>) {
         apply(snapshot: snapshot, shouldRegisterUndo: false)
     }
 }

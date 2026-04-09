@@ -9,10 +9,10 @@ public enum GraphEvent: Sendable {
 
 /// SwGraphUI のメインビューの骨格。
 /// ズーム・パンの適用と、ドラッグ入力の GraphStore へのブリッジを担います。
-public struct GraphView<Data: Sendable, NodeContent: View>: View {
-    public let store: GraphStore<Data>
-    public let nodeBuilder: (BaseNode<Data>) -> NodeContent
-    public let edgeBuilder: (BaseEdge<Data>, [PathSegment], Color, CGFloat, Bool, Bool) -> AnyView
+public struct GraphView<NodeData: Sendable, NodeContent: View>: View {
+    public let store: GraphStore<NodeData>
+    public let nodeBuilder: (BaseNode<NodeData>) -> NodeContent
+    public let edgeBuilder: (BaseEdge<NodeData>, [PathSegment], Color, CGFloat, Bool, Bool) -> AnyView
     public let backgroundBuilder: () -> AnyView
     public var onEvent: ((GraphEvent) -> Void)?
 
@@ -34,12 +34,12 @@ public struct GraphView<Data: Sendable, NodeContent: View>: View {
     @State private var isMarqueeMode: Bool = false
     
     public init(
-        store: GraphStore<Data>,
+        store: GraphStore<NodeData>,
         onEvent: ((GraphEvent) -> Void)? = nil,
         onConnect: ((Connection) -> Void)? = nil,
         onReconnect: ((String, Connection) -> Void)? = nil,
-        edgeBuilder: ((BaseEdge<Data>, [PathSegment], Color, CGFloat, Bool, Bool) -> AnyView)? = nil,
-        @ViewBuilder nodeBuilder: @escaping (BaseNode<Data>) -> NodeContent,
+        edgeBuilder: ((BaseEdge<NodeData>, [PathSegment], Color, CGFloat, Bool, Bool) -> AnyView)? = nil,
+        @ViewBuilder nodeBuilder: @escaping (BaseNode<NodeData>) -> NodeContent,
         @ViewBuilder backgroundBuilder: @escaping () -> AnyView = { AnyView(EmptyView()) }
     ) {
         self.store = store
@@ -233,19 +233,29 @@ public struct GraphView<Data: Sendable, NodeContent: View>: View {
                                         let graphPointer = XYPosition(x: value.location.x, y: value.location.y).fromScreen(viewport: viewport)
                                         
                                         if !store.runtimeState.drag.isDragging {
-                                            store.startDragging(nodeIDs: [node.id], at: graphPointer)
-                                            onEvent?(.dragStart(nodeIDs: [node.id]))
+                                            // 複数選択時のドラッグ対応: 対象ノードが選択済みなら、選択中の全ノードを移動対象にする
+                                            let dragNodeIDs: [String] = {
+                                                if node.selected {
+                                                    return Array(store.runtimeState.selection.selectedNodeIDs)
+                                                } else {
+                                                    return [node.id]
+                                                }
+                                            }()
+                                            store.startDragging(nodeIDs: dragNodeIDs, at: graphPointer)
+                                            onEvent?(.dragStart(nodeIDs: dragNodeIDs))
                                         } else {
                                             store.updateAutoPan(at: XYPosition(x: value.location.x, y: value.location.y))
                                             store.updateDragging(to: graphPointer)
+                                            // 内部的な更新は store 側の draggedNodes に任せる
                                             onEvent?(.dragUpdate(nodeIDs: [node.id]))
                                         }
                                     }
                                 }
                                 .onEnded { [store = self.store, modifierKeys = self.modifierKeys, onEvent = self.onEvent] value in
                                     if store.runtimeState.drag.isDragging {
+                                        let draggedIDs = store.runtimeState.drag.draggedNodes.map { $0.id }
                                         store.stopDragging()
-                                        onEvent?(.dragStop(nodeIDs: [node.id]))
+                                        onEvent?(.dragStop(nodeIDs: draggedIDs))
                                     } else {
                                         guard store.runtimeState.interactivity.elementsSelectable else { return }
                                         if modifierKeys.isShiftPressed {
@@ -267,21 +277,27 @@ public struct GraphView<Data: Sendable, NodeContent: View>: View {
 
 /// グラフの描画レイヤー（エッジ、ノード、プレビュー）をまとめた共有スタック。
 /// インタラクティブな GraphView と、静的なエクスポートの両方で使用されます。
-internal struct GraphLayerStack<Data: Sendable, NodeContent: View>: View {
-    let store: GraphStore<Data>
-    let nodeBuilder: (BaseNode<Data>) -> NodeContent
-    let edgeBuilder: (BaseEdge<Data>, [PathSegment], Color, CGFloat, Bool, Bool) -> AnyView
+internal struct GraphLayerStack<NodeData: Sendable, NodeContent: View>: View {
+    let store: GraphStore<NodeData>
+    let nodeBuilder: (BaseNode<NodeData>) -> NodeContent
+    let edgeBuilder: (BaseEdge<NodeData>, [PathSegment], Color, CGFloat, Bool, Bool) -> AnyView
     let onReconnect: ((String, Connection) -> Void)?
     let modifierKeys: ModifierKeysProvider?
-    let nodeWrapper: (BaseNode<Data>, AnyView) -> AnyView
+    let nodeWrapper: (BaseNode<NodeData>, AnyView) -> AnyView
     
     var body: some View {
         ZStack(alignment: .topLeading) {
             edgeLayer
             previewLayer
             nodeLayer
+            selectionBoxLayer
             edgeOverlayLayer
         }
+    }
+    
+    @ViewBuilder
+    private var selectionBoxLayer: some View {
+        SelectionBoxView(store: store)
     }
     
     @ViewBuilder
@@ -340,7 +356,7 @@ internal struct GraphLayerStack<Data: Sendable, NodeContent: View>: View {
             return idxA < idxB
         }.map { $0.1 }
 
-        ForEach(sortedNodes) { (node: BaseNode<Data>) in
+        ForEach(sortedNodes) { (node: BaseNode<NodeData>) in
             let absolutePos = self.store.absolutePosition(for: node.id)
             let content = NodeMeasurementWrapper(id: node.id, content: self.nodeBuilder(node))
                 .offset(x: absolutePos.x, y: absolutePos.y)
@@ -350,9 +366,9 @@ internal struct GraphLayerStack<Data: Sendable, NodeContent: View>: View {
     }
 }
 
-extension GraphView where NodeContent == DefaultNodeView<Data> {
+extension GraphView where NodeContent == DefaultNodeView<NodeData> {
     public init(
-        store: GraphStore<Data>,
+        store: GraphStore<NodeData>,
         onEvent: ((GraphEvent) -> Void)? = nil,
         onConnect: ((Connection) -> Void)? = nil,
         onReconnect: ((String, Connection) -> Void)? = nil
@@ -366,12 +382,12 @@ extension GraphView where NodeContent == DefaultNodeView<Data> {
 }
 
 /// グラフライブラリ標準のノード表示
-public struct DefaultNodeView<Data: Sendable>: View {
-    let node: BaseNode<Data>
-    let store: GraphStore<Data>
+public struct DefaultNodeView<NodeData: Sendable>: View {
+    let node: BaseNode<NodeData>
+    let store: GraphStore<NodeData>
     let onConnect: ((Connection) -> Void)?
     
-    public init(node: BaseNode<Data>, store: GraphStore<Data>, onConnect: ((Connection) -> Void)? = nil) {
+    public init(node: BaseNode<NodeData>, store: GraphStore<NodeData>, onConnect: ((Connection) -> Void)? = nil) {
         self.node = node
         self.store = store
         self.onConnect = onConnect
@@ -401,11 +417,11 @@ public struct DefaultNodeView<Data: Sendable>: View {
         .overlay(
             HStack {
                 // 左側ターゲットハンドル
-                HandleView(nodeID: node.id, type: .target, placement: .left, store: store, onConnect: onConnect)
+                HandleView<NodeData>(nodeID: node.id, type: .target, placement: .left, store: store, onConnect: onConnect)
                     .offset(x: -8)
                 Spacer()
                 // 右側ソースハンドル
-                HandleView(nodeID: node.id, type: .source, placement: .right, store: store, onConnect: onConnect)
+                HandleView<NodeData>(nodeID: node.id, type: .source, placement: .right, store: store, onConnect: onConnect)
                     .offset(x: 8)
             }
         )
@@ -423,9 +439,9 @@ public struct DefaultNodeView<Data: Sendable>: View {
 }
 
 /// ドラッグ中に表示される暫定的な接続線。
-struct ConnectionPreviewLine<Data: Sendable>: View {
+struct ConnectionPreviewLine<NodeData: Sendable>: View {
     let active: ConnectionInProgressState
-    let store: GraphStore<Data>
+    let store: GraphStore<NodeData>
     
     var body: some View {
         let sourceKey = HandleKey(nodeID: active.fromNodeID, handleID: active.fromHandleID, type: active.fromHandleType, placement: active.fromHandlePosition)

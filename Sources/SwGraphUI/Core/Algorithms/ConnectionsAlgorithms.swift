@@ -37,25 +37,57 @@ public enum ConnectionsAlgorithms {
         "xy-edge__\(connection.source)\(connection.sourceHandle ?? "")-\(connection.target)\(connection.targetHandle ?? "")"
     }
 
-    public static func addEdge<Data>(
-        _ edgeOrConnection: GraphEdge<Data>?,
-        to edges: [GraphEdge<Data>]
-    ) -> [GraphEdge<Data>] where Data: Sendable {
+    public static func getEdges<NodeData>(
+        for node: BaseNode<NodeData>,
+        in edges: [BaseEdge<NodeData>]
+    ) -> [BaseEdge<NodeData>] where NodeData: Sendable {
+        edges.filter { $0.source == node.id || $0.target == node.id }
+    }
+    
+    public static func getIncomers<NodeData>(
+        for node: BaseNode<NodeData>,
+        in nodes: [BaseNode<NodeData>],
+        edges: [BaseEdge<NodeData>]
+    ) -> [BaseNode<NodeData>] where NodeData: Sendable {
+        let incomerIDs = Set(edges.filter { $0.target == node.id }.map { $0.source })
+        return nodes.filter { incomerIDs.contains($0.id) }
+    }
+    
+    public static func getOutgoers<NodeData>(
+        for node: BaseNode<NodeData>,
+        in nodes: [BaseNode<NodeData>],
+        edges: [BaseEdge<NodeData>]
+    ) -> [BaseNode<NodeData>] where NodeData: Sendable {
+        let outgoerIDs = Set(edges.filter { $0.source == node.id }.map { $0.target })
+        return nodes.filter { outgoerIDs.contains($0.id) }
+    }
+
+    public static func isInternalConnection<NodeData>(
+        edge: BaseEdge<NodeData>,
+        selectedIDs: Set<String>
+    ) -> Bool where NodeData: Sendable {
+        selectedIDs.contains(edge.source) && selectedIDs.contains(edge.target)
+    }
+
+    public static func addEdge<NodeData>(
+        _ edgeOrConnection: GraphEdge<NodeData>?,
+        to edges: [GraphEdge<NodeData>]
+    ) -> [GraphEdge<NodeData>] where NodeData: Sendable {
         guard let edgeOrConnection else { return edges }
         guard !edgeOrConnection.source.isEmpty, !edgeOrConnection.target.isEmpty else { return edges }
         guard !containsDuplicate(edgeOrConnection, in: edges) else { return edges }
         return edges + [edgeOrConnection]
     }
 
-    public static func addEdge<Data>(
+    public static func addEdge<NodeData>(
         from connection: Connection,
-        to edges: [GraphEdge<Data>],
-        data: Data? = nil,
+        to edges: [GraphEdge<NodeData>],
+        data: NodeData? = nil,
         kind: String? = nil
-    ) -> [GraphEdge<Data>] where Data: Sendable {
+    ) -> [GraphEdge<NodeData>] where NodeData: Sendable {
         guard !connection.source.isEmpty, !connection.target.isEmpty else { return edges }
 
-        let edge = GraphEdge<Data>(
+        let edge = GraphEdge<NodeData>(
             id: edgeID(for: connection),
             source: connection.source,
             target: connection.target,

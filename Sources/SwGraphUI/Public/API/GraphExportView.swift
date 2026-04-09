@@ -2,11 +2,11 @@ import SwiftUI
 
 /// エクスポート（画像書き出し）専用のグラフ表示ビュー。
 /// 画質を最優先し、ジェスチャやデバッグ用のオーバーレイを含みません。
-internal struct GraphExportView<Data: Sendable, NodeContent: View>: View {
-    let store: GraphStore<Data>
+internal struct GraphExportView<NodeData: Sendable, NodeContent: View>: View {
+    let store: GraphStore<NodeData>
     let settings: GraphExportSettings
-    let nodeBuilder: (BaseNode<Data>) -> NodeContent
-    let edgeBuilder: (BaseEdge<Data>, [PathSegment], Color, CGFloat, Bool, Bool) -> AnyView
+    let nodeBuilder: (BaseNode<NodeData>) -> NodeContent
+    let edgeBuilder: (BaseEdge<NodeData>, [PathSegment], Color, CGFloat, Bool, Bool) -> AnyView
     
     // エクスポート対象の矩形領域（グラフ絶対座標系）
     let bounds: Rect

@@ -12,9 +12,9 @@
     - [x] `zIndex` -> `depth` -> `index` による階層ソート (nodeLayer)
     - [x] `NodePositioningAlgorithms.calculateDepth` の実装
     - [x] `SubflowSample` & `GroupNodeView` の追加
-- [/] **Milestone 30: Subflow Constraints & Selection Polish**
-    - [ ] M30a: Parent Extent (移動制限) & DragManager 統合
-    - [ ] M30b: Selection Bounding Box (複数選択枠)
+- [x] **Milestone 30: Subflow Constraints & Selection Polish [DONE]** (2026-04-09)
+    - [x] M30a: Parent Extent (移動制限) & DragManager 統合
+    - [x] M30b: Selection Bounding Box (複数選択枠)
 - [x] **Milestone 28a: Inspector Density & Dark Mode Polish [DONE]**
 - [x] M28b: Interaction Polish (Keyboard Support [DONE], Undo/Redo [DONE])
 - [ ] M28c: Interaction Polish & A11y (Legacy)
@@ -27,6 +27,7 @@
 - [x] **ドキュメント同期**: `reference-divergence.md` 上での未追従事項が更新されていること。
 
 ## 完了したマイルストーン
+- [x] M30: Subflow Constraints & Selection Polish (2026-04-09)
 - [x] M29: Subflows & Nesting (Z-order, Group nodes, Sample) (2026-04-09)
 - [x] M28b: Interaction Polish (Undo/Redo) (2026-04-08)
 - [x] M28a: Inspector Density & Dark Mode Polish (2026-04-08)

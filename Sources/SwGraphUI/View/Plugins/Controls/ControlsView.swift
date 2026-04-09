@@ -1,10 +1,10 @@
 import SwiftUI
 
 /// グラフの基本操作を提供するコントロールパネル。
-public struct ControlsView<Data: Sendable>: View {
-    public let store: GraphStore<Data>
+public struct ControlsView<NodeData: Sendable>: View {
+    public let store: GraphStore<NodeData>
     
-    public init(store: GraphStore<Data>) {
+    public init(store: GraphStore<NodeData>) {
         self.store = store
     }
     

@@ -1,6 +1,6 @@
 # Requirements - SwGraphUI
 
-## [M30] Subflow Constraints & Selection Polish (2026-04-09) [IN PROGRESS]
+## [M30] Subflow Constraints & Selection Polish (2026-04-09) [DONE]
 
 ### 概要
 Subflow（入れ子構造）における実用的な制約の実装と、複数選択時の視覚的フィードバックの向上。

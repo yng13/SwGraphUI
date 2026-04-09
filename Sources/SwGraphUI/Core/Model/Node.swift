@@ -17,11 +17,11 @@ public enum NodeExtent: Sendable, Equatable, Codable {
     case coordinate(CoordinateExtent)
 }
 
-public struct BaseNode<Data: Sendable>: Sendable, Identifiable {
+public struct BaseNode<NodeData: Sendable>: Sendable, Identifiable {
     // MARK: - User-defined properties
     public var id: String
     public var position: XYPosition
-    public var data: Data
+    public var data: NodeData
     public var kind: String?
     public var sourcePosition: Position?
     public var targetPosition: Position?
@@ -56,7 +56,7 @@ public struct BaseNode<Data: Sendable>: Sendable, Identifiable {
     public init(
         id: String,
         position: XYPosition,
-        data: Data,
+        data: NodeData,
         kind: String? = nil,
         sourcePosition: Position? = nil,
         targetPosition: Position? = nil,
@@ -120,7 +120,7 @@ public struct BaseNode<Data: Sendable>: Sendable, Identifiable {
     }
 }
 
-extension BaseNode: Codable where Data: Codable {
+extension BaseNode: Codable where NodeData: Codable {
     enum CodingKeys: String, CodingKey {
         case id, position, data, kind
         case sourcePosition, targetPosition, parentID, zIndex, extent
@@ -134,7 +134,7 @@ extension BaseNode: Codable where Data: Codable {
         let container = try decoder.container(keyedBy: CodingKeys.self)
         self.id = try container.decode(String.self, forKey: .id)
         self.position = try container.decode(XYPosition.self, forKey: .position)
-        self.data = try container.decode(Data.self, forKey: .data)
+        self.data = try container.decode(NodeData.self, forKey: .data)
         self.kind = try container.decodeIfPresent(String.self, forKey: .kind)
         self.sourcePosition = try container.decodeIfPresent(Position.self, forKey: .sourcePosition)
         self.targetPosition = try container.decodeIfPresent(Position.self, forKey: .targetPosition)
@@ -205,8 +205,8 @@ extension BaseNode: Codable where Data: Codable {
 
 public typealias Node = BaseNode<EmptyPayload>
 
-extension BaseNode: Equatable where Data: Equatable {
-    public static func == (lhs: BaseNode<Data>, rhs: BaseNode<Data>) -> Bool {
+extension BaseNode: Equatable where NodeData: Equatable {
+    public static func == (lhs: BaseNode<NodeData>, rhs: BaseNode<NodeData>) -> Bool {
         lhs.id == rhs.id &&
         lhs.position == rhs.position &&
         lhs.width == rhs.width &&

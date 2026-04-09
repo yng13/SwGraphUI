@@ -5,17 +5,17 @@ import AppKit
 
 /// グラフライブラリ標準のエッジ（接続線）表示。
 /// ノードの背面に配置されるパス本体を担当します。
-public struct DefaultEdgeView<Data: Sendable>: View {
-    let edge: BaseEdge<Data>
-    let store: GraphStore<Data>
+public struct DefaultEdgeView<NodeData: Sendable>: View {
+    let edge: BaseEdge<NodeData>
+    let store: GraphStore<NodeData>
     let onReconnect: ((String, Connection) -> Void)?
     let modifierKeys: ModifierKeysProvider?
     let edgeBodyBuilder: (([PathSegment], Color, CGFloat, Bool, Bool) -> AnyView)?
 
     
     public init(
-        edge: BaseEdge<Data>,
-        store: GraphStore<Data>,
+        edge: BaseEdge<NodeData>,
+        store: GraphStore<NodeData>,
         onReconnect: ((String, Connection) -> Void)? = nil,
         modifierKeys: ModifierKeysProvider? = nil,
         edgeBodyBuilder: (([PathSegment], Color, CGFloat, Bool, Bool) -> AnyView)? = nil
@@ -162,12 +162,12 @@ public struct DefaultEdgeView<Data: Sendable>: View {
 
 /// エッジのオーバーレイ（ラベル、再接続ハンドル）を表示。
 /// ノードの前面に配置されることを想定しています。
-public struct DefaultEdgeOverlayView<Data: Sendable>: View {
-    let edge: BaseEdge<Data>
-    let store: GraphStore<Data>
+public struct DefaultEdgeOverlayView<NodeData: Sendable>: View {
+    let edge: BaseEdge<NodeData>
+    let store: GraphStore<NodeData>
     var onReconnect: ((String, Connection) -> Void)? = nil
     
-    public init(edge: BaseEdge<Data>, store: GraphStore<Data>, onReconnect: ((String, Connection) -> Void)? = nil) {
+    public init(edge: BaseEdge<NodeData>, store: GraphStore<NodeData>, onReconnect: ((String, Connection) -> Void)? = nil) {
         self.edge = edge
         self.store = store
         self.onReconnect = onReconnect
@@ -295,11 +295,11 @@ private struct DefaultEdgeViewUtils {
 }
 
 /// 再接続のためのドラッグハンドル
-struct ReconnectAnchor<Data: Sendable>: View {
-    let edge: BaseEdge<Data>
+struct ReconnectAnchor<NodeData: Sendable>: View {
+    let edge: BaseEdge<NodeData>
     let handleType: HandleType
     let position: CGPoint
-    let store: GraphStore<Data>
+    let store: GraphStore<NodeData>
     let onReconnect: ((String, Connection) -> Void)?
     
     @State private var isHovering = false

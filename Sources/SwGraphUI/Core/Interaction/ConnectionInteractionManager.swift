@@ -65,13 +65,13 @@ public enum ConnectionInteractionManager {
     
     /// 指定されたグラフ空間のポインタ位置付近に吸着対象となるハンドルがあるか検索します。
     /// ※ 後方互換性および単純な検索用
-    public static func findTargetHandle<Data: Sendable>(
+    public static func findTargetHandle<NodeData: Sendable>(
         near pointerInGraph: XYPosition,
-        in nodes: [BaseNode<Data>],
-        nodeLookup: [String: BaseNode<Data>],
+        in nodes: [BaseNode<NodeData>],
+        nodeLookup: [String: BaseNode<NodeData>],
         viewport: Viewport,
         fromNodeID: String?
-    ) -> (node: BaseNode<Data>, handle: NodeHandle)? {
+    ) -> (node: BaseNode<NodeData>, handle: NodeHandle)? {
         // 既存の findTargetHandle も共通ロジックに寄せる（任意）が、
         // 今回の GraphStore 統合では findNearestHandle を主導線とする。
         
@@ -79,7 +79,7 @@ public enum ConnectionInteractionManager {
         // 現時点では GraphStore 側の統合を優先。
         let pointerInScreen = pointerInGraph.toScreen(viewport: viewport)
         
-        var bestMatch: (node: BaseNode<Data>, handle: NodeHandle)?
+        var bestMatch: (node: BaseNode<NodeData>, handle: NodeHandle)?
         var minDistanceSq = snapDistance * snapDistance
         
         for node in nodes {

@@ -1,9 +1,9 @@
 public enum GraphAlgorithms {
-    public static func isEdge<Data>(_ value: GraphEdge<Data>) -> Bool where Data: Sendable {
+    public static func isEdge<NodeData>(_ value: GraphEdge<NodeData>) -> Bool where NodeData: Sendable {
         !value.id.isEmpty && !value.source.isEmpty && !value.target.isEmpty
     }
 
-    public static func isNode<Data>(_ value: GraphNode<Data>) -> Bool where Data: Sendable {
+    public static func isNode<NodeData>(_ value: GraphNode<NodeData>) -> Bool where NodeData: Sendable {
         !value.id.isEmpty
     }
 
@@ -35,18 +35,18 @@ public enum GraphAlgorithms {
         return edges.filter { ids.contains($0.source) || ids.contains($0.target) }
     }
 
-    public static func nodeBounds<Data>(
-        for nodes: [GraphNode<Data>],
+    public static func nodeBounds<NodeData>(
+        for nodes: [GraphNode<NodeData>],
         defaultOrigin: NodeOrigin = .topLeft
-    ) -> Rect where Data: Sendable {
+    ) -> Rect where NodeData: Sendable {
         let rects = nodes.map { nodeRect(for: $0, defaultOrigin: defaultOrigin) }
         return GeometryAlgorithms.union(of: rects) ?? Rect(x: 0, y: 0, width: 0, height: 0)
     }
 
-    public static func nodeRect<Data>(
-        for node: GraphNode<Data>,
+    public static func nodeRect<NodeData>(
+        for node: GraphNode<NodeData>,
         defaultOrigin: NodeOrigin = .topLeft
-    ) -> Rect where Data: Sendable {
+    ) -> Rect where NodeData: Sendable {
         let size = nodeDimensions(for: node)
         let origin = node.origin ?? defaultOrigin
         let x = node.position.x - size.width * origin.x
@@ -54,7 +54,7 @@ public enum GraphAlgorithms {
         return Rect(x: x, y: y, width: size.width, height: size.height)
     }
 
-    public static func nodeDimensions<Data>(for node: GraphNode<Data>) -> Dimensions where Data: Sendable {
+    public static func nodeDimensions<NodeData>(for node: GraphNode<NodeData>) -> Dimensions where NodeData: Sendable {
         if let measured = node.measured {
             return measured
         }

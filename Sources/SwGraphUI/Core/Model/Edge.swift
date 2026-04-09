@@ -106,12 +106,12 @@ public struct EdgePosition: Sendable, Equatable {
     }
 }
 
-public struct BaseEdge<Data: Sendable>: Sendable, Identifiable {
+public struct BaseEdge<NodeData: Sendable>: Sendable, Identifiable {
     // MARK: - User-defined properties
     public var id: String
     public var source: String
     public var target: String
-    public var data: Data?
+    public var data: NodeData?
     public var kind: String?
     public var sourceHandle: String?
     public var targetHandle: String?
@@ -138,7 +138,7 @@ public struct BaseEdge<Data: Sendable>: Sendable, Identifiable {
         id: String,
         source: String,
         target: String,
-        data: Data? = nil,
+        data: NodeData? = nil,
         kind: String? = nil,
         sourceHandle: String? = nil,
         targetHandle: String? = nil,
@@ -185,7 +185,7 @@ public struct BaseEdge<Data: Sendable>: Sendable, Identifiable {
     }
 }
 
-extension BaseEdge: Codable where Data: Codable {
+extension BaseEdge: Codable where NodeData: Codable {
     enum CodingKeys: String, CodingKey {
         case id, source, target, data, kind
         case sourceHandle, targetHandle, sourcePosition, targetPosition
@@ -199,7 +199,7 @@ extension BaseEdge: Codable where Data: Codable {
         self.id = try container.decode(String.self, forKey: .id)
         self.source = try container.decode(String.self, forKey: .source)
         self.target = try container.decode(String.self, forKey: .target)
-        self.data = try container.decodeIfPresent(Data.self, forKey: .data)
+        self.data = try container.decodeIfPresent(NodeData.self, forKey: .data)
         self.kind = try container.decodeIfPresent(String.self, forKey: .kind)
         self.sourceHandle = try container.decodeIfPresent(String.self, forKey: .sourceHandle)
         self.targetHandle = try container.decodeIfPresent(String.self, forKey: .targetHandle)

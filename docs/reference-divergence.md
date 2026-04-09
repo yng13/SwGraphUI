@@ -167,7 +167,7 @@
 内容:
 
 - M14〜M16 にかけて UI と interaction が実装完了 (`selectAll`, `deleteSelection`, Shift+Drag 矩形選択, Connected Edge 選択含む)
-- **差異**: `selection on drag` (ドラッグ開始時の選択連動) や、周辺の keyboard/accessibility 連動、複数選択時のバウンディングボックス表示などは未実装。
+- **差異**: `selection on drag`（ドラッグ開始時の選択連動）などは参照実装と一部振る舞いが異なる箇所があるが、複数選択時のバウンディングボックス表示や同期移動は M30 にて実装済み。
 
 ### 6. Example Coverage
 

@@ -2,17 +2,17 @@ import Foundation
 
 /// グラフの特定の時点の状態を表すスナップショット。
 /// ノード、エッジ、およびビューポートの最小限のデータを保持します。
-public struct GraphSnapshot<Data: Sendable> {
+public struct GraphSnapshot<NodeData: Sendable> {
     /// グラフ内の全ノード
-    public let nodes: [BaseNode<Data>]
+    public let nodes: [BaseNode<NodeData>]
     /// グラフ内の全エッジ
-    public let edges: [BaseEdge<Data>]
+    public let edges: [BaseEdge<NodeData>]
     /// 現在のビューポート設定（位置とズーム）
     public let viewport: Viewport
 
     public init(
-        nodes: [BaseNode<Data>],
-        edges: [BaseEdge<Data>],
+        nodes: [BaseNode<NodeData>],
+        edges: [BaseEdge<NodeData>],
         viewport: Viewport
     ) {
         self.nodes = nodes
@@ -21,4 +21,4 @@ public struct GraphSnapshot<Data: Sendable> {
     }
 }
 
-extension GraphSnapshot: Codable where Data: Codable {}
+extension GraphSnapshot: Codable where NodeData: Codable {}

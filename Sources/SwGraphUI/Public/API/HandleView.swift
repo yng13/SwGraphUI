@@ -2,12 +2,12 @@ import SwiftUI
 
 /// ノードの接続端点（ハンドル）を表示し、ドラッグによる接続操作を提供するコンポーネント。
 /// カスタムノード内でも自由に配置可能です。
-public struct HandleView<Data: Sendable>: View {
+public struct HandleView<NodeData: Sendable>: View {
     public let nodeID: String
     public let handleID: String?
     public let type: HandleType
     public let placement: Position
-    public let store: GraphStore<Data>
+    public let store: GraphStore<NodeData>
     public let onConnect: ((Connection) -> Void)?
     public let onReconnect: ((String, Connection) -> Void)?
     
@@ -20,7 +20,7 @@ public struct HandleView<Data: Sendable>: View {
         handleID: String? = nil,
         type: HandleType,
         placement: Position,
-        store: GraphStore<Data>,
+        store: GraphStore<NodeData>,
         onConnect: ((Connection) -> Void)? = nil,
         onReconnect: ((String, Connection) -> Void)? = nil
     ) {

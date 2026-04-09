@@ -2,16 +2,16 @@ import SwiftUI
 
 /// ノードのリサイズ操作を提供する View。
 /// カスタムノードの body 内でオーバーレイとして使用することを想定しています。
-public struct NodeResizer<Data: Sendable>: View {
-    @Environment(GraphStore<Data>.self) private var store
-    let node: BaseNode<Data>
+public struct NodeResizer<NodeData: Sendable>: View {
+    @Environment(GraphStore<NodeData>.self) private var store
+    let node: BaseNode<NodeData>
     let isVisible: Bool
     
     /// NodeResizer を作成します。
     /// - Parameters:
     ///   - node: 対象ノード
     ///   - isVisible: リサイザーの可視性（デフォルトは true。store の選択状態と組み合わせて判定されます）
-    public init(node: BaseNode<Data>, isVisible: Bool = true) {
+    public init(node: BaseNode<NodeData>, isVisible: Bool = true) {
         self.node = node
         self.isVisible = isVisible
     }
@@ -28,16 +28,16 @@ public struct NodeResizer<Data: Sendable>: View {
                     .stroke(Color.accentColor.opacity(0.5), lineWidth: 1)
                 
                 // --- Edge Controls ---
-                ResizeControlView<Data>(node: node, position: .top, variant: .line)
-                ResizeControlView<Data>(node: node, position: .bottom, variant: .line)
-                ResizeControlView<Data>(node: node, position: .left, variant: .line)
-                ResizeControlView<Data>(node: node, position: .right, variant: .line)
+                ResizeControlView<NodeData>(node: node, position: .top, variant: .line)
+                ResizeControlView<NodeData>(node: node, position: .bottom, variant: .line)
+                ResizeControlView<NodeData>(node: node, position: .left, variant: .line)
+                ResizeControlView<NodeData>(node: node, position: .right, variant: .line)
                 
                 // --- Corner Controls ---
-                ResizeControlView<Data>(node: node, position: .topLeft, variant: .handle)
-                ResizeControlView<Data>(node: node, position: .topRight, variant: .handle)
-                ResizeControlView<Data>(node: node, position: .bottomLeft, variant: .handle)
-                ResizeControlView<Data>(node: node, position: .bottomRight, variant: .handle)
+                ResizeControlView<NodeData>(node: node, position: .topLeft, variant: .handle)
+                ResizeControlView<NodeData>(node: node, position: .topRight, variant: .handle)
+                ResizeControlView<NodeData>(node: node, position: .bottomLeft, variant: .handle)
+                ResizeControlView<NodeData>(node: node, position: .bottomRight, variant: .handle)
             }
             // 親側のレイアウトに左右されないよう、明示的にリサイザー枠のサイズを確定させる
             .frame(
@@ -53,9 +53,9 @@ private enum ControlVariant {
     case line
 }
 
-private struct ResizeControlView<Data: Sendable>: View {
-    @Environment(GraphStore<Data>.self) private var store
-    let node: BaseNode<Data>
+private struct ResizeControlView<NodeData: Sendable>: View {
+    @Environment(GraphStore<NodeData>.self) private var store
+    let node: BaseNode<NodeData>
     let position: ResizeControlPosition
     let variant: ControlVariant
     

@@ -120,6 +120,10 @@
     - [x] `zIndex` -> `depth` -> `index` による階層ソート (nodeLayer)
     - [x] `NodePositioningAlgorithms.calculateDepth` の実装
     - [x] `SubflowSample` & `GroupNodeView` の追加
+- [x] **Milestone 30: Subflow Constraints & Selection Polish [DONE]** (2026-04-09)
+    - [x] M30a: Parent Extent (移動制限) & DragManager 統合
+    - [x] M30b: Selection Bounding Box (複数選択枠)
+    - [x] 複数選択時の同期移動 (Root node consideration)
 - [x] **Milestone 28a: Inspector Density & Dark Mode Polish [DONE]**
     - [x] 脱 List 化 / ScrollView 移行による高密度レイアウト
     - [x] 92pt ラベル幅 Property Grid / 1px アライメント補正
@@ -129,12 +133,13 @@
     - [x] Keyboard Interaction: Arrow keys move (1px/10px), Delete, Select All [DONE]
     - [x] Keyboard Focus Guard: TextField 競合回避 [DONE]
     - [/] Undo/Redo: コマンドスタックの実装 [Polish]
-    - [ ] a11y component 群の棚卸し
+    - [ ] a11y component 群の棚卸し (保留中/指示待ち)
 - [ ] Layout 系 example 群
 - [ ] UI components 系 example 群
 
 ## 保留中 (別途指示待ち)
 - [ ] Whiteboard 系 example 群 (後順位)
+- [ ] Accessibility (A11y) 対応 (別途指示待ち)
 
 ## Epic 5: 拡張機能
 
@@ -149,4 +154,4 @@
 ### 直近の次アクション
 - [x] Milestone 29 (Subflow Drag Audit) [DONE]
 - [x] Epic 5 (PNG Export Implementation) [DONE]
-- [ ] Milestone 28b (A11y Audit & Support)
+- [ ] Layout 系 example 群の拡充 (Dagre 等 / M31)

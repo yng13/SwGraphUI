@@ -83,9 +83,9 @@ public struct DragState: Sendable, Equatable {
         !draggedNodes.isEmpty
     }
 
-    public mutating func startDrag<Data>(
-        nodes: [BaseNode<Data>],
-        nodeLookup: [String: BaseNode<Data>],
+    public mutating func startDrag<NodeData>(
+        nodes: [BaseNode<NodeData>],
+        nodeLookup: [String: BaseNode<NodeData>],
         pointer: XYPosition
     ) {
         self.draggedNodes = nodes.map { node in
@@ -228,9 +228,9 @@ public struct ViewportState: Sendable, Equatable {
         )
     }
     
-    public mutating func fitView<Data>(
-        nodes: [BaseNode<Data>],
-        nodeLookup: [String: BaseNode<Data>],
+    public mutating func fitView<NodeData>(
+        nodes: [BaseNode<NodeData>],
+        nodeLookup: [String: BaseNode<NodeData>],
         in size: Dimensions,
         padding: GeometryAlgorithms.Padding = .all(.relative(0.1)),
         minZoom: Double = 0.5,
