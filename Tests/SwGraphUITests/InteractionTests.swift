@@ -36,7 +36,7 @@ import Foundation
     
     // 2. Extent 適用時に clamp された結果でも snap が破綻しないこと (Snap -> Extent)
     @Test func snapThenExtentOrdering() async throws {
-        let node = Node(id: "n1", position: .init(x: 0, y: 0), data: EmptyPayload(), extent: .init(min: .zero, max: .init(x: 50, y: 50)), measured: .init(width: 10, height: 10))
+        let node = Node(id: "n1", position: .init(x: 0, y: 0), data: EmptyPayload(), extent: .coordinate(CoordinateExtent(min: .zero, max: .init(x: 50, y: 50))), measured: .init(width: 10, height: 10))
         let items = [NodeDragItem(id: "n1", lastPosition: .zero, distance: .zero)]
         
         // SnapGrid: 20, Extent: 0...50, Size: 10x10
@@ -47,7 +47,7 @@ import Foundation
             draggedNodes: items,
             pointer: .init(x: 45, y: 0),
             nodeLookup: ["n1": node],
-            snapGrid: .init(width: 20, height: 20)
+            snapGrid: SnapGrid(width: 20, height: 20)
         )
         #expect(next["n1"]!.x == 40)
         
@@ -58,7 +58,7 @@ import Foundation
             draggedNodes: items,
             pointer: .init(x: 55, y: 0),
             nodeLookup: ["n1": node],
-            snapGrid: .init(width: 20, height: 20)
+            snapGrid: SnapGrid(width: 20, height: 20)
         )
         #expect(next2["n1"]!.x == 40)
     }

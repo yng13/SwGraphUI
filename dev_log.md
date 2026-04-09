@@ -1,5 +1,21 @@
 # 開発ログ
 
+## 2026-04-09
+### Milestone 30a/b: Subflow Constraints & Selection Polish 開始
+- **概要**: 移動制限機能の実装と複数選択 UI の精緻化に着手。
+- **タスク**: `NodeExtent` の導入、`DragManager` 統合、Selection Box 追加。
+
+### Milestone 29: Subflows & Nesting 実装 (完了)
+- **概要**: 階層構造ノードの基本的な表示と重なり順の最適化。
+- **技術的変更**:
+    - `NodePositioningAlgorithms`: `calculateDepth` を追加し、階層の深さを計算可能にした。
+    - `GraphView`: `nodeLayer` において `zIndex` -> `depth` -> `元順` の安定ソートを実装し、親が常に背面にくるよう修正。
+    - `GraphStore`: `nodeLookup` をパブリック公開し、階層計算を効率化。
+    - `Example`: `SubflowSample` と `GroupNodeView` を追加。
+- **検証結果**:
+    - `swift test`: 全 60 件のパスを確認。
+    - UI確認: 親ノードドラッグ時の子ノード追従と、ヒエラルキーに基づく重なり順の整合性を確認。
+
 ## 2026-04-08
 ### Milestone 25b: Aspect Ratio & Advanced Resizing 実装
 - **概要**: コーナードラッグ時の Shift キー押下によるアスペクト比維持リサイズの実装。
@@ -244,3 +260,4 @@ Shift + クリックによる複数選択および、Shift + ドラッグによ�
     - `GraphStore.apply`: `shouldRegisterUndo` による Redo 登録時に、現在の `ignoringViewport` 状態を継承するように修正。これにより Undo -> Redo サイクル全体で Viewport が保護される。
     - `swift test`: 58件（+1件）全テストをパス。
     - マニュアル確認: ノード移動 -> 画面スクロール -> Undo において、ノード位置のみが戻り、画面表示位置が維持されることを確認。
+    - **Subflow ドラッグ監査**: 親子同時選択時の「二重移動（加速）」リスクについて調査・検証を完了。現状の `GraphView` はドラッグ開始時に「実際に掴んだ1ノード」のみを `draggedNodes` に登録する仕様であるため、親を動かせば子は相対的に追従し、子を動かせば子が相対移動するという 1倍速の挙動が保証されていることを確認。バグの懸念は現状の実装において解消済み。

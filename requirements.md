@@ -1,5 +1,20 @@
 # Requirements - SwGraphUI
 
+## [M30] Subflow Constraints & Selection Polish (2026-04-09) [IN PROGRESS]
+
+### 概要
+Subflow（入れ子構造）における実用的な制約の実装と、複数選択時の視覚的フィードバックの向上。
+
+### 要件項目
+1.  **M30a: Parent Extent (移動制限)**: 子ノードが親の枠外に出られないようにする移動制限機能。
+    - `extent: .parent` のサポート。
+    - `DragManager` を `GraphStore` のドラッグ計算の共通経路として統合。
+    - 親サイズ未確定時の fallback 処理。
+2.  **M30b: Selection Bounding Box (複数選択枠)**: 複数ノード選択時に全体を囲む中立的なデザインの枠を表示。
+    - 2つ以上のノード選択時に表示。
+    - 絶対座標ベースでの包含矩形計算。
+    - オーバーレイ（最前面）での描画。
+
 ## [Epic 4] Basic Interaction & Custom Elements (2026-04-06) [DONE]
 
 ### 概要

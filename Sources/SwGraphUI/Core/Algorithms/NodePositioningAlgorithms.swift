@@ -86,16 +86,26 @@ public enum NodePositioningAlgorithms {
         return relativePosition + parentAbsPos
     }
 
-    /// 指定された範囲 (CoordinateExtent) 内に座標を制限します。
+    /// 指定された範囲 (NodeExtent) 内に座標を制限します。
     public static func clampToExtent(
         _ position: XYPosition,
-        extent: CoordinateExtent,
-        dimensions: Dimensions
+        extent: NodeExtent,
+        dimensions: Dimensions,
+        containerSize: Dimensions? = nil
     ) -> XYPosition {
-        XYPosition(
-            x: max(extent.min.x, min(position.x, extent.max.x - dimensions.width)),
-            y: max(extent.min.y, min(position.y, extent.max.y - dimensions.height))
-        )
+        switch extent {
+        case .coordinate(let coord):
+            return XYPosition(
+                x: max(coord.min.x, min(position.x, coord.max.x - dimensions.width)),
+                y: max(coord.min.y, min(position.y, coord.max.y - dimensions.height))
+            )
+        case .parent:
+            guard let container = containerSize else { return position }
+            return XYPosition(
+                x: max(0, min(position.x, container.width - dimensions.width)),
+                y: max(0, min(position.y, container.height - dimensions.height))
+            )
+        }
     }
 
     /// 複数のノードを含む最小の矩形領域を算出します（階層構造対応）。

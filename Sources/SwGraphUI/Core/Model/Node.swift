@@ -12,6 +12,11 @@ public struct NodeOrigin: Sendable, Equatable, Codable {
     public static let zero = topLeft
 }
 
+public enum NodeExtent: Sendable, Equatable, Codable {
+    case parent
+    case coordinate(CoordinateExtent)
+}
+
 public struct BaseNode<Data: Sendable>: Sendable, Identifiable {
     // MARK: - User-defined properties
     public var id: String
@@ -22,7 +27,7 @@ public struct BaseNode<Data: Sendable>: Sendable, Identifiable {
     public var targetPosition: Position?
     public var parentID: String?
     public var zIndex: Int?
-    public var extent: CoordinateExtent?
+    public var extent: NodeExtent?
     public var expandParent: Bool
     public var ariaLabel: String?
     public var origin: NodeOrigin?
@@ -57,7 +62,7 @@ public struct BaseNode<Data: Sendable>: Sendable, Identifiable {
         targetPosition: Position? = nil,
         parentID: String? = nil,
         zIndex: Int? = nil,
-        extent: CoordinateExtent? = nil,
+        extent: NodeExtent? = nil,
         expandParent: Bool = false,
         ariaLabel: String? = nil,
         origin: NodeOrigin? = nil,
@@ -135,7 +140,7 @@ extension BaseNode: Codable where Data: Codable {
         self.targetPosition = try container.decodeIfPresent(Position.self, forKey: .targetPosition)
         self.parentID = try container.decodeIfPresent(String.self, forKey: .parentID)
         self.zIndex = try container.decodeIfPresent(Int.self, forKey: .zIndex)
-        self.extent = try container.decodeIfPresent(CoordinateExtent.self, forKey: .extent)
+        self.extent = try container.decodeIfPresent(NodeExtent.self, forKey: .extent)
         self.expandParent = try container.decode(Bool.self, forKey: .expandParent)
         self.ariaLabel = try container.decodeIfPresent(String.self, forKey: .ariaLabel)
         self.origin = try container.decodeIfPresent(NodeOrigin.self, forKey: .origin)

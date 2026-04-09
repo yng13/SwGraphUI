@@ -25,6 +25,7 @@ struct SubflowSample: GraphSample {
             position: XYPosition(x: 20, y: 40),
             data: "Child 1",
             parentID: "parent-group",
+            extent: .parent,
             width: 150,
             height: 60
         )

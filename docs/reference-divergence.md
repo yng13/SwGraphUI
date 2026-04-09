@@ -51,7 +51,7 @@
 
 ### 未着手 / 未完
 
-- whiteboard 系 interaction
+- whiteboard 系 interaction (保留中/Deferred)
 - **Undo / Redo**: コマンドスタックによる履歴管理 (M28b 残課題)
 - **A11y**: AccessibilityNode 群の提供 (M28b 残課題)
 

@@ -541,31 +541,22 @@ public final class GraphStore<Data: Sendable>: Sendable {
     }
     
     public func updateDragging(to pointer: XYPosition) {
-        // オートパンの更新（ポインタ位置はスクリーン座標として扱う。
-        // updateDragging 引数の pointer はすでに fromScreen 済みの場合があるため、
-        // GraphStore.updateAutoPan は別途 DragGesture 等から直接 screen 座標を受け取る運用にするか、
-        // ここで再逆変換するかを検討。
-        // 今回は呼び出し側の GraphView で store.updateAutoPan を呼ぶ。
-        
         runtimeState.drag.updateDrag(to: pointer)
         
-        let lookup = Dictionary(uniqueKeysWithValues: nodes.map { ($0.id, $0) })
+        let lookup = self.nodeLookup
+        
+        // DragManager を使用して制約（extent, snap）を考慮した次の座標を計算
+        let nextPositions = DragManager.calculateNextPositions(
+            draggedNodes: runtimeState.drag.draggedNodes,
+            pointer: pointer,
+            nodeLookup: lookup,
+            snapGrid: nil // TODO: 将来的に RuntimeState に SnapGrid を持たせる場合はここに追加
+        )
         
         // 実際の座標更新
-        for item in runtimeState.drag.draggedNodes {
-            if let index = nodes.firstIndex(where: { $0.id == item.id }) {
-                let absPos = pointer - item.distance
-                
-                // 親がいる場合は相対座標に変換、いない場合は絶対座標のまま
-                if let parentID = nodes[index].parentID, let parent = lookup[parentID] {
-                    nodes[index].position = NodePositioningAlgorithms.toRelativePosition(
-                        absPos,
-                        parent: parent,
-                        nodeLookup: lookup
-                    )
-                } else {
-                    nodes[index].position = absPos
-                }
+        for (id, pos) in nextPositions {
+            if let index = nodes.firstIndex(where: { $0.id == id }) {
+                nodes[index].position = pos
             }
         }
     }

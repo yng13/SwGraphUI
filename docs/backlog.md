@@ -132,6 +132,8 @@
     - [ ] a11y component 群の棚卸し
 - [ ] Layout 系 example 群
 - [ ] UI components 系 example 群
+
+## 保留中 (別途指示待ち)
 - [ ] Whiteboard 系 example 群 (後順位)
 
 ## Epic 5: 拡張機能
