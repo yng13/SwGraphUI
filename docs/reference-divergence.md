@@ -15,7 +15,7 @@
 - `未追従`: 参照実装にあるが、SwGraphUI では未実装または一部未達
 - `要再判断`: 参照に寄せるか、Swift 向けに再設計するかをまだ決め切っていない
 
-## 現状サマリ (M22 時点)
+## 現状サマリ (M37 時点)
 
 ### 一致 / 受け入れ可
 
@@ -39,6 +39,8 @@
 - **Auto Pan**: ドラッグ・接続操作時の自動スクロールと座標同期 (M27a)
 - **Keyboard Interaction**: CanvasKeyboardBridge による Delete/SelectAll/Arrow-key move (M28b Keyboard 基盤)
 - **A11y (Baseline)**: Nodes / Edges / Controls / MiniMap に対するラベル（ariaLabel -> label -> id 優先順位）、ロール、ヒントの基盤実装 (M33a)
+- **Undo/Redo Final QA**: move / delete / resize / reconnect / layout / fitView の対称性確認と no-op 履歴抑制をテストで確認 (M37)
+- **Rendering Polish**: 高倍率 zoom 時の background / edge label / reconnect handle / selection box の表示品質調整 (M36)
 
 ### 意図的差分
 
@@ -103,7 +105,6 @@
 未追従の点:
 
 - iOS でのピンチズームの中心点追従 (意図的差分: 現在 macOS ではカーソル位置基準だが、iOS では hover API の制約により座標が取れないため実質的に左上 `(0,0)` 基準となる)
-- auto pan
 - drag threshold の細部
 - selection on drag
 
@@ -182,11 +183,11 @@
 
 - Example app は `overview`, `interaction` カテゴリを追加し、基本的な受け入れ確認ハーネスを構築済み
 - `Basic`, `Hierarchy`, `Overlap Test`, `Custom & Measure` のデバッグ用テスト配置も維持
-- コア機能（Selection, Zoom, Drag, Hierarchy）の動作検証用として「受け入れ可」水準に到達
+- コア機能（Selection, Zoom, Drag, Hierarchy, Save/Restore, Export, Layout, Undo/Redo QA）の動作検証用として「受け入れ可」水準に到達
 
 ## 次に詰める優先順位
 
 1. internal cache (`positionAbsolute`, `handleBounds`) の要否再判断
-2. auto pan 実装
-3. examples coverage の拡張 (Stress Test, Save/Restore 等)
-4. M34: Regression Matrix Expansion (安定性強化)
+2. examples coverage の拡張 (Whiteboard / Layout 残タスク)
+3. Accessibility 実機検証
+4. API / docs hardening

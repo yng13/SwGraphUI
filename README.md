@@ -87,9 +87,16 @@ Current capabilities include:
 - single selection, multi-selection, and marquee selection
 - edge labels with styled backgrounds
 - custom node views and custom edge bodies
+- node toolbar style composition in examples
 - minimap and controls
+- configurable backgrounds (dots / lines / grid-like variants)
 - node resizer
+- auto pan during drag / connect
+- tree-style layout application
 - save / restore snapshots for nodes, edges, and viewport
+- PNG / PDF export backends
+- undo / redo refinement with symmetry and no-op guard tests
+- accessibility baseline for nodes, edges, controls, and minimap
 
 Platform support:
 
@@ -116,6 +123,8 @@ The package includes an `Example` app with focused samples such as:
 - `Edge Label`
 - `Node Resizer`
 - `Save & Restore`
+- `Dagre Tree`
+- `Subflow`
 
 A minimal graph setup looks like this:
 
@@ -237,7 +246,7 @@ Current recommendation:
 ## Status
 
 SwGraphUI already covers most core flow-editor interactions.  
-It still intentionally differs from `xyflow` in several areas, especially around internal caching strategy, Apple-platform input behavior, and the scope of advanced examples.
+It still intentionally differs from `xyflow` in several areas, especially around internal caching strategy, Apple-platform input behavior, and the remaining whiteboard / advanced UI example scope.
 
 See also:
 

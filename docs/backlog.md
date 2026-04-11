@@ -183,14 +183,14 @@
     - [ ] UI レベルでの pan / zoom / export の体感性能確認
     - [ ] MiniMap / Background / animated edge の同時負荷検証
     - [ ] 長時間操作時のクラッシュ耐性確認
-- [ ] **Milestone 36: Runtime Rendering Polish [Todo]**
-    - [ ] custom node 群の高倍率 zoom 監査
-    - [ ] edge label / reconnect handle / selection box の高倍率表示確認
-    - [ ] Background LOD / phase / accent の見た目最終調整
-- [ ] **Milestone 37: Undo/Redo Final QA [Todo]**
-    - [ ] move / delete / resize / reconnect / layout / fitView の対称性確認
-    - [ ] no-op 操作で履歴が汚れないことの確認
-    - [ ] Save/Restore と Undo/Redo の責務分離の再確認
+- [x] **Milestone 36: Runtime Rendering Polish [DONE]** (2026-04-11)
+    - [x] custom node 群の高倍率 zoom 監査
+    - [x] edge label / reconnect handle / selection box の高倍率表示確認
+    - [x] Background LOD / phase / accent の見た目最終調整
+- [x] **Milestone 37: Undo/Redo Final QA [DONE]** (2026-04-12)
+    - [x] move / delete / resize / reconnect / layout / fitView の対称性確認
+    - [x] no-op 操作で履歴が汚れないことの確認
+    - [x] Save/Restore と Undo/Redo の責務分離の再確認
 - [ ] **Milestone 38: API & Docs Hardening [Todo]**
     - [ ] public API に product 固有 field が漏れていないことの確認
     - [ ] `current-plan.md` / `reference-divergence.md` / `examples-reference-map.md` の継続同期
@@ -203,3 +203,6 @@
 - [x] Milestone 32 (Crisp Zoom / Coordinate-based Rendering) [DONE]
 - [x] Milestone 33a (Accessibility Baseline - Labels & Roles) [DONE]
 - [x] Milestone 34 (Regression Matrix Expansion) [DONE]
+- [x] Milestone 36 (Runtime Rendering Polish) [DONE]
+- [x] Milestone 37 (Undo/Redo Final QA) [DONE]
+- [ ] Milestone 38 (API & Docs Hardening)
