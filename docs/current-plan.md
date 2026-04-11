@@ -5,7 +5,7 @@
 
 ## Proposed Changes
 
-### [Epic 4] 背景とインタラクションの精緻化 (M27-M33)
+### [Epic 4] 背景とインタラクションの精緻化 (M27-M34)
 - [x] M27a: Auto Pan Interaction (Logic & Timer Sync)
 - [x] M27b: Background Enhancement (LOD, Variants, Accent) [DONE]
 - [x] **Milestone 29: Subflows & Nesting [DONE]** (2026-04-09)
@@ -22,6 +22,7 @@
 - [x] **Milestone 28a: Inspector Density & Dark Mode Polish [DONE]**
 - [x] M28b: Interaction Polish (Keyboard Support [DONE], Undo/Redo [DONE])
 - [x] M33a: Accessibility Baseline (Labels & Roles) [DONE]
+- [x] Milestone 34: Regression Matrix Expansion [DONE]
 - [ ] M33b: Accessibility Navigation & Verification (Deferred)
 
 ## Exit Rule
@@ -33,6 +34,7 @@
 - [x] **A11y Baseline**: ラベル / ロール / ヒントの基盤実装が完了していること。
 
 ## 完了したマイルストーン
+- [x] M34: Regression Matrix Expansion (2026-04-11)
 - [x] M33a: Accessibility Baseline (Labels & Roles) (2026-04-11)
 - [x] M31: Layout Examples (Dagre Tree etc.) (2026-04-09)
 - [x] M30: Subflow Constraints & Selection Polish (2026-04-09)

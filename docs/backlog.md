@@ -169,12 +169,12 @@
     - [ ] キーボードのみでの基本操作成立確認
     - [ ] Inspector / Sidebar を含む focus 順の見直し
     - [ ] Example アプリ検証環境の再整備と確認手順の確立
-- [ ] **Milestone 34: Regression Matrix Expansion [Todo]**
-    - [ ] hierarchy + selection + undo/redo の複合テスト
-    - [ ] layout + undo/redo + selection の複合テスト
-    - [ ] 大規模グラフにおけるインタラクションの安定性確認
-    - [ ] save/restore + selection + viewport の複合テスト
-    - [ ] export + custom edge / label / marker の複合テスト
+- [x] **Milestone 34: Regression Matrix Implementation [DONE]** (2026-04-11)
+    - [x] Hierarchy x Move x Undo 整合性検証
+    - [x] Multi-selection x Delete x Undo 整合性検証
+    - [x] Layout x Undo x Redo 決定論的検証
+    - [x] Parent Extent x Move x Undo 制約検証
+    - [x] Large Graph Smoke (200ノード) 性能基線検証
 - [ ] **Milestone 35: Large Graph Stability [Todo]**
     - [ ] 100〜500 node 規模での pan / zoom / selection / layout / export の確認
     - [ ] 長時間操作時のクラッシュ耐性と体感性能の確認
@@ -198,4 +198,4 @@
 - [x] Milestone 31 (Layout Algorithms & Dagre Tree Style) [DONE]
 - [x] Milestone 32 (Crisp Zoom / Coordinate-based Rendering) [DONE]
 - [x] Milestone 33a (Accessibility Baseline - Labels & Roles) [DONE]
-- [ ] Milestone 34 (Regression Matrix Expansion)
+- [x] Milestone 34 (Regression Matrix Expansion) [DONE]

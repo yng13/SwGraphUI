@@ -402,7 +402,23 @@ Shift + クリックによる複数選択および、Shift + ドラッグによ�
     - **今後**: フル検証（VoiceOver/Inspector）およびナビゲーション最適化は将来の品質ゲートへ後退（M33b Deferred）。
 - **検証結果**:
     - `swift build`: 成功。
+
 - **後続への送り（Milestone 34 以降）**:
     - Tab 順序の最適化。
     - ズーム可能なキャンバス内でのフォーカス設計。
     - 大規模グラフ時のエッジ露出制御。
+
+### 2026-04-11: M34 回帰テストマトリクスの実装と課題解決
+
+- **実施内容**:
+    - `RegressionMatrixTests.swift` を実装し、5つの複合シナリオを検証。
+    - 階層構造 (Hierarchy)、多選択削除 (Multi-selection Delete)、レイアウト (Layout)、親制約 (Parent Extent)、大規模グラフ (Large Graph) のテストを完遂。
+- **発見された課題と解決**:
+    - **Undo グルーピングの問題**: Unit Test 環境（`@MainActor`）では、同一イベントループ内の複数操作が単一の Undo グループにまとめられてしまう。これにより「2段階の Undo」を検証する際に 1 回の `undo()` で全て戻ってしまう問題が発生した。`undoManager.groupsByEvent = false` に設定し、各操作を `beginUndoGrouping` / `endUndoGrouping` で囲むことで解決。
+    - **座標空間の誤認と二重変換（セルフデバッグ）**: `moveSelectedNodes` において `DragManager` が既に絶対->相対変換を行って値を返しているにもかかわらず、`GraphStore` 側で再度変換をかけようとして座標がずれるバグを発見。DragManager の仕様を再確認し、Store 側での冗長な変換を削除（および比較ロジックの適正化）することで正常化。
+- **検証結果**:
+    - `RegressionMatrixTests`: 全 5 ケースパス。
+    - `xcodebuild build`: 成功。
+    - 大規模グラフ (200 Node/Edge) においても UI ロジックの完走を確認。
+- **次の一手**:
+    - M34 を完了とし、後続のマイルストーンへ。

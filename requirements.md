@@ -331,3 +331,13 @@ Undo/Redo 実行時の要素状態（選択）とビューポートの保存ロ�
     - [ ] Tab 順の最適化とキャンバス内のフォーカス管理。
 2.  **[ ] Full Validation**:
     - [ ] 支援技術（VoiceOver/Inspector等）による実機レベルのフル検証。
+
+## Milestone 34: Regression Matrix Implementation [DONE]
+1.  **[x] Complex Interaction Testing**:
+    - [x] **Hierarchy x Move x Undo**: 階層構造における座標復元の整合性検証。
+    - [x] **Multi-selection x Delete x Undo**: モデルと `runtimeState` の二重選択整合性検証。
+    - [x] **Layout x Undo x Redo**: レイアウト適用後の決定論的な座標復元検証。
+    - [x] **Parent Extent x Move x Undo**: 親境界制約下での移動と Undo/Redo の安全性検証。
+    - [x] **Large Graph Smoke**: 200ノード規模での基本操作（全選択移動・レイアウト）の動作検証。
+2.  **[x] Testing Stability**:
+    - [x] テスト環境における `UndoManager` のグルーピング挙動制御の確立。
