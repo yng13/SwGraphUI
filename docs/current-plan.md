@@ -35,6 +35,7 @@
 - [x] **A11y Baseline**: ラベル / ロール / ヒントの基盤実装が完了していること。
 
 ## 完了したマイルストーン
+- [x] Brand assets draft (logo / icon SVG seeds) (2026-04-12)
 - [x] M35: Large Graph Stability & Performance Audit (2026-04-11)
 - [x] M34: Regression Matrix Expansion (2026-04-11)
 - [x] M33a: Accessibility Baseline (Labels & Roles) (2026-04-11)

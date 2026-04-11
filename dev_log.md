@@ -411,6 +411,17 @@ Shift + クリックによる複数選択および、Shift + ドラッグによ�
     - `UndoRefinementTests.swift`: 全 5 ケース（対称性、同期、ガード、論理分離、fitView選択安定性）のパスを確認。
     - 自己レビュー: 破損した `GraphStore.swift` の完全修復と、Revision 5 の意図通りの実装を確認。
 
+### Milestone 37: Undo/Redo Final QA (2026-04-12)
+- **概要**: Undo/Redo の最終 QA として、対称性テストの検証範囲と No-op 判定の前提を `UndoManager` の実挙動に合わせて修正。
+- **技術的実装**:
+    - **Reconnect 対称性の拡張**: `UndoSymmetryTests` で `target` だけでなく、`source/targetHandle` と `source/targetPosition` を Undo/Redo 往復で検証。
+    - **No-op テスト前提の修正**: 空の Undo グループを人工的に作ってしまう `beginUndoGrouping/endUndoGrouping` を No-op テストから除去。
+    - **Undo グループ責務の正規化**: `GraphStore.registerUndo` から内部 `beginUndoGrouping/endUndoGrouping` を削除し、グルーピング責務を呼び出し側へ戻した。
+    - **No-op ガードの維持**: `moveSelectedNodes`、`stopResizing`、`deleteSelection`、`applyLayout` の実効変化判定は維持。
+- **検証結果**:
+    - `swift test --filter UndoSymmetryTests`: pass。
+    - `swift test`: 全件回帰確認を継続。
+
 ### Milestone 33a: Accessibility Baseline (Labels & Roles) (2026-04-10) [DONE]
 - **概要**: グラフの主要コンポーネントにアクセシビリティ（ラベル、役割、ヒント）を付与し、VoiceOver 対応の基礎を構築。
 - **技術的実装**:

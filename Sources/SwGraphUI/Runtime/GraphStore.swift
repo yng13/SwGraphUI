@@ -132,7 +132,12 @@ public final class GraphStore<NodeData: Sendable>: Sendable {
         if let before = resizeStartSnapshot {
             let after = self.snapshot()
             let hasChanged = zip(before.nodes, after.nodes).contains { b, a in
-                b.id != a.id || b.width != a.width || b.height != a.height || b.position != a.position
+                let dx = (a.position.x - b.position.x)
+                let dy = (a.position.y - b.position.y)
+                let dw = (a.width ?? 0) - (b.width ?? 0)
+                let dh = (a.height ?? 0) - (b.height ?? 0)
+                // 座標またはサイズに有意な差（0.1px 以上の変化）があるか
+                return (dx * dx + dy * dy > 0.01) || (abs(dw) > 0.1) || (abs(dh) > 0.1)
             } || before.nodes.count != after.nodes.count
             
             if hasChanged {
@@ -402,7 +407,16 @@ public final class GraphStore<NodeData: Sendable>: Sendable {
             }
         }
         
-        if hasMoved {
+        // 移動量に有意な差（0.1px 以上の変化）があるノードが1つでもあるか
+        let significantMove = nodes.contains { n in
+            guard selectedNodeIDs.contains(n.id) else { return false }
+            let old = beforeSnapshot.nodes.first(where: { $0.id == n.id })?.position ?? n.position
+            let dx = abs(n.position.x - old.x)
+            let dy = abs(n.position.y - old.y)
+            return dx > 0.1 || dy > 0.1
+        }
+        
+        if significantMove {
             registerUndo(title: "ノードの移動", snapshot: beforeSnapshot, ignoringViewport: true)
         }
     }
@@ -421,12 +435,17 @@ public final class GraphStore<NodeData: Sendable>: Sendable {
         let selectedEdgeIDs = runtimeState.selection.selectedEdgeIDs
         if selectedNodeIDs.isEmpty && selectedEdgeIDs.isEmpty { return }
 
-        registerUndo(title: "要素の削除", snapshot: self.snapshot(), ignoringViewport: true)
+        let before = self.snapshot()
         nodes.removeAll { selectedNodeIDs.contains($0.id) }
         edges.removeAll { edge in
             selectedEdgeIDs.contains(edge.id) ||
             selectedNodeIDs.contains(edge.source) ||
             selectedNodeIDs.contains(edge.target)
+        }
+        
+        // 実際に削除された要素がある場合のみ登録
+        if nodes.count != before.nodes.count || edges.count != before.edges.count {
+            registerUndo(title: "要素の削除", snapshot: before, ignoringViewport: true)
         }
         clearSelection()
     }
@@ -576,11 +595,26 @@ public final class GraphStore<NodeData: Sendable>: Sendable {
             switch active.mode {
             case .connect:
                 result = Connection(source: active.fromNodeID, target: targetNodeID, sourceHandle: active.fromHandleID, targetHandle: active.targetHandleID, sourcePosition: active.fromHandlePosition, targetPosition: targetHandlePosition)
-            case .reconnect(_, let isSource):
+            case .reconnect(let edgeID, let isSource):
+                let existingEdge = edge(id: edgeID)
                 if isSource {
-                    result = Connection(source: targetNodeID, target: active.fromNodeID, sourceHandle: active.targetHandleID, targetHandle: active.fromHandleID, sourcePosition: targetHandlePosition, targetPosition: active.fromHandlePosition)
+                    result = Connection(
+                        source: targetNodeID,
+                        target: active.fromNodeID,
+                        sourceHandle: active.targetHandleID,
+                        targetHandle: existingEdge != nil ? existingEdge?.targetHandle : active.fromHandleID,
+                        sourcePosition: targetHandlePosition,
+                        targetPosition: existingEdge != nil ? existingEdge?.targetPosition : active.fromHandlePosition
+                    )
                 } else {
-                    result = Connection(source: active.fromNodeID, target: targetNodeID, sourceHandle: active.fromHandleID, targetHandle: active.targetHandleID, sourcePosition: active.fromHandlePosition, targetPosition: targetHandlePosition)
+                    result = Connection(
+                        source: active.fromNodeID,
+                        target: targetNodeID,
+                        sourceHandle: existingEdge != nil ? existingEdge?.sourceHandle : active.fromHandleID,
+                        targetHandle: active.targetHandleID,
+                        sourcePosition: existingEdge != nil ? existingEdge?.sourcePosition : active.fromHandlePosition,
+                        targetPosition: targetHandlePosition
+                    )
                 }
             }
         }
@@ -599,12 +633,19 @@ public final class GraphStore<NodeData: Sendable>: Sendable {
     }
 
     public func applyLayout(direction: GraphLayoutDirection = .topToBottom, spacing: Double = 50.0) {
-        registerUndo(title: "レイアウトの適用", snapshot: self.snapshot(), ignoringViewport: true)
+        let beforeSnapshot = self.snapshot()
         let newPositions = GraphLayoutAlgorithms.layoutNodesTreeStyle(nodes: nodes, edges: edges, direction: direction, spacing: spacing)
+        
+        var hasChanged = false
         for i in 0..<nodes.count {
-            if let newPos = newPositions[nodes[i].id] {
+            if let newPos = newPositions[nodes[i].id], nodes[i].position != newPos {
                 nodes[i].position = newPos
+                hasChanged = true
             }
+        }
+        
+        if hasChanged {
+            registerUndo(title: "レイアウトの適用", snapshot: beforeSnapshot, ignoringViewport: true)
         }
     }
 
@@ -667,11 +708,12 @@ public final class GraphStore<NodeData: Sendable>: Sendable {
     
     private func registerUndo(title: String, snapshot: GraphSnapshot<NodeData>, ignoringViewport: Bool = true) {
         guard let undoManager = undoManager else { return }
-        undoManager.registerUndo(withTarget: self) { target in
-            target.apply(snapshot: snapshot, shouldRegisterUndo: true, ignoringViewport: ignoringViewport, restoringSelection: true)
-        }
         if !undoManager.isUndoing && !undoManager.isRedoing {
             undoManager.setActionName(title)
+        }
+
+        undoManager.registerUndo(withTarget: self) { target in
+            target.apply(snapshot: snapshot, shouldRegisterUndo: true, ignoringViewport: ignoringViewport, restoringSelection: true)
         }
     }
 

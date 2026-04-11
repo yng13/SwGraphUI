@@ -1,0 +1,21 @@
+<svg width="920" height="320" viewBox="0 0 920 320" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <rect width="920" height="320" rx="56" fill="#FFFFFF"/>
+  <g transform="translate(32 32) scale(0.5)">
+    <rect width="512" height="512" rx="72" fill="#FFFFFF"/>
+    <rect x="72" y="72" width="368" height="368" rx="52" stroke="#D8E3F1" stroke-width="8"/>
+    <path d="M116 176H396" stroke="#D8E3F1" stroke-width="8" stroke-linecap="square"/>
+    <path d="M116 264H396" stroke="#D8E3F1" stroke-width="8" stroke-linecap="square"/>
+    <path d="M116 352H396" stroke="#D8E3F1" stroke-width="8" stroke-linecap="square"/>
+    <path d="M176 116V396" stroke="#D8E3F1" stroke-width="8" stroke-linecap="square"/>
+    <path d="M264 116V396" stroke="#D8E3F1" stroke-width="8" stroke-linecap="square"/>
+    <path d="M352 116V396" stroke="#D8E3F1" stroke-width="8" stroke-linecap="square"/>
+    <path d="M190 184L250 248" stroke="#1D4ED8" stroke-width="18" stroke-linecap="square"/>
+    <path d="M274 238L350 194" stroke="#1D4ED8" stroke-width="18" stroke-linecap="square"/>
+    <path d="M266 286L314 344" stroke="#1D4ED8" stroke-width="18" stroke-linecap="square"/>
+    <rect x="146" y="144" width="80" height="80" rx="12" fill="#111827"/>
+    <rect x="218" y="212" width="72" height="88" rx="12" fill="#1D4ED8"/>
+    <rect x="322" y="158" width="54" height="54" rx="10" fill="#111827"/>
+    <rect x="286" y="316" width="76" height="52" rx="10" fill="#111827"/>
+  </g>
+  <text x="352" y="180" fill="#0F172A" font-family="'SF Pro Display', 'Helvetica Neue', Arial, sans-serif" font-size="88" font-weight="650" letter-spacing="-2.4">SwGraphUI</text>
+</svg>
