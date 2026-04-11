@@ -1,16 +1,27 @@
 # 開発ログ
 
 ## 2026-04-11
+### Milestone 36: Runtime Rendering Polish 完了
+- **概要**: 高倍率ズーム時およびズーム操作中の描画品質と操作性を精緻化。
+- **技術的変更**:
+    - `BackgroundView`: zoom に基づく opacity 補間ロジックを実装。LOD (1/5間引き) 切り替え時のチラつきを解消。しきい値: `minGap (12pt/16pt)` 付近で 0.8x〜1.0x の線形補間。
+    - `EdgeRenderer`: `dashPhase` 計算を screen-space 基準に修正。ズーム率にかかわらず秒速 30px の一定速度でアニメーション。
+    - `SelectionBoxView`: 境界線の太さを `min(max(1.0/zoom, 0.5), 2.0)` でクランプ。縮小時でも視認性を維持。
+    - `NodeResizer`: ハンドルサイズを `scaleEffect` で制御し `0.5x〜2.5x` にクランプ。当たり判定は `contentShape(inset: -10)` により 31pt を確保し、操作性を維持。
+- **検証結果**:
+    - `swift test`: 既存 94 件（回帰・性能含む）の全パスを確認。
+    - 手動確認: ズーム操作中の背景の滑らかな遷移、および極小・極大ズーム時のギズモ視認性を確認。
+
 ### Milestone 35: Large Graph Stability & Performance Audit 完了
 - **概要**: 1,000ノード規模のグラフにおける主要操作のコストを可視化。Snapshot が実用上ゼロコストであることを確認しつつ、Layout の重い箇所の最適化を実施。
 - **実測 Baseline (MacBook Air M4)**:
-    - `construct`: ~2.3ms
-    - `selectAll`: ~34.0ms
+    - `construct`: ~2.0ms
+    - `selectAll`: ~23.5ms
     - `snapshot`: ~0.01ms
-    - `moveSelectedNodes`: ~20.0ms
-    - `undo`: ~12.0ms
-    - `redo`: ~11.0ms
-    - `applyLayout`: ~28.0ms
+    - `moveSelectedNodes`: ~16.8ms
+    - `undo`: ~17.1ms
+    - `redo`: ~10.7ms
+    - `applyLayout`: ~24.2ms
 - **技術的変更**:
     - `GraphLayoutAlgorithms`: $O(N^2)$ のエッジ走査を、隣接リストを用いた $O(N+E)$ に修正。約 450ms から約 30ms へ高速化。
     - `PerformanceMatrixTests`: 大規模環境の監査専用テストスイートを新設。エッジを含む構成での計測と Redo 計測を追加。

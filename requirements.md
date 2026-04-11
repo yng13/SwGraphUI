@@ -1,15 +1,23 @@
 # Requirements - SwGraphUI
 
-## [M35] Large Graph Stability & Performance Audit (2026-04-11) [DONE]
+## [M35] Large Graph Core Stability & Performance Audit (2026-04-11) [DONE]
 
 ### 概要
-1,000ノード規模の大規模グラフにおける基本操作のパフォーマンスベースラインを取得。既存の Snapshot アーキテクチャの妥当性を検証し、レイアウト計算のボトルネックを解消した。
+1,000ノード規模の大規模グラフにおけるコアロジックのパフォーマンスベースラインを取得。既存の Snapshot アーキテクチャの妥当性を検証し、レイアウト計算のボトルネックを解消した。
+
+### 実測 Baseline (MacBook Air M4)
+- `construct`: ~2.0ms
+- `selectAll`: ~23.5ms
+- `snapshot`: ~0.01ms (Value Semantic 参照コピーによる極低コストを確認)
+- `moveSelectedNodes`: ~16.8ms
+- `undo/redo`: ~17.1ms / ~10.7ms
+- `applyLayout`: ~24.2ms (O(N+E) 最適化後の数値)
 
 ### 要件項目
 1.  **Baseline 取得**: MacBook Air M4 環境において 1,000ノード/999エッジ構成での構築、選択、移動、Undo/Redo、Layout の基準時間を計測（完了）。
-2.  **アーキテクチャ妥当性検証**: 現在の Snapshot (Value Semantic 参照コピー) が 1,000ノード級で無視できるコスト (0.01ms) であることを実証（完了）。
-3.  **Layout ボトルネック解消**: $O(N^2)$ になっていたレイアウト計算を $O(N+E)$ へ最適化し、1,000ノード級でも 30ms 前後の完走を確保（完了）。
-4.  **SLA 設定方針**: 本マイルストーンで得た数値を基準とし、M36 以降で正式なパフォーマンス保証値（SLA）を固定する。
+2.  **アーキテクチャ妥当性検証**: 現在の Snapshot が 1,000ノード級でボトルネックにならないことを実証（完了）。
+3.  **Layout ボトルネック解消**: $O(N^2)$ になっていたレイアウト計算を $O(N+E)$ へ最適化（完了）。
+4.  **SLA 設定方針**: 本値を基準とし、M36 以降で正式なパフォーマンス保証値（SLA）を検討する。
 
 ## [M30] Subflow Constraints & Selection Polish (2026-04-09) [DONE]
 

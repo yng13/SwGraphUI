@@ -31,16 +31,30 @@ public struct BackgroundView: View {
             let zoom = viewport.zoom
             guard zoom > 0.001 else { return } // 極小ズームガード
             
-            let baseScaledGap = max(gap * zoom, 1.0)
-            let minScreenSpacing: CGFloat = (variant == .dots) ? 12 : 16
-
-            // minor は密度に応じて間引くが、major は常に graph-space の 5x5 基準で別描画する
-            var densityStep: Int = 1
-            while CGFloat(densityStep) * baseScaledGap < minScreenSpacing {
-                densityStep *= 5
+            // ズームに応じた密度（LOD）制御
+            // baseScaledGap が min...max の範囲にあるとき、その密度で描画
+            let minGap: CGFloat = (variant == .dots) ? 12 : 16
+            let maxGap: CGFloat = minGap * 5.0
+            
+            let currentScaledGap = gap * zoom
+            var densityStep: Double = 1.0
+            while CGFloat(densityStep) * currentScaledGap < minGap {
+                densityStep *= 5.0
             }
-
-            let minorStepGraph = Double(gap) * Double(densityStep)
+            
+            // 切り替わりしきい値付近での不透明度補間 (LOD Fade)
+            // 密度が切り替わる直前（間隔が狭くなりすぎるとき）に薄くする
+            let currentStepGap = CGFloat(densityStep) * currentScaledGap
+            let fadeOutStart = minGap
+            let fadeOutEnd = minGap * 0.8 // 少し重なるようにマージンを持たせる
+            let opacityFactor: Double = {
+                if currentStepGap < fadeOutStart {
+                    return max(0.0, Double((currentStepGap - fadeOutEnd) / (fadeOutStart - fadeOutEnd)))
+                }
+                return 1.0
+            }()
+            
+            let minorStepGraph = Double(gap) * densityStep
             let majorStepGraph = Double(gap) * 5.0
             let graphLeft = (-viewport.x) / zoom
             let graphTop = (-viewport.y) / zoom
@@ -63,8 +77,8 @@ public struct BackgroundView: View {
                     viewport: viewport,
                     canvasSize: canvasSize
                 )
-                context.stroke(minorPath, with: .color(patternColor.opacity(0.6)), lineWidth: size)
-                context.stroke(majorPath, with: .color(patternColor.opacity(1.0)), lineWidth: size)
+                context.stroke(minorPath, with: .color(patternColor.opacity(0.4 * opacityFactor)), lineWidth: size)
+                context.stroke(majorPath, with: .color(patternColor.opacity(0.8)), lineWidth: size)
             } else {
                 buildPointPaths(
                     minorPath: &minorPath,
@@ -81,12 +95,12 @@ public struct BackgroundView: View {
 
             if variant == .cross {
                 let lw = size * 0.8
-                context.stroke(minorPath, with: .color(patternColor.opacity(0.6)), lineWidth: lw)
-                context.stroke(majorPath, with: .color(patternColor.opacity(1.0)), lineWidth: lw * 1.5)
+                context.stroke(minorPath, with: .color(patternColor.opacity(0.4 * opacityFactor)), lineWidth: lw)
+                context.stroke(majorPath, with: .color(patternColor.opacity(0.8)), lineWidth: lw * 1.5)
             } else if variant == .dots {
                 // Dots
-                context.fill(minorPath, with: .color(patternColor.opacity(0.6)))
-                context.fill(majorPath, with: .color(patternColor.opacity(1.0)))
+                context.fill(minorPath, with: .color(patternColor.opacity(0.4 * opacityFactor)))
+                context.fill(majorPath, with: .color(patternColor.opacity(0.8)))
             }
         }
         .allowsHitTesting(false)

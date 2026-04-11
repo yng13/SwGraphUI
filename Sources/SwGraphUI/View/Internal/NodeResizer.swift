@@ -26,8 +26,9 @@ public struct NodeResizer<NodeData: Sendable>: View {
             let scale = max(CGFloat(zoomLevel), 0.0001)
             ZStack {
                 // ガイド枠線
+                // lineWidth も SelectionBox と同様に視認性を確保
                 Rectangle()
-                    .stroke(Color.accentColor.opacity(0.5), lineWidth: 1)
+                    .stroke(Color.accentColor.opacity(0.5), lineWidth: min(max(1.0 / scale, 0.5), 2.0))
                 
                 // --- Edge Controls ---
                 ResizeControlView<NodeData>(node: node, position: .top, variant: .line)
@@ -57,6 +58,7 @@ private enum ControlVariant {
 
 private struct ResizeControlView<NodeData: Sendable>: View {
     @Environment(GraphStore<NodeData>.self) private var store
+    @Environment(\.graphZoomLevel) private var zoomLevel
     let node: BaseNode<NodeData>
     let position: ResizeControlPosition
     let variant: ControlVariant
@@ -97,6 +99,9 @@ private struct ResizeControlView<NodeData: Sendable>: View {
             .shadow(color: .black.opacity(0.2), radius: 1, x: 0, y: 1)
             .overlay(Circle().stroke(Color.accentColor, lineWidth: 1.5))
             .frame(width: 11, height: 11)
+            // 視覚上のサイズはクランプするが、当たり判定（frameの外側）を確保
+            .scaleEffect(min(max(1.0 / CGFloat(zoomLevel), 0.5), 2.5))
+            .contentShape(Circle().inset(by: -10)) // 操作しやすさを維持 (実質 31pt 程度の判定領域)
             .modifier(ControlPositionModifier(position: position))
     }
     

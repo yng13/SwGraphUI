@@ -68,6 +68,9 @@ final class PerformanceMatrixTests: XCTestCase {
         let store = GraphStore<String>(undoManager: undoManager)
         for i in 0..<1000 {
             store.nodes.append(BaseNode(id: "\(i)", position: XYPosition(x: Double(i) * 50, y: 0), data: "Node \(i)"))
+            if i > 0 {
+                store.edges.append(BaseEdge(id: "e\(i)", source: "\(i-1)", target: "\(i)"))
+            }
         }
         store.selectAll()
         
@@ -83,7 +86,7 @@ final class PerformanceMatrixTests: XCTestCase {
             undoManager.redo()
         }
         
-        XCTAssertEqual(store.nodes.first?.position.x, 10)
+        XCTAssertEqual(store.nodes.first?.position.x, 10, "Redo after Undo should return to moved position")
         
         print("[Perf] Milestone 35 Move Baseline: move=\(String(format: "%.2f", moveTime))ms undo=\(String(format: "%.2f", undoTime))ms redo=\(String(format: "%.2f", redoTime))ms")
     }

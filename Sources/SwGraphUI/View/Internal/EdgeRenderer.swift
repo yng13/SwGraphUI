@@ -61,7 +61,10 @@ public struct EdgeRenderer: View {
         if animated {
             let elapsed = date.timeIntervalSinceReferenceDate
             let dashCycle: CGFloat = scaledLongDash + scaledShortDash
-            let phase = CGFloat(-elapsed * 30 * viewport.zoom)
+            // ズームにかかわらずスクリーン空間上で秒速 30px (相当) の一定速度で流れるように計算
+            // (elapsed * speed / zoom) に zoom を掛けることで、最終的な表示ピクセル速度を固定する
+            let speed: CGFloat = 30
+            let phase = CGFloat(-elapsed * speed)
                 .truncatingRemainder(dividingBy: dashCycle)
             return StrokeStyle(
                 lineWidth: scaledWidth,
