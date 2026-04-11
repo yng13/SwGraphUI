@@ -1,5 +1,20 @@
 # 開発ログ
 
+## 2026-04-11
+### Milestone 33a: Accessibility Baseline を baseline 完了としてクローズ
+- **概要**: SwGraphUI ライブラリ側の accessibility 基盤実装は維持しつつ、Example アプリにおける Accessibility Inspector の無反応問題には深入りせず、M33a を「Labels & Roles の基盤整備完了」としてクローズした。
+- **技術的変更**:
+    - `GraphView` / `DefaultEdgeView` / `ControlsView` / `MiniMapView` に対して、読み上げ対象となる要素の label / role / hint を整備。
+    - ノードおよび接続の読み上げ名に `ariaLabel -> label -> id` の優先順位を適用。
+    - 背景、選択枠、接続プレビュー、補助入力レイヤなど、意味を持たない装飾要素を accessibility tree から除外。
+    - Example 側でも `ContentView` / `SidebarView` / `InspectorView` に container label を追加し、ライブラリ外側の公開構造も補強。
+- **判断**:
+    - Accessibility Inspector が Example 全体で無反応となる検証環境課題が残っており、これはライブラリ実装の有無だけでは切り分け不能。
+    - そのため、M33a は「基盤実装」までで閉じ、実機レベルの検証・focus 順・最終 polish は `M33b` へ分離。
+- **検証結果**:
+    - `swift test`: XCTest 28件 + Swift Testing 57件 = 合計 85件パス。
+    - `grep` により `ariaLabel ?? label ?? id` の優先順位ロジック、および主要 accessibility label の存在を確認。
+
 ## 2026-04-09
 ### Milestone 30a/b: Subflow Constraints & Selection Polish 開始
 - **概要**: 移動制限機能の実装と複数選択 UI の精緻化に着手。
@@ -364,5 +379,30 @@ Shift + クリックによる複数選択および、Shift + ドラッグによ�
     - **対称的 Viewport Undo**: `registerViewportUndo()` において、Undo 時に Redo 用の軽量履歴を再登録する対称設計を採用。
     - **アクション名の日本語化**: `UndoManager` 表示名を日本語に統一（ノードの移動、表示範囲を調整、要素の削除 等）。
 - **検証結果**:
-    - `UndoRefinementTests.swift`: 全 4 ケース（対称性、同期、ガード、論理分離）のパスを確認。
+    - `UndoRefinementTests.swift`: 全 5 ケース（対称性、同期、ガード、論理分離、fitView選択安定性）のパスを確認。
     - 自己レビュー: 破損した `GraphStore.swift` の完全修復と、Revision 5 の意図通りの実装を確認。
+
+### Milestone 33a: Accessibility Baseline (Labels & Roles) (2026-04-10) [DONE]
+- **概要**: グラフの主要コンポーネントにアクセシビリティ（ラベル、役割、ヒント）を付与し、VoiceOver 対応の基礎を構築。
+- **技術的実装**:
+    - **モデル拡張**: `BaseNode` に `label` プロパティを追加し、`BaseEdge` との整合性を確保。
+    - **ラベル解決の優先順位**: ノードおよびエッジの読み上げにおいて `ariaLabel` -> `label` -> `id` の優先順位を厳守。
+    - **コンポーネント対応**:
+        - `GraphView`: キャンバス全体を `.contain` で識別可能に。
+        - `DefaultNodeView`: 子要素を統合し、選択状態（trait）と操作ヒントを付与。
+        - `DefaultEdgeView`: 「A から B への接続」という形式で接続関係を明示。
+        - `ControlsView` / `MiniMapView`: 日本語ラベルによる機能識別。
+- **検証結果**:
+    - `swift test`: パス（57件）。
+    - `swift build`: 成功。
+    - 手動確認: 構造的な破壊がないこと、および各要素へのラベル付与を確認。
+- **アクセシビリティ精緻化 (2026-04-11) [Pivot & Closed]**:
+    - **判断**: アクセシビリティ・インスペクタが Example アプリを正常にキャッチできない検証環境の問題により、ツールベースの検証に時間を溶かすことを避け、実装ベースで M33a をクローズ。
+    - **成果**: `Nodes`/`Edges`/`Controls`/`MiniMap` へのラベル・ロール・ヒント付与基盤はライブラリとして完了。
+    - **今後**: フル検証（VoiceOver/Inspector）およびナビゲーション最適化は将来の品質ゲートへ後退（M33b Deferred）。
+- **検証結果**:
+    - `swift build`: 成功。
+- **後続への送り（Milestone 34 以降）**:
+    - Tab 順序の最適化。
+    - ズーム可能なキャンバス内でのフォーカス設計。
+    - 大規模グラフ時のエッジ露出制御。

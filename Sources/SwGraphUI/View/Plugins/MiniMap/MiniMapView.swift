@@ -114,6 +114,7 @@ public struct MiniMapView<Data: Sendable>: View {
             )
         }
         .clipShape(RoundedRectangle(cornerRadius: 12)) // 角を少し丸く
+        .accessibilityLabel("現在の表示範囲を示すミニマップ")
         .shadow(color: Color.black.opacity(0.15), radius: 10, x: 0, y: 5) // 浮遊感を強調
         .overlay(
             RoundedRectangle(cornerRadius: 12)

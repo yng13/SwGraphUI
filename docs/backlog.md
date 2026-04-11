@@ -146,7 +146,7 @@
 
 ## 保留中 (別途指示待ち)
 - [ ] Whiteboard 系 example 群 (後順位)
-- [ ] Accessibility (A11y) 対応 (別途指示待ち)
+- [ ] Accessibility (A11y) の実機検証・最終 polish (販売前ゲートで再開)
 
 ## Epic 5: 拡張機能
 
@@ -158,8 +158,44 @@
 - [x] 文字ぼやけ回避の品質基準を定義 (`docs/export-strategy.md`) [DONE]
 - [x] Example app に export 検証用ボタンを追加 [DONE]
 
+## Epic 6: 品質強化と販売品質への仕上げ
+
+- [x] **Milestone 33a: Accessibility Baseline (Labels & Roles) [DONE]** (2026-04-10)
+    - [x] ノード / エッジ / Controls / MiniMap の accessibility label / role / hint 整備
+    - [x] 読み上げ優先順位（ariaLabel -> label -> id）の適用
+    - [x] 装飾レイヤ・補助入力レイヤの accessibility 除外
+- [ ] **Milestone 33b: Accessibility Navigation & Verification [Deferred]**
+    - [ ] 支援技術（VoiceOver/Inspector等）による実機レベルのフル検証
+    - [ ] キーボードのみでの基本操作成立確認
+    - [ ] Inspector / Sidebar を含む focus 順の見直し
+    - [ ] Example アプリ検証環境の再整備と確認手順の確立
+- [ ] **Milestone 34: Regression Matrix Expansion [Todo]**
+    - [ ] hierarchy + selection + undo/redo の複合テスト
+    - [ ] layout + undo/redo + selection の複合テスト
+    - [ ] 大規模グラフにおけるインタラクションの安定性確認
+    - [ ] save/restore + selection + viewport の複合テスト
+    - [ ] export + custom edge / label / marker の複合テスト
+- [ ] **Milestone 35: Large Graph Stability [Todo]**
+    - [ ] 100〜500 node 規模での pan / zoom / selection / layout / export の確認
+    - [ ] 長時間操作時のクラッシュ耐性と体感性能の確認
+    - [ ] MiniMap / Background / animated edge の同時負荷確認
+- [ ] **Milestone 36: Runtime Rendering Polish [Todo]**
+    - [ ] custom node 群の高倍率 zoom 監査
+    - [ ] edge label / reconnect handle / selection box の高倍率表示確認
+    - [ ] Background LOD / phase / accent の見た目最終調整
+- [ ] **Milestone 37: Undo/Redo Final QA [Todo]**
+    - [ ] move / delete / resize / reconnect / layout / fitView の対称性確認
+    - [ ] no-op 操作で履歴が汚れないことの確認
+    - [ ] Save/Restore と Undo/Redo の責務分離の再確認
+- [ ] **Milestone 38: API & Docs Hardening [Todo]**
+    - [ ] public API に product 固有 field が漏れていないことの確認
+    - [ ] `current-plan.md` / `reference-divergence.md` / `examples-reference-map.md` の継続同期
+    - [ ] Example を受け入れハーネスとして使う手順の明文化
+
 ### 直近の次アクション
 - [x] Milestone 29 (Subflow Drag Audit) [DONE]
 - [x] Epic 5 (PNG Export Implementation) [DONE]
 - [x] Milestone 31 (Layout Algorithms & Dagre Tree Style) [DONE]
 - [x] Milestone 32 (Crisp Zoom / Coordinate-based Rendering) [DONE]
+- [x] Milestone 33a (Accessibility Baseline - Labels & Roles) [DONE]
+- [ ] Milestone 34 (Regression Matrix Expansion)

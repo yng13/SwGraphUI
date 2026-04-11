@@ -16,8 +16,12 @@ struct SidebarView: View {
         #if os(macOS)
         MacSidebarOutlineView(appStore: appStore, graphStore: graphStore)
             .background(Color(nsColor: .windowBackgroundColor))
+            .accessibilityElement(children: .contain)
+            .accessibilityLabel("サンプルナビゲータ")
         #else
         MobileSidebarView(appStore: appStore, graphStore: graphStore)
+            .accessibilityElement(children: .contain)
+            .accessibilityLabel("サンプルナビゲータ")
         #endif
     }
 }
@@ -79,6 +83,8 @@ private struct MacSidebarOutlineView: NSViewRepresentable {
         scrollView.hasHorizontalScroller = false
         scrollView.autohidesScrollers = true
         scrollView.borderType = .noBorder
+        scrollView.setAccessibilityElement(true)
+        scrollView.setAccessibilityLabel("サンプルナビゲータ")
 
         let outlineView = NSOutlineView()
         outlineView.headerView = nil
@@ -96,6 +102,8 @@ private struct MacSidebarOutlineView: NSViewRepresentable {
         outlineView.delegate = context.coordinator
         outlineView.dataSource = context.coordinator
         outlineView.autoresizesOutlineColumn = true
+        outlineView.setAccessibilityElement(true)
+        outlineView.setAccessibilityLabel("サンプル一覧")
 
         let column = NSTableColumn(identifier: NSUserInterfaceItemIdentifier("main"))
         column.isEditable = false

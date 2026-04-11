@@ -38,6 +38,7 @@
 - **NodeResizer**: 8方向のインタラクティブなノードリサイズと制約適用 (M25a / M25b: Corner + Shift Lock)
 - **Auto Pan**: ドラッグ・接続操作時の自動スクロールと座標同期 (M27a)
 - **Keyboard Interaction**: CanvasKeyboardBridge による Delete/SelectAll/Arrow-key move (M28b Keyboard 基盤)
+- **A11y (Baseline)**: Nodes / Edges / Controls / MiniMap に対するラベル（ariaLabel -> label -> id 優先順位）、ロール、ヒントの基盤実装 (M33a)
 
 ### 意図的差分
 
@@ -52,8 +53,7 @@
 ### 未着手 / 未完
 
 - whiteboard 系 interaction (保留中/Deferred)
-- **Undo / Redo**: コマンドスタックによる履歴管理 (M28b 残課題)
-- **A11y**: AccessibilityNode 群の提供 (M28b 残課題)
+- **A11y Verification**: 支援技術（VoiceOver/Inspector等）による実機レベルのフル検証と focus 順の最終調整 (Deferred)
 
 ### 要再判断
 
@@ -188,5 +188,5 @@
 
 1. internal cache (`positionAbsolute`, `handleBounds`) の要否再判断
 2. auto pan 実装
-4. examples coverage の拡張 (Stress Test, Save/Restore 等)
-5. A11y / Keyboard interaction の体系的整理
+3. examples coverage の拡張 (Stress Test, Save/Restore 等)
+4. M34: Regression Matrix Expansion (安定性強化)

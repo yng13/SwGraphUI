@@ -24,10 +24,13 @@ struct ContentView: View {
             if appStore.isSidebarVisible {
                 SidebarView(appStore: appStore, graphStore: graphStore)
                     .frame(minWidth: 200, idealWidth: 250, maxWidth: 400)
+                    .accessibilityElement(children: .contain)
+                    .accessibilityLabel("サンプルナビゲータ")
                     .overlay(alignment: .trailing) {
                         Rectangle()
                             .fill(Color.secondary.opacity(0.2))
                             .frame(width: 1)
+                            .accessibilityHidden(true)
                     }
             }
             
@@ -36,10 +39,14 @@ struct ContentView: View {
                 mainCanvasView
                     .frame(minHeight: 400, idealHeight: 1200, maxHeight: .infinity)
                     .layoutPriority(1)
+                    .accessibilityElement(children: .contain)
+                    .accessibilityLabel("グラフ編集エリア")
                 
                 if appStore.isCodeViewVisible {
                     CodeView(graphStore: graphStore)
                         .frame(minHeight: 150, idealHeight: 400, maxHeight: .infinity)
+                        .accessibilityElement(children: .contain)
+                        .accessibilityLabel("コードビュー")
                 }
             }
             .frame(minWidth: 400)
@@ -61,13 +68,18 @@ struct ContentView: View {
                     }
                 }
                 .frame(minWidth: 250, idealWidth: 300, maxWidth: 500)
+                .accessibilityElement(children: .contain)
+                .accessibilityLabel("インスペクタペイン")
                 .overlay(alignment: .leading) {
                     Rectangle()
                         .fill(Color.secondary.opacity(0.2))
                         .frame(width: 1)
+                        .accessibilityHidden(true)
                 }
             }
         }
+        .accessibilityElement(children: .contain)
+        .accessibilityLabel("SwGraphUI Example")
         .toolbar {
             ToolbarItemGroup(placement: .navigation) {
                 Button(action: { appStore.isSidebarVisible.toggle() }) {
@@ -202,6 +214,8 @@ struct ContentView: View {
                 .coordinateSpace(name: "graph")
                 .background(Color(NSColor.underPageBackgroundColor))
                 .border(Color.blue.opacity(0.3), width: 2) // FitView対象領域を可視化
+                .accessibilityElement(children: .contain)
+                .accessibilityLabel("グラフキャンバス領域")
                 
                 // Plugins Area
                 ZStack {
@@ -222,7 +236,11 @@ struct ContentView: View {
                     }
                 }
                 .allowsHitTesting(true) // プラグイン領域への入力を許可
+                .accessibilityElement(children: .contain)
+                .accessibilityLabel("グラフ補助コントロール")
             }
+            .accessibilityElement(children: .contain)
+            .accessibilityLabel("メインキャンバス")
             .onAppear {
                 appStore.currentGraphSize = Dimensions(width: geometry.size.width, height: geometry.size.height)
             }
@@ -256,6 +274,7 @@ struct ContentView: View {
                     graphStore.moveSelectedNodes(by: offset)
                 }
             )
+            .accessibilityHidden(true)
         }
         #endif
     }

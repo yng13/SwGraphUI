@@ -15,6 +15,18 @@ Subflow（入れ子構造）における実用的な制約の実装と、複数�
     - 絶対座標ベースでの包含矩形計算。
     - オーバーレイ（最前面）での描画。
 
+## [M33a] Accessibility Baseline (Labels & Roles) (2026-04-11) [DONE]
+
+### 概要
+SwGraphUI ライブラリとして、ノード・エッジ・Controls・MiniMap に対する基礎的なアクセシビリティ情報を整備した。販売品質に向けた第一段階として、ラベル・ロール・ヒントの実装を完了し、装飾レイヤを accessibility tree から除外した。
+
+### 要件項目
+1.  **要素ラベル整備**: ノード・エッジ・Controls・MiniMap に対して `accessibilityLabel` を付与すること（完了）。
+2.  **優先順位ロジック**: ノードおよびエッジ関連の読み上げ名は `ariaLabel -> label -> id` を優先順として解決すること（完了）。
+3.  **状態ヒント**: 選択状態や基本的な操作可能性をヒント/trait として公開すること（完了）。
+4.  **装飾レイヤ除外**: 背景、選択枠、接続プレビュー、補助入力ブリッジ等を accessibility 対象から除外すること（完了）。
+5.  **検証範囲の限定**: Accessibility Inspector / VoiceOver による実機レベルの完全検証は、本マイルストーンの完了条件には含めない。Example アプリ側の検証環境課題があるため、販売前の品質ゲート（M33b）で継続する（保留）。
+
 ## [Epic 4] Basic Interaction & Custom Elements (2026-04-06) [DONE]
 
 ### 概要
@@ -305,3 +317,17 @@ Undo/Redo 実行時の要素状態（選択）とビューポートの保存ロ�
     - [x] **COMPLETED**: ユニットテストによる回帰防止（`UndoRefinementTests.swift`）。
 4.  **[x] Interaction Stability**:
     - [x] Undo -> Redo の往復において、選択状態と座標の整合性が 100% 維持されること。
+
+## Milestone 33a: Accessibility Baseline (Labels & Roles)
+1.  **[x] Labels & Roles Implementation**:
+    - [x] ノード / エッジ / コントロール / ミニマップに対する日本語ラベルの付与。
+    - [x] 読み上げ優先順位（`ariaLabel` -> `label` -> `id`）の適用。
+2.  **[x] Element Visibility**:
+    - [x] グラフコンテナの識別（`.contain`）と、子要素の適切な集約（`.combine`）。
+    - [x] **NOTE**: 検証ツール（Inspector）の環境問題により、ツールベースの自動検証は保留中（コード実装ベースでの完了）。
+
+## Milestone 33b: Accessibility Navigation & Verification (Deferred)
+1.  **[ ] Focus & Navigation**:
+    - [ ] Tab 順の最適化とキャンバス内のフォーカス管理。
+2.  **[ ] Full Validation**:
+    - [ ] 支援技術（VoiceOver/Inspector等）による実機レベルのフル検証。

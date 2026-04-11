@@ -30,6 +30,7 @@ public struct BaseNode<NodeData: Sendable>: Sendable, Identifiable {
     public var extent: NodeExtent?
     public var expandParent: Bool
     public var ariaLabel: String?
+    public var label: String?
     public var origin: NodeOrigin?
     public var handles: [NodeHandle]
     public var connectable: Bool
@@ -84,6 +85,7 @@ public struct BaseNode<NodeData: Sendable>: Sendable, Identifiable {
         maxHeight: Double = .infinity,
         initialWidth: Double? = nil,
         initialHeight: Double? = nil,
+        label: String? = nil,
         measured: Dimensions? = nil
     ) {
         self.id = id
@@ -116,6 +118,7 @@ public struct BaseNode<NodeData: Sendable>: Sendable, Identifiable {
         self.maxHeight = maxHeight
         self.initialWidth = initialWidth
         self.initialHeight = initialHeight
+        self.label = label
         self.measured = measured
     }
 }
@@ -124,7 +127,7 @@ extension BaseNode: Codable where NodeData: Codable {
     enum CodingKeys: String, CodingKey {
         case id, position, data, kind
         case sourcePosition, targetPosition, parentID, zIndex, extent
-        case expandParent, ariaLabel, origin, handles, connectable, resizable
+        case expandParent, ariaLabel, label, origin, handles, connectable, resizable
         case hidden, draggable, selectable, deletable, dragHandle
         case width, height, minWidth, minHeight, maxWidth, maxHeight
         case initialWidth, initialHeight
@@ -143,6 +146,7 @@ extension BaseNode: Codable where NodeData: Codable {
         self.extent = try container.decodeIfPresent(NodeExtent.self, forKey: .extent)
         self.expandParent = try container.decode(Bool.self, forKey: .expandParent)
         self.ariaLabel = try container.decodeIfPresent(String.self, forKey: .ariaLabel)
+        self.label = try container.decodeIfPresent(String.self, forKey: .label)
         self.origin = try container.decodeIfPresent(NodeOrigin.self, forKey: .origin)
         self.handles = try container.decode([NodeHandle].self, forKey: .handles)
         self.connectable = try container.decode(Bool.self, forKey: .connectable)
@@ -180,6 +184,7 @@ extension BaseNode: Codable where NodeData: Codable {
         try container.encodeIfPresent(extent, forKey: .extent)
         try container.encode(expandParent, forKey: .expandParent)
         try container.encodeIfPresent(ariaLabel, forKey: .ariaLabel)
+        try container.encodeIfPresent(label, forKey: .label)
         try container.encodeIfPresent(origin, forKey: .origin)
         try container.encode(handles, forKey: .handles)
         try container.encode(connectable, forKey: .connectable)
@@ -216,6 +221,7 @@ extension BaseNode: Equatable where NodeData: Equatable {
         lhs.draggable == rhs.draggable &&
         lhs.hidden == rhs.hidden &&
         lhs.parentID == rhs.parentID &&
+        lhs.label == rhs.label &&
         lhs.data == rhs.data
     }
 }

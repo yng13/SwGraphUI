@@ -87,6 +87,8 @@ public struct GraphView<NodeData: Sendable, NodeContent: View>: View {
                 }
             )
         }
+        .accessibilityElement(children: .contain)
+        .accessibilityLabel("グラフキャンバス")
         .onAppear {
             _ = modifierKeys.isShiftPressed // 初期アクセスで監視開始
             
@@ -176,6 +178,7 @@ public struct GraphView<NodeData: Sendable, NodeContent: View>: View {
         // ヒットテストを確実にするため、完全に透明ではない色を使用
         Color.black.opacity(0.0001)
             .contentShape(Rectangle())
+            .accessibilityHidden(true)
             .gesture(
                 DragGesture(minimumDistance: 0, coordinateSpace: .named("viewport_container"))
                     .onChanged { value in
@@ -439,6 +442,10 @@ public struct DefaultNodeView<NodeData: Sendable>: View {
                     .offset(x: 8 * zoomScale)
             }
         )
+        .accessibilityElement(children: .combine)
+        .accessibilityLabel(node.ariaLabel ?? node.label ?? node.id)
+        .accessibilityAddTraits(node.selected ? [.isSelected] : [])
+        .accessibilityHint(node.selectable ? "ダブルタップで選択" : "")
     }
     
     private static var backgroundColor: Color {
@@ -483,5 +490,6 @@ struct ConnectionPreviewLine<NodeData: Sendable>: View {
             active.targetNodeID != nil ? Color.blue : Color.blue.opacity(0.6),
             style: StrokeStyle(lineWidth: 2, lineCap: .round, dash: [5, 5])
         )
+        .accessibilityHidden(true)
     }
 }

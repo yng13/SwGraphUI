@@ -75,78 +75,88 @@ public struct DefaultEdgeView<NodeData: Sendable>: View {
             
             let path = DefaultEdgeViewUtils.segmentsToPath(adjustedSegments, viewport: viewport)
 
-            return AnyView(ZStack {
-                // 1. ヒットエリア（太いパス判定）
-                path
-                    .stroke(Color.black.opacity(0.0001), lineWidth: 20)
-                    .contentShape(path.stroke(lineWidth: 20))
-                    .onTapGesture {
-                        if modifierKeys?.isShiftPressed == true {
-                            store.toggleEdgeSelection(edge.id)
+            let sourceNode = store.node(id: edge.source)
+            let targetNode = store.node(id: edge.target)
+            let sourceLabel = sourceNode?.ariaLabel ?? sourceNode?.label ?? edge.source
+            let targetLabel = targetNode?.ariaLabel ?? targetNode?.label ?? edge.target
+            let edgeLabel = edge.ariaLabel ?? edge.label ?? "\(sourceLabel) から \(targetLabel) への接続"
+
+            return AnyView(
+                ZStack {
+                    // 1. ヒットエリア（太いパス判定）
+                    path
+                        .stroke(Color.black.opacity(0.0001), lineWidth: 20)
+                        .contentShape(path.stroke(lineWidth: 20))
+                        .onTapGesture {
+                            if modifierKeys?.isShiftPressed == true {
+                                store.toggleEdgeSelection(edge.id)
+                            } else {
+                                store.selectEdge(edge.id)
+                            }
+                        }
+
+                    // 2. 表示用エッジ
+                    Group {
+                        if let edgeBodyBuilder = edgeBodyBuilder {
+                            edgeBodyBuilder(
+                                adjustedSegments,
+                                edge.selected ? (isReconnecting ? Color.blue : Color.primary) : Color.gray,
+                                strokeWidth,
+                                viewport,
+                                edge.animated && !isReconnecting,
+                                isReconnecting
+                            )
                         } else {
-                            store.selectEdge(edge.id)
+                            EdgeRenderer(
+                                segments: adjustedSegments,
+                                strokeColor: edge.selected ? (isReconnecting ? Color.blue : Color.primary) : Color.gray,
+                                strokeWidth: strokeWidth,
+                                viewport: viewport,
+                                animated: edge.animated && !isReconnecting,
+                                isReconnecting: isReconnecting
+                            )
                         }
                     }
+                    .opacity(isReconnecting ? 0.3 : 1.0)
+                    
+                    // 3. 始点マーカー
+                    if let marker = edge.markerStart {
+                        let screenPos = sourceHandlePos.toScreen(viewport: viewport)
+                        ArrowHead(
+                            at: CGPoint(x: screenPos.x, y: screenPos.y),
+                            angle: baseResult.sourceTangentAngle.map { Angle(radians: $0 + .pi) } ?? (
+                                sourcePos == .top ? .degrees(270) :
+                                sourcePos == .bottom ? .degrees(90) :
+                                sourcePos == .left ? .degrees(180) : .degrees(0)
+                            ),
+                            color: edge.selected ? Color.primary : Color.gray,
+                            width: (marker.width ?? 6.0) * viewport.zoom,
+                            height: (marker.height ?? 6.0) * viewport.zoom
+                        )
+                        .opacity(isReconnecting ? 0.3 : 1.0)
+                    }
 
-                // 2. 表示用エッジ
-                Group {
-                    if let edgeBodyBuilder = edgeBodyBuilder {
-                        edgeBodyBuilder(
-                            adjustedSegments,
-                            edge.selected ? (isReconnecting ? Color.blue : Color.primary) : Color.gray,
-                            strokeWidth,
-                            viewport,
-                            edge.animated && !isReconnecting,
-                            isReconnecting
+                    // 4. 終了マーカー（矢印）
+                    if let marker = edge.markerEnd {
+                        let screenPos = targetHandlePos.toScreen(viewport: viewport)
+                        ArrowHead(
+                            at: CGPoint(x: screenPos.x, y: screenPos.y),
+                            angle: baseResult.targetTangentAngle.map { Angle(radians: $0) } ?? (
+                                targetPos == .top ? .degrees(90) :
+                                targetPos == .bottom ? .degrees(270) :
+                                targetPos == .left ? .degrees(0) : .degrees(180)
+                            ),
+                            color: edge.selected ? Color.primary : Color.gray,
+                            width: (marker.width ?? 6.0) * viewport.zoom,
+                            height: (marker.height ?? 6.0) * viewport.zoom
                         )
-                    } else {
-                        EdgeRenderer(
-                            segments: adjustedSegments,
-                            strokeColor: edge.selected ? (isReconnecting ? Color.blue : Color.primary) : Color.gray,
-                            strokeWidth: strokeWidth,
-                            viewport: viewport,
-                            animated: edge.animated && !isReconnecting,
-                            isReconnecting: isReconnecting
-                        )
+                        .opacity(isReconnecting ? 0.3 : 1.0)
                     }
                 }
-
-                .opacity(isReconnecting ? 0.3 : 1.0)
-                
-                // 3. 始点マーカー
-                if let marker = edge.markerStart {
-                    let screenPos = sourceHandlePos.toScreen(viewport: viewport)
-                    ArrowHead(
-                        at: CGPoint(x: screenPos.x, y: screenPos.y),
-                        angle: baseResult.sourceTangentAngle.map { Angle(radians: $0 + .pi) } ?? (
-                            sourcePos == .top ? .degrees(270) :
-                            sourcePos == .bottom ? .degrees(90) :
-                            sourcePos == .left ? .degrees(180) : .degrees(0)
-                        ),
-                        color: edge.selected ? Color.primary : Color.gray,
-                        width: (marker.width ?? 6.0) * viewport.zoom,
-                        height: (marker.height ?? 6.0) * viewport.zoom
-                    )
-                    .opacity(isReconnecting ? 0.3 : 1.0)
-                }
-
-                // 4. 終了マーカー（矢印）
-                if let marker = edge.markerEnd {
-                    let screenPos = targetHandlePos.toScreen(viewport: viewport)
-                    ArrowHead(
-                        at: CGPoint(x: screenPos.x, y: screenPos.y),
-                        angle: baseResult.targetTangentAngle.map { Angle(radians: $0) } ?? (
-                            targetPos == .top ? .degrees(90) :
-                            targetPos == .bottom ? .degrees(270) :
-                            targetPos == .left ? .degrees(0) : .degrees(180)
-                        ),
-                        color: edge.selected ? Color.primary : Color.gray,
-                        width: (marker.width ?? 6.0) * viewport.zoom,
-                        height: (marker.height ?? 6.0) * viewport.zoom
-                    )
-                    .opacity(isReconnecting ? 0.3 : 1.0)
-                }
-            })
+                .accessibilityElement(children: .combine)
+                .accessibilityLabel(edgeLabel)
+                .accessibilityAddTraits(edge.selected ? [.isSelected] : [])
+            )
         } else {
             return AnyView(EmptyView())
         }

@@ -31,6 +31,7 @@ struct SelectionBoxView<Data: Sendable>: View {
                 .frame(width: screenBounds.width, height: screenBounds.height)
                 .position(x: screenBounds.origin.x + screenBounds.width / 2, y: screenBounds.origin.y + screenBounds.height / 2)
                 .allowsHitTesting(false)
+                .accessibilityHidden(true)
         }
     }
 }

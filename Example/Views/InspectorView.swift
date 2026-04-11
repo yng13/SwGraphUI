@@ -205,6 +205,8 @@ struct InspectorView: View {
                 Spacer()
             }
         }
+        .accessibilityElement(children: .contain)
+        .accessibilityLabel("インスペクタ")
     }
 
     // MARK: - Sections
