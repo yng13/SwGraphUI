@@ -191,10 +191,11 @@
     - [x] move / delete / resize / reconnect / layout / fitView の対称性確認
     - [x] no-op 操作で履歴が汚れないことの確認
     - [x] Save/Restore と Undo/Redo の責務分離の再確認
-- [ ] **Milestone 38: API & Docs Hardening [Todo]**
-    - [ ] public API に product 固有 field が漏れていないことの確認
-    - [ ] `current-plan.md` / `reference-divergence.md` / `examples-reference-map.md` の継続同期
-    - [ ] Example を受け入れハーネスとして使う手順の明文化
+- [x] **Milestone 38: API & Docs Hardening [DONE]** (2026-04-12)
+    - [x] public API に product 固有 field が漏れていないことの確認
+    - [x] `current-plan.md` / `reference-divergence.md` / `examples-reference-map.md` の継続同期
+    - [x] 品質メトリクスとリリース前チェック項目を `requirements.md` に反映
+    - [ ] Example の GUI 手動監査はローカル実機で継続
 
 ### 直近の次アクション
 - [x] Milestone 29 (Subflow Drag Audit) [DONE]
@@ -205,4 +206,4 @@
 - [x] Milestone 34 (Regression Matrix Expansion) [DONE]
 - [x] Milestone 36 (Runtime Rendering Polish) [DONE]
 - [x] Milestone 37 (Undo/Redo Final QA) [DONE]
-- [ ] Milestone 38 (API & Docs Hardening)
+- [x] Milestone 38 (API & Docs Hardening) [DONE]

@@ -8,21 +8,19 @@
 ### [Epic 6] 品質強化と販売品質への同期
 - [x] Milestone 36: Runtime Rendering Polish [DONE]
 - [x] Milestone 37: Undo/Redo Final QA [DONE]
+- [x] Milestone 38: API & Docs Hardening [DONE]
 - [x] Brand assets draft/finalization [DONE]
 - [ ] Milestone 33b: Accessibility Navigation & Verification (Deferred)
 - [ ] Milestone 35b: Large Graph UI & Integrated Load (Deferred)
-- [ ] Milestone 38: API & Docs Hardening
-    - [ ] `current-plan.md` / `reference-divergence.md` / `examples-reference-map.md` の継続同期
-    - [ ] public API に product 固有 field が漏れていないことの確認
-    - [ ] Example を受け入れハーネスとして使う手順の明文化
 
 ## Exit Rule
 - [x] 描画品質の最終 polish が完了していること。
 - [x] Undo/Redo の対称性と No-op 履歴汚染の確認が完了していること。
 - [x] ブランドアセットの採用案が確定していること。
-- [ ] 残る Deferred / Todo 項目の責務境界が明文化されていること。
+- [x] 残る Deferred / Todo 項目の責務境界が明文化されていること。
 
 ## 完了したマイルストーン
+- [x] M38: API & Docs Hardening (2026-04-12)
 - [x] Brand assets finalized (blueprint-asymmetric) (2026-04-12)
 - [x] M37: Undo/Redo Final QA (2026-04-12)
 - [x] M36: Runtime Rendering Polish (2026-04-11)

@@ -7,8 +7,8 @@ final class UndoSymmetryTests: XCTestCase {
     var store: GraphStore<String>!
     var undoManager: UndoManager!
     
-    override func setUp() {
-        super.setUp()
+    override func setUp() async throws {
+        try await super.setUp()
         undoManager = UndoManager()
         undoManager.groupsByEvent = false
         store = GraphStore<String>(nodes: [], undoManager: undoManager)

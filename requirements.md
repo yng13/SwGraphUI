@@ -1,5 +1,25 @@
 # Requirements - SwGraphUI
 
+## [M38] API & Docs Hardening (2026-04-12) [DONE]
+
+### 概要
+リリースクオリティを確保するため、警告の解消、Undo/Redo QA の収束、ドキュメント同期、および品質メトリクスの明文化を行った。
+
+### 要件項目
+1. **警告整理**: `UndoSymmetryTests` の Actor Isolation 警告、および `GraphStore` の未使用変数警告を解消すること（完了）。
+2. **API 境界確認**: `GraphStore` / 公開 Example / docs を見直し、product 固有 field が public surface に露出していないことを確認すること（完了）。
+3. **Docs 同期**: `backlog.md`, `current-plan.md`, `reference-divergence.md`, `examples-reference-map.md`, `README.md` を現状へ同期すること（完了）。
+4. **品質メトリクス反映**: 現時点の自動テスト通過実績を requirements に反映すること（完了）。
+5. **手動監査の扱い明確化**: Example GUI の最終ストレス監査はローカル実機で継続することを明記すること（完了）。
+
+### 品質メトリクス
+- `swift build`: 成功
+- `swift test`: 全件成功
+- XCTest: 43 件パス
+- Swift Testing: 57 件パス
+- 合計: 100 件パス
+- `UndoSymmetryTests`: 6 件パス（move / delete / resize / reconnect / no-op / viewport isolation）
+
 ## [M35] Large Graph Core Stability & Performance Audit (2026-04-11) [DONE]
 
 ### 概要

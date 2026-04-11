@@ -113,6 +113,11 @@ public final class GraphStore<NodeData: Sendable>: Sendable {
     }
 
     /// リサイズ操作によってノードの寸法と位置を更新します。
+    /// - Parameters:
+    ///   - id: 更新対象ノード ID
+    ///   - width: リサイズ後の幅
+    ///   - height: リサイズ後の高さ
+    ///   - position: リサイズ後の位置
     public func updateNodeDimensionsAfterResize(id: String, width: Double, height: Double, position: XYPosition) {
         if let index = nodes.firstIndex(where: { $0.id == id }) {
             nodes[index].width = width
@@ -128,6 +133,7 @@ public final class GraphStore<NodeData: Sendable>: Sendable {
         self.resizeStartSnapshot = self.snapshot()
     }
     
+    /// リサイズ操作を確定し、実効変化がある場合のみ Undo 履歴を登録します。
     public func stopResizing() {
         if let before = resizeStartSnapshot {
             let after = self.snapshot()
@@ -380,7 +386,6 @@ public final class GraphStore<NodeData: Sendable>: Sendable {
         let beforeSnapshot = self.snapshot()
         let selectedNodeIDs = runtimeState.selection.selectedNodeIDs
         let lookup = self.nodeLookup
-        var hasMoved = false
         
         for i in 0..<nodes.count {
             let node = nodes[i]
@@ -403,7 +408,6 @@ public final class GraphStore<NodeData: Sendable>: Sendable {
             
             if nodes[i].position != constrainedPos {
                 nodes[i].position = constrainedPos
-                hasMoved = true
             }
         }
         

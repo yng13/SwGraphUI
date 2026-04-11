@@ -34,7 +34,6 @@ public struct BackgroundView: View {
             // ズームに応じた密度（LOD）制御
             // baseScaledGap が min...max の範囲にあるとき、その密度で描画
             let minGap: CGFloat = (variant == .dots) ? 12 : 16
-            let maxGap: CGFloat = minGap * 5.0
             
             let currentScaledGap = gap * zoom
             var densityStep: Double = 1.0
