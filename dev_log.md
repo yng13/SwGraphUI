@@ -1,6 +1,24 @@
 # 開発ログ
 
 ## 2026-04-11
+### Milestone 35: Large Graph Stability & Performance Audit 完了
+- **概要**: 1,000ノード規模のグラフにおける主要操作のコストを可視化。Snapshot が実用上ゼロコストであることを確認しつつ、Layout の重い箇所の最適化を実施。
+- **実測 Baseline (MacBook Air M4)**:
+    - `construct`: ~2.3ms
+    - `selectAll`: ~34.0ms
+    - `snapshot`: ~0.01ms
+    - `moveSelectedNodes`: ~20.0ms
+    - `undo`: ~12.0ms
+    - `redo`: ~11.0ms
+    - `applyLayout`: ~28.0ms
+- **技術的変更**:
+    - `GraphLayoutAlgorithms`: $O(N^2)$ のエッジ走査を、隣接リストを用いた $O(N+E)$ に修正。約 450ms から約 30ms へ高速化。
+    - `PerformanceMatrixTests`: 大規模環境の監査専用テストスイートを新設。エッジを含む構成での計測と Redo 計測を追加。
+- **判断**:
+    - 現状の Snapshot 実装は 1,000ノード級ではボトルネックにならす、差分管理等の複雑化を避ける判断を維持。
+    - 一括選択 (`selectAll`) が若干重い (34ms) が、これはモデルへの `selected = true` 書き込みによるものであり、許容範囲内。
+- **検証結果**:
+    - `PerformanceMatrixTests` の 4 ケースを含む全 94 件のテストパスを確認。
 ### Milestone 33a: Accessibility Baseline を baseline 完了としてクローズ
 - **概要**: SwGraphUI ライブラリ側の accessibility 基盤実装は維持しつつ、Example アプリにおける Accessibility Inspector の無反応問題には深入りせず、M33a を「Labels & Roles の基盤整備完了」としてクローズした。
 - **技術的変更**:

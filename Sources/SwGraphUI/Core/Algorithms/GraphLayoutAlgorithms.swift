@@ -68,7 +68,13 @@ public enum GraphLayoutAlgorithms {
             .filter { (nodeInDegrees[$0.id] ?? 0) == 0 }
             .map { ($0.id, 0) }
         
-        // 循環がない前提での簡易階層決定
+        // 1.5 隣接リストの構築 (O(E))
+        var outEdgesMap: [String: [String]] = [:]
+        for edge in edges {
+            outEdgesMap[edge.source, default: []].append(edge.target)
+        }
+        
+        // 2. BFS/DFS 的な階層決定 (O(N+E))
         var visited = Set<String>()
         var nodeToLayer: [String: Int] = [:]
         
@@ -79,10 +85,11 @@ public enum GraphLayoutAlgorithms {
             
             nodeToLayer[id] = max(nodeToLayer[id, default: 0], layer)
             
-            // このノードを source とするエッジの先を layer + 1 へ
-            let outEdges = edges.filter { $0.source == id }
-            for edge in outEdges {
-                queue.append((edge.target, layer + 1))
+            // 隣接リストを使用して O(d) で探索
+            if let targets = outEdgesMap[id] {
+                for target in targets {
+                    queue.append((target, layer + 1))
+                }
             }
         }
         

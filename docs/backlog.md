@@ -175,10 +175,14 @@
     - [x] Layout x Undo x Redo 決定論的検証
     - [x] Parent Extent x Move x Undo 制約検証
     - [x] Large Graph Smoke (200ノード) 性能基線検証
-- [ ] **Milestone 35: Large Graph Stability [Todo]**
-    - [ ] 100〜500 node 規模での pan / zoom / selection / layout / export の確認
-    - [ ] 長時間操作時のクラッシュ耐性と体感性能の確認
-    - [ ] MiniMap / Background / animated edge の同時負荷確認
+- [x] **Milestone 35: Large Graph Core Stability & Performance Audit [DONE]**
+    - [x] 1,000 node / 999 edge 規模での構築・一括選択・移動・Undo/Redo の Baseline 採取
+    - [x] Layout アルゴリズム (Tree) のボトルネック特定と $O(N+E)$ への最適化実証
+    - [x] Snapshot アーキテクチャの 1,000ノード級での妥当性確認
+- [ ] **Milestone 35b: Large Graph UI & Integrated Load [Deferred]**
+    - [ ] UI レベルでの pan / zoom / export の体感性能確認
+    - [ ] MiniMap / Background / animated edge の同時負荷検証
+    - [ ] 長時間操作時のクラッシュ耐性確認
 - [ ] **Milestone 36: Runtime Rendering Polish [Todo]**
     - [ ] custom node 群の高倍率 zoom 監査
     - [ ] edge label / reconnect handle / selection box の高倍率表示確認
