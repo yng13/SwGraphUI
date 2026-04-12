@@ -16,8 +16,6 @@
   - 警告ゼロ、ドキュメントの完全同期、公開 API の洗練。
 - [x] M35b: Large Graph UI & Integrated Load
   - 1000要素時の体感性能（pan/zoom/MiniMap/Background）の実機監査。
-- **[ ] M33b: Accessibility Navigation & Verification**
-  - VoiceOver 等による最小限の動作保証（読める・分かる・操作できる）。
 
 ---
 - `UndoSymmetryTests`: 6 件パス（move / delete / resize / reconnect / no-op / viewport isolation）

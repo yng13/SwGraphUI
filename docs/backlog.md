@@ -198,12 +198,8 @@
     - [ ] Example の GUI 手動監査はローカル実機で継続
 
 ### 直近の次アクション
-- [x] Milestone 29 (Subflow Drag Audit) [DONE]
-- [x] Epic 5 (PNG Export Implementation) [DONE]
-- [x] Milestone 31 (Layout Algorithms & Dagre Tree Style) [DONE]
-- [x] Milestone 32 (Crisp Zoom / Coordinate-based Rendering) [DONE]
-- [x] Milestone 33a (Accessibility Baseline - Labels & Roles) [DONE]
-- [x] Milestone 34 (Regression Matrix Expansion) [DONE]
+- [x] Milestone 35b (Large Graph UI Performance Polish) [DONE]
 - [ ] Milestone 36 (Runtime Rendering Polish)
 - [ ] Milestone 37 (Undo/Redo Final QA)
 - [ ] Milestone 38 (API & Docs Hardening)
+- [ ] Milestone 33b (Accessibility Verification - Optional/Post-1.0)

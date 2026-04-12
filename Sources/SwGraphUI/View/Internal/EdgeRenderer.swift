@@ -81,30 +81,30 @@ public struct EdgeRenderer: View {
         
         let baseShortDash: CGFloat = 5
         let baseLongDash: CGFloat = 10
-        let scaledShortDash = baseShortDash * zoom
-        let scaledLongDash = baseLongDash * zoom
+        
+        // M36: 全ズーム域で「見た目の間隔」と「火花の流れる速度」を物理ピクセルで一定に保つ。
+        // Path 自体が toScreen 済みのため、dash 配列に zoom を掛ける必要はない。
         
         if isReconnecting {
             return StrokeStyle(
                 lineWidth: scaledWidth,
                 lineCap: .round,
-                dash: [scaledShortDash, scaledShortDash]
+                dash: [baseShortDash, baseShortDash]
             )
         }
         
         if animated {
             let elapsed = date.timeIntervalSinceReferenceDate
             
-            // 下記の計算により、スクリーン上で秒速 30px の一定速度を実現
-            // dashCycle (Graph space 換算) で割った余りを phase にする
-            let speedInGraph: CGFloat = 30 / zoom
-            let phase = CGFloat(-elapsed * speedInGraph)
-                .truncatingRemainder(dividingBy: baseLongDash + baseShortDash) * zoom
+            // スクリーン上で秒速 30px の一定速度を実現
+            let speed: CGFloat = 30
+            let phase = CGFloat(-elapsed * speed)
+                .truncatingRemainder(dividingBy: baseLongDash + baseShortDash)
             
             return StrokeStyle(
                 lineWidth: scaledWidth,
                 lineCap: .round,
-                dash: [scaledLongDash, scaledShortDash],
+                dash: [baseLongDash, baseShortDash],
                 dashPhase: phase
             )
         } else {

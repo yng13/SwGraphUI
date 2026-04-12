@@ -125,12 +125,10 @@ public struct BackgroundView: View {
     ) {
         let minorXs = axisValues(start: graphLeft, end: graphRight, step: minorStepGraph)
         let minorYs = axisValues(start: graphTop, end: graphBottom, step: minorStepGraph)
-        let majorXs = Set(axisValues(start: graphLeft, end: graphRight, step: majorStepGraph))
-        let majorYs = Set(axisValues(start: graphTop, end: graphBottom, step: majorStepGraph))
 
-        for x in minorXs {
-            for y in minorYs {
-                let isMajor = majorXs.contains(x) && majorYs.contains(y)
+        for (ix, x) in minorXs {
+            for (iy, y) in minorYs {
+                let isMajor = (ix % 5 == 0) && (iy % 5 == 0)
                 let screenPoint = XYPosition(x: x, y: y).toScreen(viewport: viewport)
                 let currentSize = size * (isMajor ? 1.5 : 1.0)
 
@@ -173,12 +171,10 @@ public struct BackgroundView: View {
     ) {
         let minorXs = axisValues(start: graphLeft, end: graphRight, step: minorStepGraph)
         let minorYs = axisValues(start: graphTop, end: graphBottom, step: minorStepGraph)
-        let majorXs = Set(axisValues(start: graphLeft, end: graphRight, step: majorStepGraph))
-        let majorYs = Set(axisValues(start: graphTop, end: graphBottom, step: majorStepGraph))
 
-        for x in minorXs {
+        for (ix, x) in minorXs {
             let screenX = XYPosition(x: x, y: 0).toScreen(viewport: viewport).x
-            if majorXs.contains(x) {
+            if ix % 5 == 0 {
                 majorPath.move(to: CGPoint(x: screenX, y: 0))
                 majorPath.addLine(to: CGPoint(x: screenX, y: canvasSize.height))
             } else {
@@ -187,9 +183,9 @@ public struct BackgroundView: View {
             }
         }
 
-        for y in minorYs {
+        for (iy, y) in minorYs {
             let screenY = XYPosition(x: 0, y: y).toScreen(viewport: viewport).y
-            if majorYs.contains(y) {
+            if iy % 5 == 0 {
                 majorPath.move(to: CGPoint(x: 0, y: screenY))
                 majorPath.addLine(to: CGPoint(x: canvasSize.width, y: screenY))
             } else {
@@ -199,10 +195,10 @@ public struct BackgroundView: View {
         }
     }
 
-    private func axisValues(start: Double, end: Double, step: Double) -> [Double] {
+    private func axisValues(start: Double, end: Double, step: Double) -> [(Int, Double)] {
         guard step > 0, step.isFinite else { return [] }
         let firstIndex = Int(floor(start / step)) - 1
         let lastIndex = Int(ceil(end / step)) + 1
-        return (firstIndex...lastIndex).map { Double($0) * step }
+        return (firstIndex...lastIndex).map { ($0, Double($0) * step) }
     }
 }
