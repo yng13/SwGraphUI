@@ -9,21 +9,23 @@ public struct DefaultEdgeView<NodeData: Sendable>: View {
     let edge: BaseEdge<NodeData>
     let store: GraphStore<NodeData>
     let onReconnect: ((String, Connection) -> Void)?
-    let modifierKeys: ModifierKeysProvider?
-    let edgeBodyBuilder: (([PathSegment], Color, CGFloat, Viewport, Bool, Bool) -> AnyView)?
-
+    let modifierKeys: ModifierKeysProvider
+    let containerSize: Dimensions
+    let edgeBodyBuilder: ([PathSegment], Color, CGFloat, Viewport, Bool, Bool) -> AnyView
     
     public init(
         edge: BaseEdge<NodeData>,
         store: GraphStore<NodeData>,
         onReconnect: ((String, Connection) -> Void)? = nil,
-        modifierKeys: ModifierKeysProvider? = nil,
-        edgeBodyBuilder: (([PathSegment], Color, CGFloat, Viewport, Bool, Bool) -> AnyView)? = nil
+        modifierKeys: ModifierKeysProvider,
+        containerSize: Dimensions,
+        @ViewBuilder edgeBodyBuilder: @escaping ([PathSegment], Color, CGFloat, Viewport, Bool, Bool) -> AnyView
     ) {
         self.edge = edge
         self.store = store
         self.onReconnect = onReconnect
         self.modifierKeys = modifierKeys
+        self.containerSize = containerSize
         self.edgeBodyBuilder = edgeBodyBuilder
     }
 
@@ -88,7 +90,7 @@ public struct DefaultEdgeView<NodeData: Sendable>: View {
                         .stroke(Color.black.opacity(0.0001), lineWidth: 20)
                         .contentShape(path.stroke(lineWidth: 20))
                         .onTapGesture {
-                            if modifierKeys?.isShiftPressed == true {
+                            if modifierKeys.isShiftPressed {
                                 store.toggleEdgeSelection(edge.id)
                             } else {
                                 store.selectEdge(edge.id)
@@ -97,25 +99,14 @@ public struct DefaultEdgeView<NodeData: Sendable>: View {
 
                     // 2. 表示用エッジ
                     Group {
-                        if let edgeBodyBuilder = edgeBodyBuilder {
-                            edgeBodyBuilder(
-                                adjustedSegments,
-                                edge.selected ? (isReconnecting ? Color.blue : Color.primary) : Color.gray,
-                                strokeWidth,
-                                viewport,
-                                edge.animated && !isReconnecting,
-                                isReconnecting
-                            )
-                        } else {
-                            EdgeRenderer(
-                                segments: adjustedSegments,
-                                strokeColor: edge.selected ? (isReconnecting ? Color.blue : Color.primary) : Color.gray,
-                                strokeWidth: strokeWidth,
-                                viewport: viewport,
-                                animated: edge.animated && !isReconnecting,
-                                isReconnecting: isReconnecting
-                            )
-                        }
+                        edgeBodyBuilder(
+                            adjustedSegments,
+                            edge.selected ? (isReconnecting ? Color.blue : Color.primary) : Color.gray,
+                            strokeWidth,
+                            viewport,
+                            edge.animated && !isReconnecting,
+                            isReconnecting
+                        )
                     }
                     .opacity(isReconnecting ? 0.3 : 1.0)
                     
@@ -181,11 +172,13 @@ public struct DefaultEdgeOverlayView<NodeData: Sendable>: View {
     let edge: BaseEdge<NodeData>
     let store: GraphStore<NodeData>
     var onReconnect: ((String, Connection) -> Void)? = nil
+    let containerSize: Dimensions
     
-    public init(edge: BaseEdge<NodeData>, store: GraphStore<NodeData>, onReconnect: ((String, Connection) -> Void)? = nil) {
+    public init(edge: BaseEdge<NodeData>, store: GraphStore<NodeData>, onReconnect: ((String, Connection) -> Void)? = nil, containerSize: Dimensions) {
         self.edge = edge
         self.store = store
         self.onReconnect = onReconnect
+        self.containerSize = containerSize
     }
     
     public var body: some View {

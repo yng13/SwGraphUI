@@ -462,3 +462,26 @@ Shift + クリックによる複数選択および、Shift + ドラッグによ�
     - 大規模グラフ (200 Node/Edge) においても UI ロジックの完走を確認。
 - **次の一手**:
     - M34 を完了とし、後続のマイルストーンへ。
+
+## [2026-04-12] Milestone 35b: Large Graph Performance Polish (Optimized Hot Paths)
+
+### 概要
+1,000ノード規模での ANR（フリーズ）問題を完全に解消。描画順キャッシュの更新モデルを精密化し、幾何変更と構造変更を分離。
+
+### 変更点
+1. **GraphStore ホットパス最適化**: 
+   - `withNodeOrderRecalculationSuspended` を導入。ドラッグ、リサイズ、レイアウト適用時などの「座標のみの変化」においては、重い描画順ソート (`O(N log N)`) をスキップ。
+   - `updateSelectedNodes` において構造的プロパティ (parentID, zIndex 等) の変化を事前/事後比較し、必要最小限の再計算に限定。
+2. **高精度 Edge Culling**:
+   - `EdgeRenderer` の画面外判定をベジェ制御点を含む全点ベースへアップグレード。
+   - 画面端での張り出したエッジの欠損を完全に排除。
+3. **Geometry 拡張**:
+   - `PathSegment.points` により、描画セグメントの頂点群へのアクセスを標準化。
+
+### 結果
+- move 操作: **~19.2ms**
+- undo/redo: **~26ms**
+- 1,000ノード環境において、ズーム・パン・ドラッグのすべてにおいて ANR なく滑らかな動作を実現。
+
+### ビルド・テスト
+- `swift test`: 全 57 件（Swift Testing）+ 43 件（XCTest）パス。

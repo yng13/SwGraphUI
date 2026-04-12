@@ -108,7 +108,8 @@ public final class ExampleAppStore {
         NodeResizerSample(),
         SaveRestoreSample(),
         SubflowSample(),
-        DagreTreeSample()
+        DagreTreeSample(),
+        StressTestSample()
     ]
     
     /// カテゴリに属するサンプルを返します

@@ -12,7 +12,7 @@ public enum GraphEvent: Sendable {
 public struct GraphView<NodeData: Sendable, NodeContent: View>: View {
     public let store: GraphStore<NodeData>
     public let nodeBuilder: (BaseNode<NodeData>) -> NodeContent
-    public let edgeBuilder: (BaseEdge<NodeData>, [PathSegment], Color, CGFloat, Viewport, Bool, Bool) -> AnyView
+    private let edgeBuilder: (BaseEdge<NodeData>, [PathSegment], Color, CGFloat, Viewport, Dimensions, Bool, Bool) -> AnyView
     public let backgroundBuilder: () -> AnyView
     public var onEvent: ((GraphEvent) -> Void)?
 
@@ -38,7 +38,7 @@ public struct GraphView<NodeData: Sendable, NodeContent: View>: View {
         onEvent: ((GraphEvent) -> Void)? = nil,
         onConnect: ((Connection) -> Void)? = nil,
         onReconnect: ((String, Connection) -> Void)? = nil,
-        edgeBuilder: ((BaseEdge<NodeData>, [PathSegment], Color, CGFloat, Viewport, Bool, Bool) -> AnyView)? = nil,
+        edgeBuilder: ((BaseEdge<NodeData>, [PathSegment], Color, CGFloat, Viewport, Dimensions, Bool, Bool) -> AnyView)? = nil,
         @ViewBuilder nodeBuilder: @escaping (BaseNode<NodeData>) -> NodeContent,
         @ViewBuilder backgroundBuilder: @escaping () -> AnyView = { AnyView(EmptyView()) }
     ) {
@@ -48,8 +48,8 @@ public struct GraphView<NodeData: Sendable, NodeContent: View>: View {
         self.onReconnect = onReconnect
         self.nodeBuilder = nodeBuilder
         self.backgroundBuilder = backgroundBuilder
-        self.edgeBuilder = edgeBuilder ?? { _, segments, color, width, viewport, animated, reconnecting in
-            AnyView(EdgeRenderer(segments: segments, strokeColor: color, strokeWidth: width, viewport: viewport, animated: animated, isReconnecting: reconnecting))
+        self.edgeBuilder = edgeBuilder ?? { edge, segments, color, width, viewport, containerSize, animated, reconnecting in
+            AnyView(EdgeRenderer(segments: segments, strokeColor: color, strokeWidth: width, viewport: viewport, containerSize: containerSize, animated: animated, isReconnecting: reconnecting))
         }
     }
 
@@ -229,6 +229,7 @@ public struct GraphView<NodeData: Sendable, NodeContent: View>: View {
                 edgeBuilder: edgeBuilder,
                 onReconnect: onReconnect,
                 modifierKeys: modifierKeys,
+                containerSize: store.runtimeState.autoPan.containerSize ?? Dimensions(width: 800, height: 600),
                 nodeWrapper: { node, content in
                     AnyView(
                         content
@@ -288,9 +289,10 @@ public struct GraphView<NodeData: Sendable, NodeContent: View>: View {
 internal struct GraphLayerStack<NodeData: Sendable, NodeContent: View>: View {
     let store: GraphStore<NodeData>
     let nodeBuilder: (BaseNode<NodeData>) -> NodeContent
-    let edgeBuilder: (BaseEdge<NodeData>, [PathSegment], Color, CGFloat, Viewport, Bool, Bool) -> AnyView
+    let edgeBuilder: (BaseEdge<NodeData>, [PathSegment], Color, CGFloat, Viewport, Dimensions, Bool, Bool) -> AnyView
     let onReconnect: ((String, Connection) -> Void)?
     let modifierKeys: ModifierKeysProvider?
+    let containerSize: Dimensions
     let nodeWrapper: (BaseNode<NodeData>, AnyView) -> AnyView
     
     var body: some View {
@@ -316,8 +318,9 @@ internal struct GraphLayerStack<NodeData: Sendable, NodeContent: View>: View {
                 store: store,
                 onReconnect: onReconnect,
                 modifierKeys: modifierKeys ?? ModifierKeysProvider(),
+                containerSize: containerSize,
                 edgeBodyBuilder: { segments, color, width, viewport, animated, reconnecting in
-                    edgeBuilder(edge, segments, color, width, viewport, animated, reconnecting)
+                    edgeBuilder(edge, segments, color, width, viewport, containerSize, animated, reconnecting)
                 }
             )
         }
@@ -327,11 +330,11 @@ internal struct GraphLayerStack<NodeData: Sendable, NodeContent: View>: View {
     private var edgeOverlayLayer: some View {
         // Pass 1: 非選択のエッジ（ラベルのみ）
         ForEach(store.edges.filter { !$0.selected }) { edge in
-            DefaultEdgeOverlayView(edge: edge, store: store, onReconnect: onReconnect)
+            DefaultEdgeOverlayView(edge: edge, store: store, onReconnect: onReconnect, containerSize: containerSize)
         }
         // Pass 2: 選択中のエッジ（ラベル + ハンドルを最前面に）
         ForEach(store.edges.filter { $0.selected }) { edge in
-            DefaultEdgeOverlayView(edge: edge, store: store, onReconnect: onReconnect)
+            DefaultEdgeOverlayView(edge: edge, store: store, onReconnect: onReconnect, containerSize: containerSize)
         }
     }
 
@@ -345,34 +348,19 @@ internal struct GraphLayerStack<NodeData: Sendable, NodeContent: View>: View {
     @ViewBuilder
     private var nodeLayer: some View {
         let lookup = store.nodeLookup
-        let indexedNodes = self.store.nodes.enumerated().map { ($0, $1) }
-        let sortedNodes = indexedNodes.sorted { (a, b) in
-            let (idxA, nodeA) = a
-            let (idxB, nodeB) = b
-            
-            // 1. zIndex (明示的な指定を最優先)
-            let zA = nodeA.zIndex ?? 0
-            let zB = nodeB.zIndex ?? 0
-            if zA != zB { return zA < zB }
-            
-            // 2. 階層の深さ (親を先に、子を後に。同一階層なら元の並びを維持)
-            let depthA = NodePositioningAlgorithms.calculateDepth(node: nodeA, nodeLookup: lookup)
-            let depthB = NodePositioningAlgorithms.calculateDepth(node: nodeB, nodeLookup: lookup)
-            if depthA != depthB { return depthA < depthB }
-            
-            // 3. 安定ソートのための元のインデックス
-            return idxA < idxB
-        }.map { $0.1 }
-
-        ForEach(sortedNodes) { (node: BaseNode<NodeData>) in
-            let absolutePos = self.store.absolutePosition(for: node.id)
-            let viewport = self.store.runtimeState.viewport.viewport
-            let screenPos = absolutePos.toScreen(viewport: viewport)
-            
-            let content = NodeMeasurementWrapper(id: node.id, content: self.nodeBuilder(node))
-                .offset(x: screenPos.x, y: screenPos.y)
-            
-            nodeWrapper(node, AnyView(content))
+        let sortedIDs = self.store.runtimeState.sortedNodeIDs
+        
+        ForEach(sortedIDs, id: \.self) { id in
+            if let node = lookup[id] {
+                let absolutePos = self.store.absolutePosition(for: node.id)
+                let viewport = self.store.runtimeState.viewport.viewport
+                let screenPos = absolutePos.toScreen(viewport: viewport)
+                
+                let content = NodeMeasurementWrapper(id: node.id, content: self.nodeBuilder(node))
+                    .offset(x: screenPos.x, y: screenPos.y)
+                
+                nodeWrapper(node, AnyView(content))
+            }
         }
     }
 }

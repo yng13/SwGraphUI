@@ -18,7 +18,7 @@ public struct PNGExporter<NodeData: Sendable> {
     public func export(
         settings: GraphExportSettings,
         @ViewBuilder nodeBuilder: @escaping (BaseNode<NodeData>) -> some View,
-        edgeBuilder: ((BaseEdge<NodeData>, [PathSegment], Color, CGFloat, Viewport, Bool, Bool) -> AnyView)? = nil
+        edgeBuilder: ((BaseEdge<NodeData>, [PathSegment], Color, CGFloat, Viewport, Dimensions, Bool, Bool) -> AnyView)? = nil
     ) -> Foundation.Data? {
         // 1. エクスポート対象の論理的な境界矩形を計算
         guard let bounds = calculateExportBounds() else { return nil }
@@ -28,8 +28,8 @@ public struct PNGExporter<NodeData: Sendable> {
             store: store,
             settings: settings,
             nodeBuilder: nodeBuilder,
-            edgeBuilder: edgeBuilder ?? { _, segments, color, width, viewport, animated, reconnecting in
-                AnyView(EdgeRenderer(segments: segments, strokeColor: color, strokeWidth: width, viewport: viewport, animated: animated, isReconnecting: reconnecting))
+            edgeBuilder: edgeBuilder ?? { _, segments, color, width, viewport, size, animated, reconnecting in
+                AnyView(EdgeRenderer(segments: segments, strokeColor: color, strokeWidth: width, viewport: viewport, containerSize: size, animated: animated, isReconnecting: reconnecting))
             },
             bounds: bounds
         )
@@ -42,7 +42,7 @@ public struct PNGExporter<NodeData: Sendable> {
         guard let nsImage = renderer.nsImage else { return nil }
         guard let tiffData = nsImage.tiffRepresentation,
               let bitmap = NSBitmapImageRep(data: tiffData) else { return nil }
-        return bitmap.representation(using: .png, properties: [:])
+        return bitmap.representation(using: NSBitmapImageRep.FileType.png, properties: [:])
         #else
         guard let uiImage = renderer.uiImage else { return nil }
         return uiImage.pngData()

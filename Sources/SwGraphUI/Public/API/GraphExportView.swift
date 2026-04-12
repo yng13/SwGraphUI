@@ -6,7 +6,7 @@ internal struct GraphExportView<NodeData: Sendable, NodeContent: View>: View {
     let store: GraphStore<NodeData>
     let settings: GraphExportSettings
     let nodeBuilder: (BaseNode<NodeData>) -> NodeContent
-    let edgeBuilder: (BaseEdge<NodeData>, [PathSegment], Color, CGFloat, Viewport, Bool, Bool) -> AnyView
+    let edgeBuilder: (BaseEdge<NodeData>, [PathSegment], Color, CGFloat, Viewport, Dimensions, Bool, Bool) -> AnyView
     
     // エクスポート対象の矩形領域（グラフ絶対座標系）
     let bounds: Rect
@@ -42,9 +42,12 @@ internal struct GraphExportView<NodeData: Sendable, NodeContent: View>: View {
             GraphLayerStack(
                 store: store,
                 nodeBuilder: nodeBuilder,
-                edgeBuilder: edgeBuilder,
+                edgeBuilder: { edge, segments, color, width, viewport, size, animated, reconnecting in
+                    edgeBuilder(edge, segments, color, width, viewport, size, animated, reconnecting)
+                },
                 onReconnect: nil,
                 modifierKeys: nil,
+                containerSize: Dimensions(width: bounds.width, height: bounds.height),
                 nodeWrapper: { _, content in
                     // エクスポート時はジェスチャ不要。そのまま返す。
                     content

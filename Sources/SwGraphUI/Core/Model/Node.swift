@@ -216,12 +216,26 @@ extension BaseNode: Equatable where NodeData: Equatable {
         lhs.position == rhs.position &&
         lhs.width == rhs.width &&
         lhs.height == rhs.height &&
+        lhs.minWidth == rhs.minWidth &&
+        lhs.minHeight == rhs.minHeight &&
+        lhs.maxWidth == rhs.maxWidth &&
+        lhs.maxHeight == rhs.maxHeight &&
         lhs.selected == rhs.selected &&
         lhs.dragging == rhs.dragging &&
         lhs.draggable == rhs.draggable &&
+        lhs.selectable == rhs.selectable &&
+        lhs.connectable == rhs.connectable &&
+        lhs.resizable == rhs.resizable &&
+        lhs.deletable == rhs.deletable &&
         lhs.hidden == rhs.hidden &&
         lhs.parentID == rhs.parentID &&
+        lhs.zIndex == rhs.zIndex &&
+        lhs.extent == rhs.extent &&
+        lhs.expandParent == rhs.expandParent &&
+        lhs.origin == rhs.origin &&
         lhs.label == rhs.label &&
-        lhs.data == rhs.data
+        lhs.ariaLabel == rhs.ariaLabel &&
+        lhs.data == rhs.data &&
+        lhs.handles == rhs.handles
     }
 }

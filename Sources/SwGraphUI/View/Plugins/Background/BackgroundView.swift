@@ -32,23 +32,23 @@ public struct BackgroundView: View {
             guard zoom > 0.001 else { return } // 極小ズームガード
             
             // ズームに応じた密度（LOD）制御
-            // baseScaledGap が min...max の範囲にあるとき、その密度で描画
+            let currentScaledGap = gap * zoom
             let minGap: CGFloat = (variant == .dots) ? 12 : 16
             
-            let currentScaledGap = gap * zoom
+            // 下限密度（densityStep = 1.0）から開始し、間隔が minGap を下回るまで密度を粗くする（5倍ずつ）
             var densityStep: Double = 1.0
             while CGFloat(densityStep) * currentScaledGap < minGap {
                 densityStep *= 5.0
             }
             
-            // 切り替わりしきい値付近での不透明度補間 (LOD Fade)
-            // 密度が切り替わる直前（間隔が狭くなりすぎるとき）に薄くする
-            let currentStepGap = CGFloat(densityStep) * currentScaledGap
-            let fadeOutStart = minGap
-            let fadeOutEnd = minGap * 0.8 // 少し重なるようにマージンを持たせる
+            // 切り替わり付近（densityStep が変わる直前）の滑らかなフェードアウト
+            // 間隔が minGap に近づくにつれて opacity を 0 に落とす
+            let stepGap = CGFloat(densityStep) * currentScaledGap
+            let fadeRange: CGFloat = 8.0 // 8pt の範囲でフェード
             let opacityFactor: Double = {
-                if currentStepGap < fadeOutStart {
-                    return max(0.0, Double((currentStepGap - fadeOutEnd) / (fadeOutStart - fadeOutEnd)))
+                let diff = stepGap - minGap
+                if diff < fadeRange {
+                    return max(0.0, Double(diff / fadeRange))
                 }
                 return 1.0
             }()

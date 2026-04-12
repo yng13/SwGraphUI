@@ -354,6 +354,14 @@ public final class GraphRuntimeState: Sendable {
     
     public var marquee: MarqueeState?
     
+    /// 描画順序が確定済みのノード ID リスト（zIndex や階層を考慮）。
+    public var sortedNodeIDs: [String] = []
+    
+    /// 絶対座標のキャッシュ。再計算コストを削減するための内部用。
+    public var absolutePositionCache: [String: XYPosition] = [:]
+    /// キャッシュが有効かどうか。ノードの位置が変更されたら false になります。
+    public var isAbsolutePositionCacheValid: Bool = false
+    
     public init(
         selection: SelectionState = .init(),
         hover: HoverState = .init(),
@@ -362,7 +370,9 @@ public final class GraphRuntimeState: Sendable {
         viewport: ViewportState = .init(),
         handleMeasurements: HandleMeasurementState = .init(),
         autoPan: AutoPanState = .init(),
-        interactivity: InteractivityState = .init()
+        interactivity: InteractivityState = .init(),
+        sortedNodeIDs: [String] = [],
+        absolutePositionCache: [String: XYPosition] = [:]
     ) {
         self.selection = selection
         self.hover = hover
@@ -372,5 +382,8 @@ public final class GraphRuntimeState: Sendable {
         self.handleMeasurements = handleMeasurements
         self.autoPan = autoPan
         self.interactivity = interactivity
+        self.sortedNodeIDs = sortedNodeIDs
+        self.absolutePositionCache = absolutePositionCache
+        self.isAbsolutePositionCacheValid = false
     }
 }

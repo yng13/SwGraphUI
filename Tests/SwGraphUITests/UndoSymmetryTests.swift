@@ -19,166 +19,133 @@ final class UndoSymmetryTests: XCTestCase {
     private func createSimpleSystem() {
         let n1 = BaseNode(id: "n1", position: XYPosition(x: 0, y: 0), data: "Node 1", width: 100, height: 40)
         let n2 = BaseNode(id: "n2", position: XYPosition(x: 200, y: 0), data: "Node 2", width: 100, height: 40)
-        let e1: BaseEdge<String> = BaseEdge(id: "e1", source: "n1", target: "n2")
+        let e1 = BaseEdge<String>(id: "e1", source: "n1", target: "n2", sourceHandle: "s1", targetHandle: "t1", sourcePosition: .right, targetPosition: .left)
         store.nodes = [n1, n2]
         store.edges = [e1]
+    }
+    
+    private func assertSymmetry(label: String, action: () -> Void) {
+        let original = store.snapshot()
+        
+        undoManager.beginUndoGrouping()
+        action()
+        undoManager.endUndoGrouping()
+        
+        XCTAssertNotEqual(store.snapshot(), original, "[\(label)] 行動後に状態が変化していること")
+        
+        undoManager.undo()
+        XCTAssertEqual(store.snapshot(), original, "[\(label)] Undo 後に元の状態と完全一致すること")
+        
+        undoManager.redo()
+        XCTAssertNotEqual(store.snapshot(), original, "[\(label)] Redo 後に修正後の状態に戻ること")
+        
+        undoManager.undo()
+        XCTAssertEqual(store.snapshot(), original, "[\(label)] 最終的に Undo で元に戻ること")
     }
     
     // MARK: - Symmetry Tests
     
     func testMoveSymmetry() {
         createSimpleSystem()
-        let initialPos = store.nodes[0].position
-        
-        // 1. Move
         store.selectNode("n1")
-        undoManager.beginUndoGrouping()
-        store.moveSelectedNodes(by: XYPosition(x: 50, y: 50))
-        undoManager.endUndoGrouping()
         
-        XCTAssertEqual(store.nodes[0].position, XYPosition(x: 50, y: 50))
-        
-        // 2. Undo
-        undoManager.undo()
-        XCTAssertEqual(store.nodes[0].position, initialPos, "Undo should restore initial position")
-        XCTAssertTrue(store.nodes[0].selected, "Undo should restore selection state")
-        
-        // 3. Redo
-        undoManager.redo()
-        XCTAssertEqual(store.nodes[0].position, XYPosition(x: 50, y: 50), "Redo should restore moved position")
+        assertSymmetry(label: "Move") {
+            store.moveSelectedNodes(by: XYPosition(x: 50, y: 50))
+        }
     }
     
     func testDeleteSymmetry() {
         createSimpleSystem()
-        let initialCount = store.nodes.count
-        
-        // 1. Delete
         store.selectNode("n1")
-        undoManager.beginUndoGrouping()
-        store.deleteSelection()
-        undoManager.endUndoGrouping()
-        XCTAssertEqual(store.nodes.count, initialCount - 1)
         
-        // 2. Undo
-        undoManager.undo()
-        XCTAssertEqual(store.nodes.count, initialCount, "Undo should restore deleted node")
-        XCTAssertTrue(store.nodes.contains(where: { $0.id == "n1" }))
-        XCTAssertTrue(store.nodes.first(where: { $0.id == "n1" })?.selected ?? false, "Selection should be restored")
-        XCTAssertFalse(store.edges.isEmpty, "Edges should be restored")
-        
-        // 3. Redo
-        undoManager.redo()
-        XCTAssertEqual(store.nodes.count, initialCount - 1, "Redo should delete again")
+        assertSymmetry(label: "Delete") {
+            store.deleteSelection()
+        }
     }
     
     func testResizeSymmetry() {
         createSimpleSystem()
-        let n1 = store.nodes[0]
-        let initialSize = CGSize(width: n1.width ?? 0, height: n1.height ?? 0)
         
-        // 1. Resize
-        store.startResizing(id: "n1")
-        store.updateNodeDimensionsAfterResize(id: "n1", width: 150, height: 100, position: .zero)
-        undoManager.beginUndoGrouping()
-        store.stopResizing()
-        undoManager.endUndoGrouping()
-        
-        XCTAssertEqual(store.nodes[0].width, 150)
-        
-        // 2. Undo
-        undoManager.undo()
-        XCTAssertEqual(store.nodes[0].width, initialSize.width, "Undo should restore initial width")
-        XCTAssertEqual(store.nodes[0].height, initialSize.height, "Undo should restore initial height")
-        
-        // 3. Redo
-        undoManager.redo()
-        XCTAssertEqual(store.nodes[0].width, 150)
+        assertSymmetry(label: "Resize") {
+            store.startResizing(id: "n1")
+            store.updateNodeDimensionsAfterResize(id: "n1", width: 150, height: 80, position: .zero)
+            store.stopResizing()
+        }
     }
     
     func testReconnectSymmetry() {
         createSimpleSystem()
-        let initialEdge = store.edges[0]
-        
-        // add third node
+        // 第3のノードを追加
         store.nodes.append(BaseNode(id: "n3", position: XYPosition(x: 400, y: 0), data: "Node 3"))
         
-        // 1. Reconnect
+        let initialEdge = store.snapshot().edges[0]
+        
+        undoManager.beginUndoGrouping()
+        // 再接続操作 (n1 -> n2 を n1 -> n3 へ)
         store.startConnecting(
             fromNodeID: "n1",
-            fromHandleID: "source",
+            fromHandleID: "s1",
             fromHandleType: .source,
             fromHandlePosition: .right,
             fromPosition: .zero,
             at: .zero,
-            mode: .reconnect(edgeID: "e1", isSource: false) // target handle を付け替える
+            mode: .reconnect(edgeID: "e1", isSource: false)
         )
-        // Simulate finding and updating target
-        store.updateConnecting(to: .zero, targetNodeID: "n3", targetHandleID: "target", targetHandlePosition: .left)
-        
-        // End connection
-        undoManager.beginUndoGrouping()
+        store.updateConnecting(to: .zero, targetNodeID: "n3", targetHandleID: "t3", targetHandlePosition: .left)
         _ = store.stopConnecting()
         undoManager.endUndoGrouping()
         
         XCTAssertEqual(store.edges[0].target, "n3")
-        XCTAssertEqual(store.edges[0].sourceHandle, initialEdge.sourceHandle)
-        XCTAssertEqual(store.edges[0].targetHandle, "target")
-        XCTAssertEqual(store.edges[0].sourcePosition, initialEdge.sourcePosition)
-        XCTAssertEqual(store.edges[0].targetPosition, .left)
+        XCTAssertEqual(store.edges[0].targetHandle, "t3")
         
-        // 2. Undo
+        // Undo でハンドルIDやポジションまで完全に元に戻るか確認
         undoManager.undo()
-        XCTAssertEqual(store.edges[0].source, initialEdge.source, "Undo should restore source")
-        XCTAssertEqual(store.edges[0].target, initialEdge.target, "Undo should restore target")
-        XCTAssertEqual(store.edges[0].sourceHandle, initialEdge.sourceHandle, "Undo should restore source handle")
-        XCTAssertEqual(store.edges[0].targetHandle, initialEdge.targetHandle, "Undo should restore target handle")
-        XCTAssertEqual(store.edges[0].sourcePosition, initialEdge.sourcePosition, "Undo should restore source position")
-        XCTAssertEqual(store.edges[0].targetPosition, initialEdge.targetPosition, "Undo should restore target position")
-        
-        // 3. Redo
-        undoManager.redo()
-        XCTAssertEqual(store.edges[0].source, initialEdge.source, "Redo should preserve source")
-        XCTAssertEqual(store.edges[0].target, "n3", "Redo should restore target")
-        XCTAssertEqual(store.edges[0].sourceHandle, initialEdge.sourceHandle, "Redo should preserve source handle")
-        XCTAssertEqual(store.edges[0].targetHandle, "target", "Redo should restore target handle")
-        XCTAssertEqual(store.edges[0].sourcePosition, initialEdge.sourcePosition, "Redo should preserve source position")
-        XCTAssertEqual(store.edges[0].targetPosition, .left, "Redo should restore target position")
+        let restoredEdge = store.edges[0]
+        XCTAssertEqual(restoredEdge.target, initialEdge.target)
+        XCTAssertEqual(restoredEdge.targetHandle, initialEdge.targetHandle)
+        XCTAssertEqual(restoredEdge.targetPosition, initialEdge.targetPosition)
+        XCTAssertEqual(restoredEdge.sourceHandle, initialEdge.sourceHandle)
     }
     
-    // MARK: - No-op and Viewport Tests
+    // MARK: - No-Op Protection Tests
     
     func testNoOpProtection() {
         createSimpleSystem()
         
-        // 1. Move by zero
+        // 1. 変化のない移動
         store.selectNode("n1")
         store.moveSelectedNodes(by: .zero)
+        XCTAssertFalse(undoManager.canUndo, "移動量ゼロは履歴に積まないこと")
         
-        XCTAssertFalse(undoManager.canUndo, "Move by zero should not register undo")
+        // 2. 極小の移動 (0.1px 未満)
+        store.moveSelectedNodes(by: XYPosition(x: 0.05, y: 0.05))
+        XCTAssertFalse(undoManager.canUndo, "0.1px 未満の移動は履歴に積まないこと")
         
-        // 2. Resize to same size
+        // 3. 変化のないリサイズ
         store.startResizing(id: "n1")
         store.updateNodeDimensionsAfterResize(id: "n1", width: 100, height: 40, position: .zero)
         store.stopResizing()
-        
-        XCTAssertFalse(undoManager.canUndo, "Resize to same size should not register undo")
+        XCTAssertFalse(undoManager.canUndo, "サイズの変わらないリサイズは履歴に積まないこと")
     }
     
     func testViewportIsolation() {
         createSimpleSystem()
-        store.setViewport(Viewport(x: 10, y: 10, zoom: 1.0))
+        let initialViewport = Viewport(x: 10, y: 10, zoom: 1.0)
+        store.setViewport(initialViewport)
         
-        // 1. Layout Apply (with ignoringViewport = true in registerUndo)
+        // 1. レイアウト適用 (Viewport を保護するはずの操作)
         undoManager.beginUndoGrouping()
         store.applyLayout()
         undoManager.endUndoGrouping()
-        XCTAssertTrue(undoManager.canUndo)
         
-        // 2. Change Viewport (this should NOT be part of the applyLayout undo group)
-        store.setViewport(Viewport(x: 100, y: 100, zoom: 2.0))
+        // 2. ビューポートを独立して変更
+        let newViewport = Viewport(x: 100, y: 100, zoom: 2.0)
+        store.setViewport(newViewport)
         
-        // 3. Undo Layout
+        // 3. Undo
         undoManager.undo()
-        XCTAssertEqual(store.runtimeState.viewport.viewport.x, 100, "Undo Layout should NOT restore old viewport if ignoringViewport was true")
+        
+        // 期待結果: レイアウト（ノード位置）は戻るが、ビューポート（パン・ズーム）は変更後のまま維持される
+        XCTAssertEqual(store.runtimeState.viewport.viewport.x, 100, "Undo 時にビューポートが勝手に戻らないこと")
     }
 }

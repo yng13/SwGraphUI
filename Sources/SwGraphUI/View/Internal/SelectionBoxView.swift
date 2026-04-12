@@ -21,15 +21,15 @@ struct SelectionBoxView<Data: Sendable>: View {
             let screenBounds = bounds.toScreen(viewport: viewport)
             
             // 境界枠のレンダリング
-            // ズームにかかわらず視認性を保つため、lineWidth をクランプ (0.5 to 2.0 pt on screen)
+            // ズームにかかわらず視認性を保つため、lineWidth をクランプ (0.7 to 2.0 pt on screen)
             let zoom = viewport.zoom
-            let lineWidth = min(max(1.0 / zoom, 0.5), 2.0)
+            let lineWidth = min(max(1.0 / zoom, 0.7), 2.0)
             
             Rectangle()
                 .fill(Color.primary.opacity(0.02))
                 .overlay(
                     Rectangle()
-                        .stroke(Color.primary.opacity(0.15), lineWidth: lineWidth)
+                        .stroke(Color.primary.opacity(0.2), lineWidth: lineWidth)
                 )
                 .frame(width: screenBounds.width, height: screenBounds.height)
                 .position(x: screenBounds.origin.x + screenBounds.width / 2, y: screenBounds.origin.y + screenBounds.height / 2)

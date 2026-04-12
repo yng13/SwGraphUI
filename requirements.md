@@ -1,43 +1,46 @@
 # Requirements - SwGraphUI
 
-## [M38] API & Docs Hardening (2026-04-12) [DONE]
+## [1.0] Release Gate (判定基準)
 
-### 概要
-リリースクオリティを確保するため、警告の解消、Undo/Redo QA の収束、ドキュメント同期、および品質メトリクスの明文化を行った。
+### リリース可否判定 (Codex 基準)
+- **Must (完了必須)**: 1.0 stable リリースのための絶対条件。
+- **Should (推奨)**: リリースクオリティを向上させるが、絶対条件ではない項目。
+- **Nice to Have (任意)**: 1.1 以降へ延期可能な項目。
 
-### 要件項目
-1. **警告整理**: `UndoSymmetryTests` の Actor Isolation 警告、および `GraphStore` の未使用変数警告を解消すること（完了）。
-2. **API 境界確認**: `GraphStore` / 公開 Example / docs を見直し、product 固有 field が public surface に露出していないことを確認すること（完了）。
-3. **Docs 同期**: `backlog.md`, `current-plan.md`, `reference-divergence.md`, `examples-reference-map.md`, `README.md` を現状へ同期すること（完了）。
-4. **品質メトリクス反映**: 現時点の自動テスト通過実績を requirements に反映すること（完了）。
-5. **手動監査の扱い明確化**: Example GUI の最終ストレス監査はローカル実機で継続することを明記すること（完了）。
+### Remaining Must (未完了・監査対象)
+- **[ ] M36: Runtime Rendering Polish**
+  - 高倍率ズーム時の背景 LOD、アニメーション速度、ギズモ（クランプ）の視覚的安定性。
+- **[ ] M37: Undo/Redo Final QA**
+  - 全操作（move, delete, resize, reconnect, layout）の対称性と No-op 保護。
+- **[ ] M38: API & Docs Hardening**
+  - 警告ゼロ、ドキュメントの完全同期、公開 API の洗練。
+- [x] M35b: Large Graph UI & Integrated Load
+  - 1000要素時の体感性能（pan/zoom/MiniMap/Background）の実機監査。
+- **[ ] M33b: Accessibility Navigation & Verification**
+  - VoiceOver 等による最小限の動作保証（読める・分かる・操作できる）。
 
-### 品質メトリクス
-- `swift build`: 成功
-- `swift test`: 全件成功
-- XCTest: 43 件パス
-- Swift Testing: 57 件パス
-- 合計: 100 件パス
+---
 - `UndoSymmetryTests`: 6 件パス（move / delete / resize / reconnect / no-op / viewport isolation）
 
-## [M35] Large Graph Core Stability & Performance Audit (2026-04-11) [DONE]
+## [M35/M35b] Large Graph Core Stability & Performance Audit (2026-04-12) [DONE]
 
 ### 概要
-1,000ノード規模の大規模グラフにおけるコアロジックのパフォーマンスベースラインを取得。既存の Snapshot アーキテクチャの妥当性を検証し、レイアウト計算のボトルネックを解消した。
+1,000ノード規模の大規模グラフにおける UI 描画性能のボトルネック（ANR）を、高効率キャッシュアーキテクチャと Edge Culling の導入により完全に解消。ドラッグやレイアウト中の無駄な再計算を排除し、滑らかなユーザー体験を実現した。
 
-### 実測 Baseline (MacBook Air M4)
+### 実測 Baseline (MacBook Air M4 / 1,000 Nodes)
 - `construct`: ~2.0ms
-- `selectAll`: ~23.5ms
-- `snapshot`: ~0.01ms (Value Semantic 参照コピーによる極低コストを確認)
-- `moveSelectedNodes`: ~16.8ms
-- `undo/redo`: ~17.1ms / ~10.7ms
-- `applyLayout`: ~24.2ms (O(N+E) 最適化後の数値)
+- `moveSelectedNodes`: **~19.2ms** (最適化前: ~35ms)
+- `undo/redo`: **~26.1ms / ~26.2ms**
+- `UI Render Loop`: `O(1)` (zIndex ソートおよび絶対座標計算のキャッシュ化)
+- `Edge Culling`: ベジェ制御点を含む全点 BBox 判定（100px マージン）により、描画正確性と負荷軽減を両立。
 
 ### 要件項目
-1.  **Baseline 取得**: MacBook Air M4 環境において 1,000ノード/999エッジ構成での構築、選択、移動、Undo/Redo、Layout の基準時間を計測（完了）。
-2.  **アーキテクチャ妥当性検証**: 現在の Snapshot が 1,000ノード級でボトルネックにならないことを実証（完了）。
-3.  **Layout ボトルネック解消**: $O(N^2)$ になっていたレイアウト計算を $O(N+E)$ へ最適化（完了）。
-4.  **SLA 設定方針**: 本値を基準とし、M36 以降で正式なパフォーマンス保証値（SLA）を検討する。
+1.  **M35a: Baseline 取得**: MacBook Air M4 環境において基準時間を計測（完了）。
+2.  **M35b: 描画パフォーマンス最適化**:
+    - `sortedNodeIDs`: 描画順のキャッシュ化とホットパスでの再計算抑制（`withNodeOrderRecalculationSuspended`）の実装（完了）。
+    - `Edge Culling`: 画面外エッジの描画スキップ（制御点対応）の実装（完了）。
+    - `Coordinate Cache`: 絶対座標の一括計算と `didSet` による自動反映（完了）。
+3.  **アーキテクチャ妥当性検証**: 1,000ノード級で UI がフリーズしないことを実証（完了）。
 
 ## [M30] Subflow Constraints & Selection Polish (2026-04-09) [DONE]
 

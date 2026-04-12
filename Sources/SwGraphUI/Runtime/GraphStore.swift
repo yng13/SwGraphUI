@@ -7,7 +7,14 @@ import Observation
 @MainActor
 public final class GraphStore<NodeData: Sendable>: Sendable {
     // MARK: - Core State
-    public var nodes: [BaseNode<NodeData>] = []
+    public var nodes: [BaseNode<NodeData>] = [] {
+        didSet {
+            if !suspendAutomaticOrderRecalculation {
+                recalculateSortedNodeIDs()
+            }
+            runtimeState.isAbsolutePositionCacheValid = false
+        }
+    }
     public var edges: [BaseEdge<NodeData>] = []
     
     // MARK: - Runtime State
@@ -15,6 +22,7 @@ public final class GraphStore<NodeData: Sendable>: Sendable {
     
     // MARK: - Interaction State
     private var autoPanTimer: Timer?
+    private var suspendAutomaticOrderRecalculation = false
     
     // MARK: - Undo/Redo State
     public var undoManager: UndoManager?
@@ -44,6 +52,25 @@ public final class GraphStore<NodeData: Sendable>: Sendable {
         self.edges = edges
         self.runtimeState = runtimeState
         self.undoManager = undoManager
+        
+        recalculateSortedNodeIDs()
+    }
+
+    private func withNodeOrderRecalculationSuspended(_ body: () -> Void) {
+        let previous = suspendAutomaticOrderRecalculation
+        suspendAutomaticOrderRecalculation = true
+        body()
+        suspendAutomaticOrderRecalculation = previous
+    }
+
+    private func nodeOrderSignature(for node: BaseNode<NodeData>) -> String {
+        [
+            node.id,
+            node.parentID ?? "",
+            String(node.zIndex ?? 0),
+            node.kind ?? "",
+            String(node.hidden)
+        ].joined(separator: "|")
     }
     
     // MARK: - Measurement & Positioning API
@@ -98,7 +125,10 @@ public final class GraphStore<NodeData: Sendable>: Sendable {
                 applySnap: false
             )
             
-            nodes[index].position = constrainedPos
+            withNodeOrderRecalculationSuspended {
+                nodes[index].position = constrainedPos
+            }
+            runtimeState.isAbsolutePositionCacheValid = false
         }
     }
 
@@ -107,7 +137,9 @@ public final class GraphStore<NodeData: Sendable>: Sendable {
         if let index = nodes.firstIndex(where: { $0.id == id }) {
             // 差分ガード：値が同じ場合は更新をスキップして再描画を抑制
             if nodes[index].measured != dimensions {
-                nodes[index].measured = dimensions
+                withNodeOrderRecalculationSuspended {
+                    nodes[index].measured = dimensions
+                }
             }
         }
     }
@@ -120,12 +152,15 @@ public final class GraphStore<NodeData: Sendable>: Sendable {
     ///   - position: リサイズ後の位置
     public func updateNodeDimensionsAfterResize(id: String, width: Double, height: Double, position: XYPosition) {
         if let index = nodes.firstIndex(where: { $0.id == id }) {
-            nodes[index].width = width
-            nodes[index].height = height
-            nodes[index].position = position
-            
-            // measured も同期。
-            nodes[index].measured = Dimensions(width: width, height: height)
+            withNodeOrderRecalculationSuspended {
+                nodes[index].width = width
+                nodes[index].height = height
+                nodes[index].position = position
+                
+                // measured も同期。
+                nodes[index].measured = Dimensions(width: width, height: height)
+            }
+            runtimeState.isAbsolutePositionCacheValid = false
         }
     }
     
@@ -154,8 +189,27 @@ public final class GraphStore<NodeData: Sendable>: Sendable {
     }
 
     public func absolutePosition(for nodeID: String) -> XYPosition {
-        guard let node = node(id: nodeID) else { return .zero }
-        return NodePositioningAlgorithms.evaluateAbsolutePosition(node, nodeLookup: nodeLookup)
+        if !runtimeState.isAbsolutePositionCacheValid {
+            recalculateAbsolutePositions()
+        }
+        return runtimeState.absolutePositionCache[nodeID] ?? .zero
+    }
+
+    /// 全ノードの絶対座標を一括計算してキャッシュします。
+    public func recalculateAbsolutePositions() {
+        let lookup = self.nodeLookup
+        var cache: [String: XYPosition] = [:]
+        
+        let sortedIDs = runtimeState.sortedNodeIDs
+        // トポロジカル順に近い順序（sortedNodeIDs は深さ考慮済み）で辿れば効率的
+        for id in sortedIDs {
+            if let node = lookup[id] {
+                cache[id] = NodePositioningAlgorithms.evaluateAbsolutePosition(node, nodeLookup: lookup)
+            }
+        }
+        
+        runtimeState.absolutePositionCache = cache
+        runtimeState.isAbsolutePositionCacheValid = true
     }
 
     // MARK: - Edge Operations
@@ -307,33 +361,56 @@ public final class GraphStore<NodeData: Sendable>: Sendable {
     
     public func addNode(_ node: BaseNode<NodeData>) {
         nodes.append(node)
+        recalculateSortedNodeIDs()
         selectNode(node.id)
     }
 
     public func updateSelectedNodes(_ transform: (inout BaseNode<NodeData>) -> Void) {
-        for i in 0..<nodes.count {
-            if nodes[i].selected {
-                transform(&nodes[i])
+        let selectedIDs = Set(nodes.filter(\.selected).map(\.id))
+        let before = Dictionary(
+            uniqueKeysWithValues: nodes
+                .filter { selectedIDs.contains($0.id) }
+                .map { ($0.id, nodeOrderSignature(for: $0)) }
+        )
+
+        withNodeOrderRecalculationSuspended {
+            for i in 0..<nodes.count {
+                if nodes[i].selected {
+                    transform(&nodes[i])
+                }
             }
+        }
+
+        let after = Dictionary(
+            uniqueKeysWithValues: nodes
+                .filter { selectedIDs.contains($0.id) }
+                .map { ($0.id, nodeOrderSignature(for: $0)) }
+        )
+        if before != after {
+            recalculateSortedNodeIDs()
         }
     }
 
     public func selectNode(_ id: String) {
         runtimeState.selection.clear()
         runtimeState.selection.selectNode(id: id)
-        for i in 0..<nodes.count {
-            nodes[i].selected = (nodes[i].id == id)
-        }
-        for i in 0..<edges.count {
-            edges[i].selected = false
+        withNodeOrderRecalculationSuspended {
+            for i in 0..<nodes.count {
+                nodes[i].selected = (nodes[i].id == id)
+            }
+            for i in 0..<edges.count {
+                edges[i].selected = false
+            }
         }
     }
     
     public func toggleNodeSelection(_ id: String) {
         runtimeState.selection.toggleNode(id: id)
-        for i in 0..<nodes.count {
-            if nodes[i].id == id {
-                nodes[i].selected = runtimeState.selection.selectedNodeIDs.contains(id)
+        withNodeOrderRecalculationSuspended {
+            for i in 0..<nodes.count {
+                if nodes[i].id == id {
+                    nodes[i].selected = runtimeState.selection.selectedNodeIDs.contains(id)
+                }
             }
         }
     }
@@ -341,11 +418,13 @@ public final class GraphStore<NodeData: Sendable>: Sendable {
     public func selectEdge(_ id: String) {
         runtimeState.selection.clear()
         runtimeState.selection.selectEdge(id: id)
-        for i in 0..<nodes.count {
-            nodes[i].selected = false
-        }
-        for i in 0..<edges.count {
-            edges[i].selected = (edges[i].id == id)
+        withNodeOrderRecalculationSuspended {
+            for i in 0..<nodes.count {
+                nodes[i].selected = false
+            }
+            for i in 0..<edges.count {
+                edges[i].selected = (edges[i].id == id)
+            }
         }
     }
     
@@ -360,22 +439,26 @@ public final class GraphStore<NodeData: Sendable>: Sendable {
     
     public func clearSelection() {
         runtimeState.selection.clear()
-        for i in 0..<nodes.count {
-            nodes[i].selected = false
-        }
-        for i in 0..<edges.count {
-            edges[i].selected = false
+        withNodeOrderRecalculationSuspended {
+            for i in 0..<nodes.count {
+                nodes[i].selected = false
+            }
+            for i in 0..<edges.count {
+                edges[i].selected = false
+            }
         }
     }
     
     public func selectAll() {
-        for i in 0..<nodes.count {
-            nodes[i].selected = true
-            runtimeState.selection.selectNode(id: nodes[i].id)
-        }
-        for i in 0..<edges.count {
-            edges[i].selected = true
-            runtimeState.selection.selectEdge(id: edges[i].id)
+        withNodeOrderRecalculationSuspended {
+            for i in 0..<nodes.count {
+                nodes[i].selected = true
+                runtimeState.selection.selectNode(id: nodes[i].id)
+            }
+            for i in 0..<edges.count {
+                edges[i].selected = true
+                runtimeState.selection.selectEdge(id: edges[i].id)
+            }
         }
     }
 
@@ -387,29 +470,32 @@ public final class GraphStore<NodeData: Sendable>: Sendable {
         let selectedNodeIDs = runtimeState.selection.selectedNodeIDs
         let lookup = self.nodeLookup
         
-        for i in 0..<nodes.count {
-            let node = nodes[i]
-            guard selectedNodeIDs.contains(node.id) && node.draggable else { continue }
-            
-            if let parentID = node.parentID, selectedNodeIDs.contains(parentID) {
-                continue
-            }
-            
-            let currentAbsPos = NodePositioningAlgorithms.evaluateAbsolutePosition(node, nodeLookup: lookup)
-            let targetAbsPos = currentAbsPos + offset
-            
-            let constrainedPos = DragManager.applyConstraints(
-                to: targetAbsPos,
-                node: node,
-                nodeLookup: lookup,
-                snapGrid: nil,
-                applySnap: false
-            )
-            
-            if nodes[i].position != constrainedPos {
-                nodes[i].position = constrainedPos
+        withNodeOrderRecalculationSuspended {
+            for i in 0..<nodes.count {
+                let node = nodes[i]
+                guard selectedNodeIDs.contains(node.id) && node.draggable else { continue }
+                
+                if let parentID = node.parentID, selectedNodeIDs.contains(parentID) {
+                    continue
+                }
+                
+                let currentAbsPos = NodePositioningAlgorithms.evaluateAbsolutePosition(node, nodeLookup: lookup)
+                let targetAbsPos = currentAbsPos + offset
+                
+                let constrainedPos = DragManager.applyConstraints(
+                    to: targetAbsPos,
+                    node: node,
+                    nodeLookup: lookup,
+                    snapGrid: nil,
+                    applySnap: false
+                )
+                
+                if nodes[i].position != constrainedPos {
+                    nodes[i].position = constrainedPos
+                }
             }
         }
+        runtimeState.isAbsolutePositionCacheValid = false
         
         // 移動量に有意な差（0.1px 以上の変化）があるノードが1つでもあるか
         let significantMove = nodes.contains { n in
@@ -450,6 +536,8 @@ public final class GraphStore<NodeData: Sendable>: Sendable {
         // 実際に削除された要素がある場合のみ登録
         if nodes.count != before.nodes.count || edges.count != before.edges.count {
             registerUndo(title: "要素の削除", snapshot: before, ignoringViewport: true)
+            recalculateSortedNodeIDs()
+            runtimeState.isAbsolutePositionCacheValid = false
         }
         clearSelection()
     }
@@ -479,25 +567,27 @@ public final class GraphStore<NodeData: Sendable>: Sendable {
         }
         
         let lookup = Dictionary(uniqueKeysWithValues: nodes.map { ($0.id, $0) })
-        for i in 0..<nodes.count {
-            let node = nodes[i]
-            let absPos = NodePositioningAlgorithms.evaluateAbsolutePosition(node, nodeLookup: lookup)
-            let size = node.measured ?? Dimensions(width: 100, height: 50)
-            let nodeRect = CGRect(x: absPos.x, y: absPos.y, width: size.width, height: size.height)
-            
-            if graphMarqueeRect.contains(nodeRect) {
-                runtimeState.selection.selectNode(id: node.id)
-                nodes[i].selected = true
+        withNodeOrderRecalculationSuspended {
+            for i in 0..<nodes.count {
+                let node = nodes[i]
+                let absPos = NodePositioningAlgorithms.evaluateAbsolutePosition(node, nodeLookup: lookup)
+                let size = node.measured ?? Dimensions(width: 100, height: 50)
+                let nodeRect = CGRect(x: absPos.x, y: absPos.y, width: size.width, height: size.height)
+                
+                if graphMarqueeRect.contains(nodeRect) {
+                    runtimeState.selection.selectNode(id: node.id)
+                    nodes[i].selected = true
+                }
             }
-        }
-        
-        let selectedNodeIDs = runtimeState.selection.selectedNodeIDs
-        if !selectedNodeIDs.isEmpty {
-            for i in 0..<edges.count {
-                let edge = edges[i]
-                if selectedNodeIDs.contains(edge.source) || selectedNodeIDs.contains(edge.target) {
-                    runtimeState.selection.selectEdge(id: edge.id)
-                    edges[i].selected = true
+            
+            let selectedNodeIDs = runtimeState.selection.selectedNodeIDs
+            if !selectedNodeIDs.isEmpty {
+                for i in 0..<edges.count {
+                    let edge = edges[i]
+                    if selectedNodeIDs.contains(edge.source) || selectedNodeIDs.contains(edge.target) {
+                        runtimeState.selection.selectEdge(id: edge.id)
+                        edges[i].selected = true
+                    }
                 }
             }
         }
@@ -510,9 +600,11 @@ public final class GraphStore<NodeData: Sendable>: Sendable {
         let targets = nodes.filter { nodeIDs.contains($0.id) }
         let lookup = Dictionary(uniqueKeysWithValues: nodes.map { ($0.id, $0) })
         runtimeState.drag.startDrag(nodes: targets, nodeLookup: lookup, pointer: pointer)
-        for i in 0..<nodes.count {
-            if nodeIDs.contains(nodes[i].id) {
-                nodes[i].dragging = true
+        withNodeOrderRecalculationSuspended {
+            for i in 0..<nodes.count {
+                if nodeIDs.contains(nodes[i].id) {
+                    nodes[i].dragging = true
+                }
             }
         }
     }
@@ -526,11 +618,14 @@ public final class GraphStore<NodeData: Sendable>: Sendable {
             nodeLookup: lookup,
             snapGrid: nil
         )
-        for (id, pos) in nextPositions {
-            if let index = nodes.firstIndex(where: { $0.id == id }) {
-                nodes[index].position = pos
+        withNodeOrderRecalculationSuspended {
+            for (id, pos) in nextPositions {
+                if let index = nodes.firstIndex(where: { $0.id == id }) {
+                    nodes[index].position = pos
+                }
             }
         }
+        runtimeState.isAbsolutePositionCacheValid = false
     }
     
     public func stopDragging() {
@@ -546,8 +641,10 @@ public final class GraphStore<NodeData: Sendable>: Sendable {
         }
         self.dragStartSnapshot = nil
         runtimeState.drag.stopDrag()
-        for i in 0..<nodes.count {
-            nodes[i].dragging = false
+        withNodeOrderRecalculationSuspended {
+            for i in 0..<nodes.count {
+                nodes[i].dragging = false
+            }
         }
     }
     
@@ -641,15 +738,18 @@ public final class GraphStore<NodeData: Sendable>: Sendable {
         let newPositions = GraphLayoutAlgorithms.layoutNodesTreeStyle(nodes: nodes, edges: edges, direction: direction, spacing: spacing)
         
         var hasChanged = false
-        for i in 0..<nodes.count {
-            if let newPos = newPositions[nodes[i].id], nodes[i].position != newPos {
-                nodes[i].position = newPos
-                hasChanged = true
+        withNodeOrderRecalculationSuspended {
+            for i in 0..<nodes.count {
+                if let newPos = newPositions[nodes[i].id], nodes[i].position != newPos {
+                    nodes[i].position = newPos
+                    hasChanged = true
+                }
             }
         }
         
         if hasChanged {
             registerUndo(title: "レイアウトの適用", snapshot: beforeSnapshot, ignoringViewport: true)
+            runtimeState.isAbsolutePositionCacheValid = false
         }
     }
 
@@ -749,6 +849,33 @@ public final class GraphStore<NodeData: Sendable>: Sendable {
         setHoveredNode(nil)
         runtimeState.marquee = nil
         runtimeState.handleMeasurements.positions.removeAll()
+        recalculateSortedNodeIDs()
+    }
+    
+    // MARK: - Performance Cache Overrides
+    
+    /// 描画順序（zIndex、階層）を事前に計算してキャッシュします。
+    public func recalculateSortedNodeIDs() {
+        let lookup = self.nodeLookup
+        let indexedNodes = self.nodes.enumerated().map { ($0, $1) }
+        
+        self.runtimeState.sortedNodeIDs = indexedNodes.sorted { (a, b) in
+            let (idxA, nodeA) = a
+            let (idxB, nodeB) = b
+            
+            // 1. zIndex
+            let zA = nodeA.zIndex ?? 0
+            let zB = nodeB.zIndex ?? 0
+            if zA != zB { return zA < zB }
+            
+            // 2. 階層の深さ (親を先に、子を後に)
+            let depthA = NodePositioningAlgorithms.calculateDepth(node: nodeA, nodeLookup: lookup)
+            let depthB = NodePositioningAlgorithms.calculateDepth(node: nodeB, nodeLookup: lookup)
+            if depthA != depthB { return depthA < depthB }
+            
+            // 3. 安定ソート
+            return idxA < idxB
+        }.map { $0.1.id }
     }
 }
 

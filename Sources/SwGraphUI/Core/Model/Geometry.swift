@@ -233,3 +233,30 @@ public enum PathSegment: Sendable, Equatable {
         }
     }
 }
+
+extension PathSegment {
+    /// セグメントの移動先または終点座標を取得します。
+    public var target: XYPosition {
+        switch self {
+        case .move(let to): return to
+        case .line(let to): return to
+        case .bezier(let to, _, _): return to
+        case .quadratic(let to, _): return to
+        }
+    }
+
+    /// セグメントの境界計算に使う全座標を返します。
+    /// ベジェ系は制御点も含めることで張り出しを取りこぼしません。
+    public var points: [XYPosition] {
+        switch self {
+        case .move(let to):
+            return [to]
+        case .line(let to):
+            return [to]
+        case .bezier(let to, let control1, let control2):
+            return [to, control1, control2]
+        case .quadratic(let to, let control):
+            return [to, control]
+        }
+    }
+}

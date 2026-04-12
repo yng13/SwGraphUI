@@ -22,3 +22,4 @@ public struct GraphSnapshot<NodeData: Sendable> {
 }
 
 extension GraphSnapshot: Codable where NodeData: Codable {}
+extension GraphSnapshot: Equatable where NodeData: Equatable {}

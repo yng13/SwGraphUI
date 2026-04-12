@@ -252,3 +252,31 @@ extension BaseEdge: Codable where NodeData: Codable {
 
 public typealias Edge = BaseEdge<EmptyPayload>
 
+extension BaseEdge: Equatable where NodeData: Equatable {
+    public static func == (lhs: BaseEdge<NodeData>, rhs: BaseEdge<NodeData>) -> Bool {
+        lhs.id == rhs.id &&
+        lhs.source == rhs.source &&
+        lhs.target == rhs.target &&
+        lhs.data == rhs.data &&
+        lhs.kind == rhs.kind &&
+        lhs.sourceHandle == rhs.sourceHandle &&
+        lhs.targetHandle == rhs.targetHandle &&
+        lhs.sourcePosition == rhs.sourcePosition &&
+        lhs.targetPosition == rhs.targetPosition &&
+        lhs.animated == rhs.animated &&
+        lhs.markerStart == rhs.markerStart &&
+        lhs.markerEnd == rhs.markerEnd &&
+        lhs.zIndex == rhs.zIndex &&
+        lhs.ariaLabel == rhs.ariaLabel &&
+        lhs.interactionWidth == rhs.interactionWidth &&
+        lhs.curvature == rhs.curvature &&
+        lhs.label == rhs.label &&
+        lhs.labelStyle == rhs.labelStyle &&
+        lhs.reconnectable == rhs.reconnectable &&
+        lhs.hidden == rhs.hidden &&
+        lhs.deletable == rhs.deletable &&
+        lhs.selectable == rhs.selectable &&
+        lhs.selected == rhs.selected
+    }
+}
+

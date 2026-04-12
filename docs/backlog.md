@@ -179,22 +179,22 @@
     - [x] 1,000 node / 999 edge 規模での構築・一括選択・移動・Undo/Redo の Baseline 採取
     - [x] Layout アルゴリズム (Tree) のボトルネック特定と $O(N+E)$ への最適化実証
     - [x] Snapshot アーキテクチャの 1,000ノード級での妥当性確認
-- [ ] **Milestone 35b: Large Graph UI & Integrated Load [Deferred]**
-    - [ ] UI レベルでの pan / zoom / export の体感性能確認
-    - [ ] MiniMap / Background / animated edge の同時負荷検証
-    - [ ] 長時間操作時のクラッシュ耐性確認
-- [x] **Milestone 36: Runtime Rendering Polish [DONE]** (2026-04-11)
+- [x] **Milestone 35b: Large Graph UI Performance Polish [DONE]** (2026-04-12)
+    - [x] ホットパス最適化（描画順ソート再計算の抑止）による ANR 消失
+    - [x] Edge Culling (制御点対応) による描画負荷の劇的低減
+    - [x] 1,000ノード環境での実機レベル操作性の確立
+- [x] **Milestone 36: Runtime Rendering Polish [DONE]** (2026-04-12)
     - [x] custom node 群の高倍率 zoom 監査
     - [x] edge label / reconnect handle / selection box の高倍率表示確認
     - [x] Background LOD / phase / accent の見た目最終調整
-- [x] **Milestone 37: Undo/Redo Final QA [DONE]** (2026-04-12)
-    - [x] move / delete / resize / reconnect / layout / fitView の対称性確認
-    - [x] no-op 操作で履歴が汚れないことの確認
-    - [x] Save/Restore と Undo/Redo の責務分離の再確認
-- [x] **Milestone 38: API & Docs Hardening [DONE]** (2026-04-12)
-    - [x] public API に product 固有 field が漏れていないことの確認
-    - [x] `current-plan.md` / `reference-divergence.md` / `examples-reference-map.md` の継続同期
-    - [x] 品質メトリクスとリリース前チェック項目を `requirements.md` に反映
+- [ ] **Milestone 37: Undo/Redo Final QA**
+    - [ ] move / delete / resize / reconnect / layout / fitView の対称性確認
+    - [ ] no-op 操作で履歴が汚れないことの確認
+    - [ ] Save/Restore と Undo/Redo の責務分離の再確認
+- [ ] **Milestone 38: API & Docs Hardening**
+    - [ ] public API に product 固有 field が漏れていないことの確認
+    - [ ] `current-plan.md` / `reference-divergence.md` / `examples-reference-map.md` の継続同期
+    - [ ] 品質メトリクスとリリース前チェック項目を `requirements.md` に反映
     - [ ] Example の GUI 手動監査はローカル実機で継続
 
 ### 直近の次アクション
@@ -204,6 +204,6 @@
 - [x] Milestone 32 (Crisp Zoom / Coordinate-based Rendering) [DONE]
 - [x] Milestone 33a (Accessibility Baseline - Labels & Roles) [DONE]
 - [x] Milestone 34 (Regression Matrix Expansion) [DONE]
-- [x] Milestone 36 (Runtime Rendering Polish) [DONE]
-- [x] Milestone 37 (Undo/Redo Final QA) [DONE]
-- [x] Milestone 38 (API & Docs Hardening) [DONE]
+- [ ] Milestone 36 (Runtime Rendering Polish)
+- [ ] Milestone 37 (Undo/Redo Final QA)
+- [ ] Milestone 38 (API & Docs Hardening)

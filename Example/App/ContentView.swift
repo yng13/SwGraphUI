@@ -352,11 +352,12 @@ extension ContentView {
         _ color: Color,
         _ width: CGFloat,
         _ viewport: Viewport,
+        _ containerSize: Dimensions,
         _ animated: Bool,
         _ reconnecting: Bool
     ) -> AnyView {
         if edge.kind == "custom" {
-            return AnyView(CustomEdgeBody(segments: segments, color: color, width: width, viewport: viewport, animated: animated, reconnecting: reconnecting))
+            return AnyView(CustomEdgeBody(segments: segments, color: color, width: width, viewport: viewport, animated: animated, reconnecting: reconnecting, containerSize: containerSize))
         } else {
             return AnyView(
                 EdgeRenderer(
@@ -364,6 +365,7 @@ extension ContentView {
                     strokeColor: color,
                     strokeWidth: width,
                     viewport: viewport,
+                    containerSize: containerSize,
                     animated: animated,
                     isReconnecting: reconnecting
                 )

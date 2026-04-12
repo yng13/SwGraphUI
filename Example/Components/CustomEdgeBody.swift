@@ -8,6 +8,7 @@ struct CustomEdgeBody: View {
     let viewport: Viewport
     let animated: Bool
     let reconnecting: Bool
+    let containerSize: Dimensions
     
     var body: some View {
         ZStack {
@@ -17,6 +18,7 @@ struct CustomEdgeBody: View {
                 strokeColor: color.opacity(0.2),
                 strokeWidth: width + 4,
                 viewport: viewport,
+                containerSize: containerSize,
                 animated: animated,
                 isReconnecting: reconnecting
             )
@@ -27,6 +29,7 @@ struct CustomEdgeBody: View {
                 strokeColor: color,
                 strokeWidth: width,
                 viewport: viewport,
+                containerSize: containerSize,
                 animated: animated,
                 isReconnecting: reconnecting
             )
@@ -38,6 +41,7 @@ struct CustomEdgeBody: View {
                     strokeColor: .white.opacity(0.5),
                     strokeWidth: 1,
                     viewport: viewport,
+                    containerSize: containerSize,
                     animated: animated,
                     isReconnecting: false
                 )
@@ -47,6 +51,7 @@ struct CustomEdgeBody: View {
                         strokeColor: .black,
                         strokeWidth: width,
                         viewport: viewport,
+                        containerSize: containerSize,
                         animated: false,
                         isReconnecting: false
                     )
