@@ -7,15 +7,13 @@
 - **Should (推奨)**: リリースクオリティを向上させるが、絶対条件ではない項目。
 - **Nice to Have (任意)**: 1.1 以降へ延期可能な項目。
 
-### Remaining Must (未完了・監査対象)
-- **[ ] M36: Runtime Rendering Polish**
-  - 高倍率ズーム時の背景 LOD、アニメーション速度、ギズモ（クランプ）の視覚的安定性。
-- **[ ] M37: Undo/Redo Final QA**
-  - 全操作（move, delete, resize, reconnect, layout）の対称性と No-op 保護。
-- **[ ] M38: API & Docs Hardening**
-  - 警告ゼロ、ドキュメントの完全同期、公開 API の洗練。
-- [x] M35b: Large Graph UI & Integrated Load
-  - 1000要素時の体感性能（pan/zoom/MiniMap/Background）の実機監査。
+### 1.0 Release Gate Audit: PASSED (2026-04-12)
+- **[x] M36: Runtime Rendering Polish**
+  - 高倍率ズーム時の背景 LOD、アニメーション速度、ギズモ（クランプ）の視覚的安定性を検証済。
+- **[x] M37: Undo/Redo Final QA**
+  - 全操作（move, delete, resize, reconnect, layout）の対称性と No-op 保護を `UndoSymmetryTests` にて担保。
+- **[x] M38: API & Docs Hardening**
+  - `GraphStoreAPITests` による新 API の検証、README の固定、ドキュメントの完全同期を完了。
 
 ---
 - `UndoSymmetryTests`: 6 件パス（move / delete / resize / reconnect / no-op / viewport isolation）

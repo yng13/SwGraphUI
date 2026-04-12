@@ -14,13 +14,25 @@ dependencies: [
 ]
 ```
 
-### Remote (After Public Release)
-Once the repository is public, you can add it via URL:
+## Installation
+
+Add `SwGraphUI` to your project using Swift Package Manager.
+
+### Remote (Stable Release)
+Add the package via URL:
 
 ```swift
 dependencies: [
-    // Replace with the actual URL after release
     .package(url: "https://github.com/yng13/SwGraphUI.git", from: "1.0.0")
+]
+```
+
+### Local Development
+For local experimentation or contribution:
+
+```swift
+dependencies: [
+    .package(path: "../SwGraphUI")
 ]
 ```
 

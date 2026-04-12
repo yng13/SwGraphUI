@@ -45,14 +45,14 @@ SwGraphUI の最終目標は、[React Flow Examples](https://reactflow.dev/examp
 - **Docs Trustworthiness**: 公開 API のシグネチャと README のサンプルコードが 100% 同期しており、導入手順が配布実態と矛盾しないこと。
 
 ### 2. Open Tasks (1.0 向け残存 Must タスク)
-- [ ] **新 API 検証の完遂**: 階層更新等の新規公開経路に対する、コードレベルでの直接的な回帰テストの追加。
-- [ ] **配布・タグ実態の確定**: リポジトリ公開 URL および 1.0.0 タグの運用方針、README の最終固定。
+- [x] **新 API 検証の完遂**: `GraphStoreAPITests.swift` にて階層更新、相対座標意味論、Parent Extent 制約、Undo 登録の正常動作を確認済。
+- [x] **配布・タグ実態の確定**: URL (`https://github.com/yng13/SwGraphUI.git`) および 1.0.0 タグ運用を README に固定済。
 
 ### 3. Deferred (1.1+ 以降へ送る責務)
 - Accessibility 実機検証 (VoiceOver/Inspector 最終判定)
 - 高度なアクセシビリティ設計
 
-### 現在のステータス (M38 終了時点判定)
-- **M38 完了**: Yes (Hardening 目標達成)
-- **1.0 Candidate**: Yes (主要機能・安定性良好)
-- **1.0 Gate 通過**: No (**「ほぼ到達、でも未通過」**)
+### 現在のステータス (1.0 Stable 到達判定)
+- **M38 完了**: Yes (Hardening 完遂)
+- **1.0 Candidate**: Yes
+- **1.0 Gate 通過**: **Yes (1.0 Stable 確定)**

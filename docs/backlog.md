@@ -187,19 +187,19 @@
     - [x] custom node 群の高倍率 zoom 監査
     - [x] edge label / reconnect handle / selection box の高倍率表示確認
     - [x] Background LOD / phase / accent の見た目最終調整
-- [ ] **Milestone 37: Undo/Redo Final QA**
-    - [ ] move / delete / resize / reconnect / layout / fitView の対称性確認
-    - [ ] no-op 操作で履歴が汚れないことの確認
-    - [ ] Save/Restore と Undo/Redo の責務分離の再確認
-- [ ] **Milestone 38: API & Docs Hardening**
-    - [ ] public API に product 固有 field が漏れていないことの確認
-    - [ ] `current-plan.md` / `reference-divergence.md` / `examples-reference-map.md` の継続同期
-    - [ ] 品質メトリクスとリリース前チェック項目を `requirements.md` に反映
-    - [ ] Example の GUI 手動監査はローカル実機で継続
+- [x] **Milestone 37: Undo/Redo Final QA [DONE]** (2026-04-12)
+    - [x] move / delete / resize / reconnect / layout / fitView の対称性確認
+    - [x] no-op 操作で履歴が汚れないことの確認
+    - [x] Save/Restore と Undo/Redo の責務分離の再確認
+- [x] **Milestone 38: API & Docs Hardening [DONE]** (2026-04-12)
+    - [x] public API に product 固有 field が漏れていないことの確認
+    - [x] `GraphStoreAPITests` による追加回帰テストの実装（相対座標意味論、新経路等）
+    - [x] README (`https://github.com/yng13/SwGraphUI.git`, `1.0.0`) の固定
+    - [x] ドキュメントの完全同期（`project-goals.md`, `requirements.md`, `backlog.md`）
+    - [x] 品質メトリクスとリリース前チェック項目を `requirements.md` に反映
 
-### 直近の次アクション
-- [x] Milestone 35b (Large Graph UI Performance Polish) [DONE]
-- [ ] Milestone 36 (Runtime Rendering Polish)
-- [ ] Milestone 37 (Undo/Redo Final QA)
-- [ ] Milestone 38 (API & Docs Hardening)
-- [ ] Milestone 33b (Accessibility Verification - Optional/Post-1.0)
+### 直近の次アクション (Post-1.0: 1.1+ Roadmap)
+- [ ] Milestone 33b (Accessibility Verification / Navigation Polish)
+- [ ] Milestone 39 (Standard Component Polish - MiniMap/Controls interaction)
+- [ ] Milestone 40 (New Feature: Background Image / Watermark support)
+- [ ] Milestone 41 (Example App: Whiteboard Mode implementation)

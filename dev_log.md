@@ -483,5 +483,18 @@ Shift + クリックによる複数選択および、Shift + ドラッグによ�
 - undo/redo: **~26ms**
 - 1,000ノード環境において、ズーム・パン・ドラッグのすべてにおいて ANR なく滑らかな動作を実現。
 
-### ビルド・テスト
-- `swift test`: 全 57 件（Swift Testing）+ 43 件（XCTest）パス。
+### 2026-04-12: [1.0] Stable Release Gate Closed (Audit Completion)
+
+- **実施内容**:
+    - **API 最終監査とテスト実装**: `updateNodePosition(id:to:)` の相対座標意味論を確認する `GraphStoreAPITests.swift` を実装。親ノードを持つ子ノードの測位、Parent Extent 制約、Undo 登録の正常性を担保。
+    - **配布情報の固定**: README に正式な URL とタグ `1.0.0` の運用方針を明記。
+    - **ビルド検証**: `xcodebuild build` にて警告ゼロの状態を確認。
+    - **ドキュメント同期**: `project-goals.md` に各ゲート項目の充足根拠を明記し、`requirements.md` および `backlog.md` を 1.0 Stable 状態でクローズ。
+- **検証結果**:
+    - `GraphStoreAPITests`: 全 4 ケースパス。
+    - `UndoSymmetryTests` / `RegressionMatrixTests`: 全件回帰なし。
+    - `swift test`: 合計 106 件パス (XCTest 48件 + Swift Testing 58件)。
+    - `xcodebuild build` (2026-04-12 15:36): **BUILD SUCCEEDED (Warnings: 0)**。
+- **1.0 完了宣言**:
+    - SwGraphUI 1.0 Stable としての要件および品質基準を満たしたと判定。
+    - 以降の新規機能開発（アクセシビリティ拡張、ホワイトボードモード等）は 1.1 RoadMap として扱う。
