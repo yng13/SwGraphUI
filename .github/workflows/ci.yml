@@ -1,0 +1,44 @@
+name: CI
+
+on:
+  push:
+    branches:
+      - main
+      - "codex/**"
+      - "feature/**"
+      - "fix/**"
+  pull_request:
+  workflow_dispatch:
+
+concurrency:
+  group: ci-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  build-and-test:
+    runs-on: macos-14
+    timeout-minutes: 20
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Select Xcode 16.3
+        run: sudo xcode-select -s /Applications/Xcode_16.3.app
+
+      - name: Show toolchain
+        run: |
+          xcodebuild -version
+          swift --version
+
+      - name: Resolve package dependencies
+        run: swift package resolve
+
+      - name: Build library and package targets
+        run: swift build
+
+      - name: Build Example executable
+        run: swift build --product Example
+
+      - name: Run tests
+        run: swift test
