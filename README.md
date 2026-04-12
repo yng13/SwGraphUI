@@ -269,9 +269,7 @@ Current recommendation:
 SwGraphUI already covers most core flow-editor interactions.  
 It still intentionally differs from `xyflow` in several areas, especially around internal caching strategy, Apple-platform input behavior, and the remaining whiteboard / advanced UI example scope.
 
-See also:
+Note:
 
-- [Reference Divergence](./docs/reference-divergence.md)
-- [Examples Reference Map](./docs/examples-reference-map.md)
-- [Backlog](./docs/backlog.md)
-- [Brand Assets](./docs/brand-assets.md)
+- Internal planning, audit, and migration documents are maintained outside the public repository surface.
+- Public usage guidance is kept in this README and in the source-level API documentation.
