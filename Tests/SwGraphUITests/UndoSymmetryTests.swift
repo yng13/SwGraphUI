@@ -92,9 +92,10 @@ final class UndoSymmetryTests: XCTestCase {
             mode: .reconnect(edgeID: "e1", isSource: false)
         )
         store.updateConnecting(to: .zero, targetNodeID: "n3", targetHandleID: "t3", targetHandlePosition: .left)
-        _ = store.stopConnecting()
+        let result = store.stopConnecting()
         undoManager.endUndoGrouping()
         
+        XCTAssertNotNil(result, "変化のある再接続は結果を返すこと")
         XCTAssertEqual(store.edges[0].target, "n3")
         XCTAssertEqual(store.edges[0].targetHandle, "t3")
         
@@ -105,6 +106,26 @@ final class UndoSymmetryTests: XCTestCase {
         XCTAssertEqual(restoredEdge.targetHandle, initialEdge.targetHandle)
         XCTAssertEqual(restoredEdge.targetPosition, initialEdge.targetPosition)
         XCTAssertEqual(restoredEdge.sourceHandle, initialEdge.sourceHandle)
+    }
+    
+    func testActionTitlePropagation() {
+        createSimpleSystem()
+        store.selectNode("n1")
+        
+        // 1. 移動を実行
+        undoManager.beginUndoGrouping()
+        store.moveSelectedNodes(by: XYPosition(x: 100, y: 100))
+        undoManager.endUndoGrouping()
+        
+        XCTAssertEqual(undoManager.undoActionName, "ノードの移動")
+        
+        // 2. Undo
+        undoManager.undo()
+        XCTAssertEqual(undoManager.redoActionName, "ノードの移動", "Redo 時にもアクション名が維持されていること")
+        
+        // 3. Redo
+        undoManager.redo()
+        XCTAssertEqual(undoManager.undoActionName, "ノードの移動", "Redo 後も Undo 名が正しく復元されること")
     }
     
     // MARK: - No-Op Protection Tests
@@ -126,6 +147,24 @@ final class UndoSymmetryTests: XCTestCase {
         store.updateNodeDimensionsAfterResize(id: "n1", width: 100, height: 40, position: .zero)
         store.stopResizing()
         XCTAssertFalse(undoManager.canUndo, "サイズの変わらないリサイズは履歴に積まないこと")
+        
+        // 4. 重複した再接続 (M37 No-Op Guard)
+        let initialEdge = store.edges[0]
+        store.startConnecting(
+            fromNodeID: initialEdge.source,
+            fromHandleID: initialEdge.sourceHandle,
+            fromHandleType: .source,
+            fromHandlePosition: initialEdge.sourcePosition ?? .right,
+            fromPosition: .zero,
+            at: .zero,
+            mode: .reconnect(edgeID: initialEdge.id, isSource: false)
+        )
+        // 元と同じターゲットに接続
+        store.updateConnecting(to: .zero, targetNodeID: initialEdge.target, targetHandleID: initialEdge.targetHandle, targetHandlePosition: initialEdge.targetPosition ?? .left)
+        let result = store.stopConnecting()
+        
+        XCTAssertNil(result, "変化のない再接続は nil を返すこと")
+        XCTAssertFalse(undoManager.canUndo, "実質的な変化のない再接続は履歴を汚さないこと")
     }
     
     func testViewportIsolation() {

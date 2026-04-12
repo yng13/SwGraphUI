@@ -720,12 +720,29 @@ public final class GraphStore<NodeData: Sendable>: Sendable {
             }
         }
         
-        if let conn = result, case .reconnect(let edgeID, _) = active.mode {
-            updateEdgeConnection(id: edgeID, newConnection: conn)
+        if let conn = result {
+            if case .reconnect(let edgeID, _) = active.mode {
+                let existing = edge(id: edgeID)
+                let isNoOp = existing.map { e in
+                    e.source == conn.source &&
+                    e.target == conn.target &&
+                    e.sourceHandle == conn.sourceHandle &&
+                    e.targetHandle == conn.targetHandle &&
+                    e.sourcePosition == conn.sourcePosition &&
+                    e.targetPosition == conn.targetPosition
+                } ?? false
+                
+                if isNoOp {
+                    // 実効的な変化がない場合は nil を返し、Undo 登録も行わない
+                    result = nil
+                } else {
+                    updateEdgeConnection(id: edgeID, newConnection: conn)
+                }
+            }
         }
         
         stopAutoPanTimer()
-        if result != nil {
+        if let conn = result {
             let actionName = (active.mode == .connect) ? "エッジの追加" : "接続の変更"
             registerUndo(title: actionName, snapshot: beforeSnapshot)
         }
@@ -817,7 +834,7 @@ public final class GraphStore<NodeData: Sendable>: Sendable {
         }
 
         undoManager.registerUndo(withTarget: self) { target in
-            target.apply(snapshot: snapshot, shouldRegisterUndo: true, ignoringViewport: ignoringViewport, restoringSelection: true)
+            target.apply(snapshot: snapshot, title: title, shouldRegisterUndo: true, ignoringViewport: ignoringViewport, restoringSelection: true)
         }
     }
 
@@ -827,12 +844,13 @@ public final class GraphStore<NodeData: Sendable>: Sendable {
 
     public func apply(
         snapshot: GraphSnapshot<NodeData>,
+        title: String? = nil,
         shouldRegisterUndo: Bool = false,
         ignoringViewport: Bool = false,
         restoringSelection: Bool = false
     ) {
-        if shouldRegisterUndo {
-            registerUndo(title: "", snapshot: self.snapshot(), ignoringViewport: ignoringViewport)
+        if shouldRegisterUndo, let currentTitle = title {
+            registerUndo(title: currentTitle, snapshot: self.snapshot(), ignoringViewport: ignoringViewport)
         }
         self.nodes = snapshot.nodes
         self.edges = snapshot.edges
