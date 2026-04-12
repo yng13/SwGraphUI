@@ -306,9 +306,26 @@ struct InspectorView: View {
                         ))
                     }
                     InspectorRow("Position") {
-                        Text("\(Int(node.position.x)), \(Int(node.position.y))")
-                            .font(.system(size: Constants.fontSize - 1, design: .monospaced))
-                            .foregroundStyle(.secondary)
+                        HStack(spacing: 8) {
+                            HStack(spacing: 4) {
+                                Text("X").font(.system(size: 8, weight: .bold)).foregroundStyle(.secondary)
+                                InspectorNumberField(value: Binding(
+                                    get: { node.position.x },
+                                    set: { val in
+                                        graphStore.updateNodePosition(id: node.id, to: XYPosition(x: val, y: node.position.y))
+                                    }
+                                ))
+                            }
+                            HStack(spacing: 4) {
+                                Text("Y").font(.system(size: 8, weight: .bold)).foregroundStyle(.secondary)
+                                InspectorNumberField(value: Binding(
+                                    get: { node.position.y },
+                                    set: { val in
+                                        graphStore.updateNodePosition(id: node.id, to: XYPosition(x: node.position.x, y: val))
+                                    }
+                                ))
+                            }
+                        }
                     }
                 }
                 if node.id != graphStore.selectedNodes.last?.id {
@@ -379,8 +396,28 @@ struct InspectorView: View {
                 .frame(height: 18)
                 .background(
                     RoundedRectangle(cornerRadius: 3)
-                        .stroke(Color.primary.opacity(0.1), lineWidth: 0.5)
-                        .background(Color(NSColor.controlBackgroundColor).opacity(0.5))
+                        .stroke(Color.primary.opacity(0.12), lineWidth: 0.5)
+                        .background(Color(NSColor.controlBackgroundColor).opacity(0.6))
+                )
+                #if os(macOS)
+                .controlSize(.small)
+                #endif
+        }
+    }
+    
+    /// 座標・数値入力用
+    private struct InspectorNumberField: View {
+        @Binding var value: Double
+        var body: some View {
+            TextField("", value: $value, format: .number.grouping(.never))
+                .textFieldStyle(.plain)
+                .font(.system(size: 10, design: .monospaced))
+                .padding(.horizontal, 4)
+                .frame(width: 44, height: 18)
+                .background(
+                    RoundedRectangle(cornerRadius: 3)
+                        .stroke(Color.primary.opacity(0.12), lineWidth: 0.5)
+                        .background(Color(NSColor.controlBackgroundColor).opacity(0.6))
                 )
                 #if os(macOS)
                 .controlSize(.small)

@@ -121,6 +121,53 @@ public struct BaseNode<NodeData: Sendable>: Sendable, Identifiable {
         self.label = label
         self.measured = measured
     }
+
+    /// 最小構成でノードを作成するためのイニシャライザ。
+    ///
+    /// 必須項目（id, position, data）のみを引数に取り、それ以外（zIndex, handles, resizable 等）はシステム既定のデフォルト値が適用されます。
+    /// 詳細な初期化が必要な場合は、全引数を網羅したフルイニシャライザを使用してください。
+    public init(
+        id: String,
+        position: XYPosition,
+        data: NodeData,
+        width: Double? = nil,
+        height: Double? = nil
+    ) {
+        self.init(
+            id: id,
+            position: position,
+            data: data,
+            kind: nil,
+            sourcePosition: nil,
+            targetPosition: nil,
+            parentID: nil,
+            zIndex: nil,
+            extent: nil,
+            expandParent: false,
+            ariaLabel: nil,
+            origin: nil,
+            handles: [],
+            connectable: true,
+            resizable: true,
+            hidden: false,
+            selected: false,
+            dragging: false,
+            draggable: true,
+            selectable: true,
+            deletable: true,
+            dragHandle: nil,
+            width: width,
+            height: height,
+            minWidth: 10,
+            minHeight: 10,
+            maxWidth: .infinity,
+            maxHeight: .infinity,
+            initialWidth: nil,
+            initialHeight: nil,
+            label: nil,
+            measured: nil
+        )
+    }
 }
 
 extension BaseNode: Codable where NodeData: Codable {

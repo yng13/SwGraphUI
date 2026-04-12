@@ -183,6 +183,43 @@ public struct BaseEdge<NodeData: Sendable>: Sendable, Identifiable {
         self.labelStyle = labelStyle
         self.reconnectable = reconnectable
     }
+
+    /// 最小構成でエッジを作成するためのイニシャライザ。
+    ///
+    /// 接続情報（id, source, target）およびデータのみを指定し、その他（marker, animated, zIndex等）はデフォルト値が適用されます。
+    /// 高度な設定が必要な場合は、フルイニシャライザを使用してください。
+    public init(
+        id: String,
+        source: String,
+        target: String,
+        data: NodeData? = nil
+    ) {
+        self.init(
+            id: id,
+            source: source,
+            target: target,
+            data: data,
+            kind: nil,
+            sourceHandle: nil,
+            targetHandle: nil,
+            sourcePosition: nil,
+            targetPosition: nil,
+            animated: false,
+            markerStart: nil,
+            markerEnd: nil,
+            zIndex: nil,
+            ariaLabel: nil,
+            interactionWidth: nil,
+            curvature: nil,
+            hidden: false,
+            deletable: true,
+            selectable: true,
+            selected: false,
+            label: nil,
+            labelStyle: .default,
+            reconnectable: .none
+        )
+    }
 }
 
 extension BaseEdge: Codable where NodeData: Codable {

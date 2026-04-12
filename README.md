@@ -5,11 +5,22 @@ It uses `xyflow` as a strong behavioral and architectural reference, but it is n
 
 ## Installation
 
-Add `SwGraphUI` with Swift Package Manager:
+### Local Development
+To use `SwGraphUI` in your local project, drag the folder into your Xcode project or add it via `Package.swift`:
 
 ```swift
 dependencies: [
-    .package(url: "https://github.com/your-org/SwGraphUI.git", branch: "main")
+    .package(path: "../SwGraphUI")
+]
+```
+
+### Remote (After Public Release)
+Once the repository is public, you can add it via URL:
+
+```swift
+dependencies: [
+    // Replace with the actual URL after release
+    .package(url: "https://github.com/yng13/SwGraphUI.git", from: "1.0.0")
 ]
 ```
 
@@ -170,12 +181,14 @@ For a customized edge body:
 ```swift
 GraphView(
     store: store,
-    edgeBuilder: { edge, segments, color, width, animated, reconnecting in
+    edgeBuilder: { edge, segments, color, width, viewport, containerSize, animated, reconnecting in
         AnyView(
             EdgeRenderer(
                 segments: segments,
                 strokeColor: edge.kind == "custom" ? .orange : color,
                 strokeWidth: width,
+                viewport: viewport,
+                containerSize: containerSize,
                 animated: animated,
                 isReconnecting: reconnecting
             )
@@ -223,10 +236,6 @@ ZStack(alignment: .bottomTrailing) {
 To run the included Example app from Xcode:
 
 1. Open the package folder in Xcode:
-
-```bash
-open /Users/kentaro/Projects/SwGraphUI/Package.swift
-```
 
 2. In Xcode, choose the `Example` scheme.
 3. Select a destination:

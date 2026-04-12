@@ -51,4 +51,26 @@ struct GraphStoreConstraintTests {
         store.updateNodePosition(id: "node", position: XYPosition(x: 200, y: -50))
         #expect(store.nodeLookup["node"]?.position == XYPosition(x: 200, y: 0))
     }
+    
+    @Test
+    func testNewUpdateNodePositionTo_DirectCall() {
+        // 新設された updateNodePosition(id:to:) (=インスペクター等で使用) を検証
+        let parent = BaseNode(id: "p", position: XYPosition(x: 100, y: 100), data: EmptyPayload(), width: 200, height: 200)
+        var child = BaseNode(id: "c", position: XYPosition(x: 10, y: 10), data: EmptyPayload(), width: 50, height: 50)
+        child.parentID = "p"
+        child.extent = .parent
+        
+        let undoManager = UndoManager()
+        let store = GraphStore<EmptyPayload>(nodes: [parent, child], undoManager: undoManager)
+        
+        // 相対座標 (10, 10) から (160, 160) へ移動命令
+        // 親子関係がある場合、内部で絶対変換 -> 制約適用 -> 相対変換 が行われ
+        // Max (150, 150) にクランプされる必要がある
+        store.updateNodePosition(id: "c", to: XYPosition(x: 160, y: 160))
+        
+        #expect(store.nodeLookup["c"]?.position == XYPosition(x: 150, y: 150))
+        
+        // Undo 履歴に登録されているか (新API は内部で registerUndo を呼ぶ)
+        #expect(store.undoManager?.canUndo == true)
+    }
 }

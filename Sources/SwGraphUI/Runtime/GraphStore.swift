@@ -648,6 +648,43 @@ public final class GraphStore<NodeData: Sendable>: Sendable {
         }
     }
     
+    /// 特定のノードを新しい座標に移動させます。
+    ///
+    /// インスペクターからの直接入力など「決定的な移動」に使用します。
+    /// 内部で制約適用、Undo登録、およびキャッシュ無効化が自動で行われます。
+    public func updateNodePosition(id: String, to newRelativePosition: XYPosition, title: String = "ノードの移動") {
+        guard let index = nodes.firstIndex(where: { $0.id == id }) else { return }
+        let node = nodes[index]
+        let currentPosition = node.position
+        
+        // 有意な差がない場合はスキップ
+        guard abs(currentPosition.x - newRelativePosition.x) > 0.01 || abs(currentPosition.y - newRelativePosition.y) > 0.01 else { return }
+        
+        let before = self.snapshot()
+        let lookup = self.nodeLookup
+
+        // 重要: DragManager.applyConstraints は第一引数に「目標とする絶対座標」を期待する。
+        // 引数 newRelativePosition は（親子関係にかかわらず）ノードの position プロパティの目標値なので、
+        // これを絶対座標に変換してから渡す必要がある。
+        let parent = node.parentID.flatMap { lookup[$0] }
+        let targetAbsPos = NodePositioningAlgorithms.toAbsolutePosition(newRelativePosition, parent: parent, nodeLookup: lookup)
+        
+        let constrainedPos = DragManager.applyConstraints(
+            to: targetAbsPos,
+            node: node,
+            nodeLookup: lookup,
+            snapGrid: nil,
+            applySnap: false
+        )
+        
+        withNodeOrderRecalculationSuspended {
+            nodes[index].position = constrainedPos
+            runtimeState.isAbsolutePositionCacheValid = false
+        }
+        
+        registerUndo(title: title, snapshot: before, ignoringViewport: true)
+    }
+    
     // --- Connection ---
     public func findHandle(near pointer: XYPosition, threshold: Double = ConnectionInteractionManager.snapDistance) -> HandleKey? {
         let viewport = runtimeState.viewport.viewport
