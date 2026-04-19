@@ -29,7 +29,12 @@ public struct DefaultEdgeView<NodeData: Sendable>: View {
         self.edgeBodyBuilder = edgeBodyBuilder
     }
 
+    @Environment(\.graphRenderingViewport) private var renderingViewport
     
+    private var activeViewport: Viewport {
+        renderingViewport ?? store.runtimeState.viewport.viewport
+    }
+
     public var body: some View {
         if let (sourcePos, targetPos, sourceHandlePos, targetHandlePos) = resolvePositions() {
             let strokeWidth: CGFloat = edge.selected ? 3 : 2
@@ -68,7 +73,7 @@ public struct DefaultEdgeView<NodeData: Sendable>: View {
                 return false
             }()
 
-            let viewport = store.runtimeState.viewport.viewport
+            let viewport = activeViewport
             let adjustedSegments = DefaultEdgeViewUtils.adjustSegmentsForBackoff(
                 baseResult.segments,
                 shortenedSource: shortenedSource,
@@ -181,6 +186,8 @@ public struct DefaultEdgeOverlayView<NodeData: Sendable>: View {
         self.containerSize = containerSize
     }
     
+    @Environment(\.graphRenderingViewport) private var renderingViewport
+
     public var body: some View {
         if store.node(id: edge.source) != nil, store.node(id: edge.target) != nil {
             let sourcePos = edge.sourcePosition ?? .right
@@ -189,7 +196,7 @@ public struct DefaultEdgeOverlayView<NodeData: Sendable>: View {
             let targetKey = HandleKey(nodeID: edge.target, handleID: edge.targetHandle, type: .target, placement: targetPos)
             let sourceHandlePos = store.resolvedHandlePosition(for: sourceKey)
             let targetHandlePos = store.resolvedHandlePosition(for: targetKey)
-
+            
             let baseResult = EdgePathAlgorithms.calculatePath(
                 source: sourceHandlePos,
                 target: targetHandlePos,
@@ -199,7 +206,7 @@ public struct DefaultEdgeOverlayView<NodeData: Sendable>: View {
                 curvature: edge.curvature ?? 0.25
             )
 
-            let viewport = store.runtimeState.viewport.viewport
+            let viewport = renderingViewport ?? store.runtimeState.viewport.viewport
             let screenLabelPos = XYPosition(x: baseResult.labelX, y: baseResult.labelY).toScreen(viewport: viewport)
 
             ZStack {

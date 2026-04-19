@@ -13,7 +13,8 @@ public struct GraphView<NodeData: Sendable, NodeContent: View>: View {
     public let store: GraphStore<NodeData>
     public let nodeBuilder: (BaseNode<NodeData>) -> NodeContent
     private let edgeBuilder: (BaseEdge<NodeData>, [PathSegment], Color, CGFloat, Viewport, Dimensions, Bool, Bool) -> AnyView
-    public let backgroundBuilder: () -> AnyView
+    public let backgroundBuilder: (() -> AnyView)?
+    public let configuration: GraphConfiguration
     public var onEvent: ((GraphEvent) -> Void)?
 
     public var onConnect: ((Connection) -> Void)?
@@ -31,18 +32,26 @@ public struct GraphView<NodeData: Sendable, NodeContent: View>: View {
     
     // パンまたは Marquee 操作の継続的な変化量を計算するための内部用ステート
     @State private var lastPanTranslation: CGSize = .zero
-    @State private var isMarqueeMode: Bool = false
+    
+    private enum BackgroundInteractionMode {
+        case undecided
+        case marquee
+        case pan
+    }
+    @State private var backgroundInteractionMode: BackgroundInteractionMode = .undecided
     
     public init(
         store: GraphStore<NodeData>,
+        configuration: GraphConfiguration = .init(),
         onEvent: ((GraphEvent) -> Void)? = nil,
         onConnect: ((Connection) -> Void)? = nil,
         onReconnect: ((String, Connection) -> Void)? = nil,
         edgeBuilder: ((BaseEdge<NodeData>, [PathSegment], Color, CGFloat, Viewport, Dimensions, Bool, Bool) -> AnyView)? = nil,
         @ViewBuilder nodeBuilder: @escaping (BaseNode<NodeData>) -> NodeContent,
-        @ViewBuilder backgroundBuilder: @escaping () -> AnyView = { AnyView(EmptyView()) }
+        backgroundBuilder: (() -> AnyView)? = nil
     ) {
         self.store = store
+        self.configuration = configuration
         self.onEvent = onEvent
         self.onConnect = onConnect
         self.onReconnect = onReconnect
@@ -59,7 +68,16 @@ public struct GraphView<NodeData: Sendable, NodeContent: View>: View {
         
         ZStack {
             GeometryReader { geometry in
-                backgroundBuilder()
+                if let backgroundBuilder {
+                    backgroundBuilder()
+                } else if configuration.showGrid {
+                    BackgroundView(
+                        viewport: store.runtimeState.viewport.viewport,
+                        gap: configuration.gridSize,
+                        variant: configuration.backgroundVariant,
+                        patternColor: configuration.gridColor
+                    )
+                }
                 
                 // ビューポート（グラフ空間）コンテナ
                 viewportContainer
@@ -150,10 +168,14 @@ public struct GraphView<NodeData: Sendable, NodeContent: View>: View {
         .background(Color(.secondarySystemBackground))
         #endif
         .onPreferenceChange(NodeSizePreferenceKey.self) { entries in
+            let zoom = max(store.runtimeState.viewport.viewport.zoom, 0.0001)
             for entry in entries {
                 store.updateNodeDimensions(
                     id: entry.id,
-                    dimensions: Dimensions(width: entry.size.width, height: entry.size.height)
+                    dimensions: Dimensions(
+                        width: Double(entry.size.width) / Double(zoom),
+                        height: Double(entry.size.height) / Double(zoom)
+                    )
                 )
             }
         }
@@ -182,36 +204,48 @@ public struct GraphView<NodeData: Sendable, NodeContent: View>: View {
             .gesture(
                 DragGesture(minimumDistance: 0, coordinateSpace: .named("viewport_container"))
                     .onChanged { value in
-                        if modifierKeys.isShiftPressed {
-                            guard store.runtimeState.interactivity.elementsSelectable else { return }
-                            if !isMarqueeMode {
-                                isMarqueeMode = true
+                        if backgroundInteractionMode == .undecided {
+                            // 操作開始時に Shift キーの状態を見てモードを確定・ロックする
+                            if modifierKeys.isShiftPressed && store.runtimeState.interactivity.elementsSelectable {
+                                backgroundInteractionMode = .marquee
                                 store.startMarquee(at: value.startLocation)
+                            } else if store.runtimeState.interactivity.panOnDrag {
+                                // 単なるタップと区別するため、一定以上の移動で pan にロックする
+                                let translation = sqrt(pow(value.translation.width, 2) + pow(value.translation.height, 2))
+                                if translation > 5 {
+                                    backgroundInteractionMode = .pan
+                                }
                             }
+                        }
+                        
+                        // ロックされたモードに従って処理を実行
+                        switch backgroundInteractionMode {
+                        case .marquee:
                             store.updateMarquee(to: value.location)
-                        } else {
-                            guard store.runtimeState.interactivity.panOnDrag else { return }
-                            if !isMarqueeMode {
-                                // パン操作
-                                let deltaX = value.translation.width - lastPanTranslation.width
-                                let deltaY = value.translation.height - lastPanTranslation.height
-                                store.pan(by: XYPosition(x: deltaX, y: deltaY))
-                                lastPanTranslation = value.translation
-                            }
+                        case .pan:
+                            let deltaX = value.translation.width - lastPanTranslation.width
+                            let deltaY = value.translation.height - lastPanTranslation.height
+                            store.pan(by: XYPosition(x: deltaX, y: deltaY))
+                            lastPanTranslation = value.translation
+                        case .undecided:
+                            break
                         }
                     }
                     .onEnded { value in
-                        if isMarqueeMode {
+                        switch backgroundInteractionMode {
+                        case .marquee:
                             store.endMarquee(isShiftPressed: true)
-                            isMarqueeMode = false
-                        } else {
-                            guard store.runtimeState.interactivity.elementsSelectable else { return }
-                            // 移動距離が小さい場合は背景タップとみなしてクリア
-                            let distance = sqrt(pow(value.translation.width, 2) + pow(value.translation.height, 2))
-                            if distance < 5 {
+                        case .pan:
+                            break
+                        case .undecided:
+                            // 移動なし（タップ）かつ要素選択が許可されている場合、選択クリア
+                            if store.runtimeState.interactivity.elementsSelectable {
                                 store.clearSelection()
                             }
                         }
+                        
+                        // リセット
+                        backgroundInteractionMode = .undecided
                         lastPanTranslation = .zero
                     }
             )
@@ -231,55 +265,95 @@ public struct GraphView<NodeData: Sendable, NodeContent: View>: View {
                 modifierKeys: modifierKeys,
                 containerSize: store.runtimeState.autoPan.containerSize ?? Dimensions(width: 800, height: 600),
                 nodeWrapper: { node, content in
-                    AnyView(
-                        content
-                            .gesture(
-                            DragGesture(minimumDistance: 0, coordinateSpace: .named("viewport_container"))
-                                .onChanged { [store = self.store, onEvent = self.onEvent] value in
-                                    guard store.runtimeState.interactivity.nodesDraggable else { return }
-                                    let translation = sqrt(pow(value.translation.width, 2) + pow(value.translation.height, 2))
-                                    if translation > 4 {
-                                        let viewport = store.runtimeState.viewport.viewport
-                                        let graphPointer = XYPosition(x: value.location.x, y: value.location.y).fromScreen(viewport: viewport)
-                                        
-                                        if !store.runtimeState.drag.isDragging {
-                                            // 複数選択時のドラッグ対応: 対象ノードが選択済みなら、選択中の全ノードを移動対象にする
-                                            let dragNodeIDs: [String] = {
-                                                if node.selected {
-                                                    return Array(store.runtimeState.selection.selectedNodeIDs)
-                                                } else {
-                                                    return [node.id]
-                                                }
-                                            }()
-                                            store.startDragging(nodeIDs: dragNodeIDs, at: graphPointer)
-                                            onEvent?(.dragStart(nodeIDs: dragNodeIDs))
-                                        } else {
-                                            store.updateAutoPan(at: XYPosition(x: value.location.x, y: value.location.y))
-                                            store.updateDragging(to: graphPointer)
-                                            // 内部的な更新は store 側の draggedNodes に任せる
-                                            onEvent?(.dragUpdate(nodeIDs: [node.id]))
-                                        }
-                                    }
-                                }
-                                .onEnded { [store = self.store, modifierKeys = self.modifierKeys, onEvent = self.onEvent] value in
-                                    if store.runtimeState.drag.isDragging {
-                                        let draggedIDs = store.runtimeState.drag.draggedNodes.map { $0.id }
-                                        store.stopDragging()
-                                        onEvent?(.dragStop(nodeIDs: draggedIDs))
-                                    } else {
-                                        guard store.runtimeState.interactivity.elementsSelectable else { return }
-                                        if modifierKeys.isShiftPressed {
-                                            store.toggleNodeSelection(node.id)
-                                        } else {
-                                            store.selectNode(node.id)
-                                        }
-                                    }
-                                }
-                        )
-                    )
+                    AnyView(NodeGestureWrapper(node: node, store: self.store, onEvent: self.onEvent, modifierKeys: self.modifierKeys, content: content))
                 }
             )
             .environment(\.graphZoomLevel, vp.zoom)
+        }
+    }
+}
+
+/// 
+/// 各ノードのジェスチャー操作をカプセル化し、モードのロックと選択意図を管理するラッパービュー。
+/// 
+internal struct NodeGestureWrapper<NodeData: Sendable>: View {
+    let node: BaseNode<NodeData>
+    let store: GraphStore<NodeData>
+    let onEvent: ((GraphEvent) -> Void)?
+    let modifierKeys: ModifierKeysProvider?
+    let content: AnyView
+    
+    // 操作開始時の意図をロックするためのステート
+    @State private var selectionIntent: SelectionIntent = .replace
+    private enum SelectionIntent { case replace, toggle }
+    
+    private enum NodeInteractionMode { case undecided, drag, click }
+    @State private var interactionMode: NodeInteractionMode = .undecided
+
+    var body: some View {
+        content
+            .gesture(
+                DragGesture(minimumDistance: 0, coordinateSpace: .named("viewport_container"))
+                    .onChanged { value in
+                        if interactionMode == .undecided {
+                            // 開始時に Shift の状態を見て選択意図（トグルか置換か）を固定
+                            selectionIntent = (modifierKeys?.isShiftPressed == true) ? .toggle : .replace
+                            
+                            // 移動距離が閾値を超えたらドラッグモードへ移行
+                            let translation = sqrt(pow(value.translation.width, 2) + pow(value.translation.height, 2))
+                            if translation > 4 {
+                                interactionMode = .drag
+                                startDragging(at: value.location)
+                            }
+                        } else if interactionMode == .drag {
+                            updateDragging(to: value.location)
+                        }
+                    }
+                    .onEnded { value in
+                        if interactionMode == .drag {
+                            stopDragging()
+                        } else {
+                            // クリック判定: キャプチャされた意図に基づいて選択を実行
+                            performSelection()
+                        }
+                        
+                        // リセット
+                        interactionMode = .undecided
+                    }
+            )
+    }
+    
+    private func startDragging(at location: CGPoint) {
+        guard store.runtimeState.interactivity.nodesDraggable else { return }
+        let viewport = store.runtimeState.viewport.viewport
+        let graphPointer = XYPosition(x: location.x, y: location.y).fromScreen(viewport: viewport)
+        
+        // 複数選択時のドラッグ対応
+        let dragNodeIDs: [String] = node.selected ? Array(store.runtimeState.selection.selectedNodeIDs) : [node.id]
+        store.startDragging(nodeIDs: dragNodeIDs, at: graphPointer)
+        onEvent?(.dragStart(nodeIDs: dragNodeIDs))
+    }
+    
+    private func updateDragging(to location: CGPoint) {
+        let viewport = store.runtimeState.viewport.viewport
+        let graphPointer = XYPosition(x: location.x, y: location.y).fromScreen(viewport: viewport)
+        store.updateAutoPan(at: XYPosition(x: location.x, y: location.y))
+        store.updateDragging(to: graphPointer)
+        onEvent?(.dragUpdate(nodeIDs: [node.id]))
+    }
+    
+    private func stopDragging() {
+        let draggedIDs = store.runtimeState.drag.draggedNodes.map { $0.id }
+        store.stopDragging()
+        onEvent?(.dragStop(nodeIDs: draggedIDs))
+    }
+    
+    private func performSelection() {
+        guard store.runtimeState.interactivity.elementsSelectable else { return }
+        if selectionIntent == .toggle {
+            store.toggleNodeSelection(node.id)
+        } else {
+            store.selectNode(node.id)
         }
     }
 }
@@ -295,6 +369,30 @@ internal struct GraphLayerStack<NodeData: Sendable, NodeContent: View>: View {
     let containerSize: Dimensions
     let nodeWrapper: (BaseNode<NodeData>, AnyView) -> AnyView
     
+    @Environment(\.graphRenderingViewport) private var renderingViewport
+    
+    init(
+        store: GraphStore<NodeData>,
+        nodeBuilder: @escaping (BaseNode<NodeData>) -> NodeContent,
+        edgeBuilder: @escaping (BaseEdge<NodeData>, [PathSegment], Color, CGFloat, Viewport, Dimensions, Bool, Bool) -> AnyView,
+        onReconnect: ((String, Connection) -> Void)?,
+        modifierKeys: ModifierKeysProvider?,
+        containerSize: Dimensions,
+        nodeWrapper: @escaping (BaseNode<NodeData>, AnyView) -> AnyView
+    ) {
+        self.store = store
+        self.nodeBuilder = nodeBuilder
+        self.edgeBuilder = edgeBuilder
+        self.onReconnect = onReconnect
+        self.modifierKeys = modifierKeys
+        self.containerSize = containerSize
+        self.nodeWrapper = nodeWrapper
+    }
+
+    private var activeViewport: Viewport {
+        renderingViewport ?? store.runtimeState.viewport.viewport
+    }
+
     var body: some View {
         ZStack(alignment: .topLeading) {
             edgeLayer
@@ -353,7 +451,7 @@ internal struct GraphLayerStack<NodeData: Sendable, NodeContent: View>: View {
         ForEach(sortedIDs, id: \.self) { id in
             if let node = lookup[id] {
                 let absolutePos = self.store.absolutePosition(for: node.id)
-                let viewport = self.store.runtimeState.viewport.viewport
+                let viewport = self.activeViewport
                 let screenPos = absolutePos.toScreen(viewport: viewport)
                 
                 let content = NodeMeasurementWrapper(id: node.id, content: self.nodeBuilder(node))
@@ -375,8 +473,19 @@ extension GraphView where NodeContent == DefaultNodeView<NodeData> {
         self.init(store: store, onEvent: onEvent, onConnect: onConnect, onReconnect: onReconnect, nodeBuilder: { node in
             DefaultNodeView(node: node, store: store, onConnect: onConnect)
         }, backgroundBuilder: {
-            AnyView(BackgroundView(viewport: store.runtimeState.viewport.viewport))
+            AnyView(GraphBackgroundViewWrapper(store: store))
         })
+    }
+}
+
+/// 背景描画の Viewport 解決用ラッパー
+private struct GraphBackgroundViewWrapper<NodeData: Sendable>: View {
+    let store: GraphStore<NodeData>
+    @Environment(\.graphRenderingViewport) private var renderingViewport
+    
+    var body: some View {
+        let viewport = renderingViewport ?? store.runtimeState.viewport.viewport
+        AnyView(BackgroundView(viewport: viewport))
     }
 }
 
@@ -393,7 +502,8 @@ public struct DefaultNodeView<NodeData: Sendable>: View {
     }
 
     @Environment(\.graphZoomLevel) private var zoomLevel
-    
+    @Environment(\.graphRenderingViewport) private var renderingViewport
+
     public var body: some View {
         let zoomScale = max(CGFloat(zoomLevel), 0.0001)
         let nodeWidth = node.width.map { CGFloat($0) * zoomScale }
@@ -452,6 +562,8 @@ struct ConnectionPreviewLine<NodeData: Sendable>: View {
     let active: ConnectionInProgressState
     let store: GraphStore<NodeData>
     
+    @Environment(\.graphRenderingViewport) private var renderingViewport
+    
     var body: some View {
         let sourceKey = HandleKey(nodeID: active.fromNodeID, handleID: active.fromHandleID, type: active.fromHandleType, placement: active.fromHandlePosition)
         let sourcePos = store.resolvedHandlePosition(for: sourceKey)
@@ -466,7 +578,8 @@ struct ConnectionPreviewLine<NodeData: Sendable>: View {
             }
         }()
         
-        let viewport = store.runtimeState.viewport.viewport
+        // 描画用のビューポートを優先
+        let viewport = renderingViewport ?? store.runtimeState.viewport.viewport
         let sourceScreen = sourcePos.toScreen(viewport: viewport)
         let targetScreen = targetPos.toScreen(viewport: viewport)
         

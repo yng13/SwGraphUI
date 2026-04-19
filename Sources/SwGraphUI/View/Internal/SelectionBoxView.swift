@@ -7,6 +7,7 @@ struct SelectionBoxView<Data: Sendable>: View {
     
     // エクスポート中などの判定用（もし将来的に必要であれば）
     @Environment(\.isGraphExporting) private var isGraphExporting
+    @Environment(\.graphRenderingViewport) private var renderingViewport
     
     var body: some View {
         let selectedNodes = store.selectedNodes
@@ -17,7 +18,7 @@ struct SelectionBoxView<Data: Sendable>: View {
             let lookup = store.nodeLookup
             let bounds = NodePositioningAlgorithms.getNodesBounds(selectedNodes, nodeLookup: lookup)
             
-            let viewport = store.runtimeState.viewport.viewport
+            let viewport = renderingViewport ?? store.runtimeState.viewport.viewport
             let screenBounds = bounds.toScreen(viewport: viewport)
             
             // 境界枠のレンダリング

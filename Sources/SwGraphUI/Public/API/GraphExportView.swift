@@ -58,5 +58,7 @@ internal struct GraphExportView<NodeData: Sendable, NodeContent: View>: View {
         }
         .frame(width: contentSize.width, height: contentSize.height)
         .environment(\.isGraphExporting, true)
+        .environment(\.graphRenderingViewport, Viewport.identity)
+        .environment(\.graphZoomLevel, 1.0)
     }
 }

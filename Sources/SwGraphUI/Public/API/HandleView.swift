@@ -15,6 +15,7 @@ public struct HandleView<NodeData: Sendable>: View {
     private let hitAreaPadding: CGFloat = 8
     private let handleSize: CGFloat = 6
     @Environment(\.graphZoomLevel) private var zoomLevel
+    @Environment(\.isGraphExporting) private var isGraphExporting
     
     public init(
         nodeID: String,
@@ -53,10 +54,12 @@ public struct HandleView<NodeData: Sendable>: View {
                         x: frame.midX,
                         y: frame.midY
                     )
+                    
                     Color.clear
                         .preference(
                             key: HandlePositionPreferenceKey.self,
-                            value: [
+                            // エクスポート中は座標報告を抑制し、ライブデータの破壊を防ぐ
+                            value: isGraphExporting ? [] : [
                                 HandleMeasurementEntry(
                                     key: HandleKey(nodeID: nodeID, handleID: handleID, type: type, placement: placement),
                                     viewportCenter: viewportCenter

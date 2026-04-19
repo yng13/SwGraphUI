@@ -176,6 +176,8 @@ public struct Viewport: Sendable, Equatable, Codable {
         self.y = y
         self.zoom = zoom
     }
+    
+    public static let identity = Viewport(x: 0, y: 0, zoom: 1)
 }
 
 public struct Transform: Sendable, Equatable {
