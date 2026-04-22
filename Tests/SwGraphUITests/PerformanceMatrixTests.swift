@@ -5,7 +5,7 @@ import Foundation
 @MainActor
 final class PerformanceMatrixTests: XCTestCase {
     
-    // 補助メソッド: 高精度な時間計測用
+    // Helper method: For high-precision time measurement | 補助メソッド: 高精度な時間計測用
     private func measureTime<T>(_ title: String, operation: () throws -> T) rethrows -> (T, Double) {
         let start = DispatchTime.now()
         let result = try operation()
@@ -16,7 +16,7 @@ final class PerformanceMatrixTests: XCTestCase {
     }
 
     /// 1. Construction Smoke Test
-    /// 1,000 nodes / 999 edges のグラフを線形で構築し、整合性と所要時間をログ出力。
+    /// Build a linear graph of 1,000 nodes / 999 edges, and log consistency and time taken. | 1,000 nodes / 999 edges のグラフを線形で構築し、整合性と所要時間をログ出力。
     func testLargeGraphConstructionSmoke() throws {
         var nodes: [BaseNode<String>] = []
         var edges: [BaseEdge<String>] = []
@@ -38,7 +38,7 @@ final class PerformanceMatrixTests: XCTestCase {
     }
     
     /// 2. Selection & Snapshot Smoke Test
-    /// selectAll() および snapshot() の実行コストを計測。
+    /// Measure execution cost of selectAll() and snapshot(). | selectAll() および snapshot() の実行コストを計測。
     func testLargeGraphSelectionAndSnapshotSmoke() throws {
         let store = GraphStore<String>()
         for i in 0..<1000 {
@@ -62,7 +62,7 @@ final class PerformanceMatrixTests: XCTestCase {
     }
     
     /// 3. Move & Undo Smoke Test
-    /// 全選択ノード移動と Undo/Redo の計測。
+    /// Measure multi-node dragging and Undo/Redo operations. | 全選択ノード移動と Undo/Redo の計測。
     func testLargeGraphMoveUndoSmoke() throws {
         let undoManager = UndoManager()
         let store = GraphStore<String>(undoManager: undoManager)
@@ -92,8 +92,8 @@ final class PerformanceMatrixTests: XCTestCase {
     }
     
     /// 4. Layout Smoke Test
-    /// applyLayout (Tree Style) の 1,000 ノードに対する適用時間を計測。
-    /// 比較の安定のため、単純な chain 構造のグラフを使用。
+    /// Measure execution time of applyLayout (Tree Style) for 1,000 nodes. | applyLayout (Tree Style) の 1,000 ノードに対する適用時間を計測。
+    /// Use a simple chain-structured graph for comparison stability. | 比較の安定のため、単純な chain 構造のグラフを使用。
     func testLargeGraphLayoutSmoke() throws {
         var nodes: [BaseNode<String>] = []
         var edges: [BaseEdge<String>] = []
@@ -110,7 +110,7 @@ final class PerformanceMatrixTests: XCTestCase {
         }
         
         XCTAssertEqual(store.nodes.count, 1000)
-        // 少なくとも初期位置 .zero から移動していることを確認
+        // Confirm that it has moved from the initial position .zero at least | 少なくとも初期位置 .zero から移動していることを確認
         XCTAssertNotEqual(store.nodes.last?.position, .zero)
         
         print("[Perf] Milestone 35 Layout Baseline: layout=\(String(format: "%.2f", layoutTime))ms")

@@ -7,15 +7,15 @@ public struct EdgePathResult: Sendable, Equatable {
     public var offsetX: Double
     public var offsetY: Double
 
-    /// SVG 互換のパス文字列。segments から動的に生成します。
+    /// SVG-compatible path string. Generated dynamically from segments. | SVG 互換のパス文字列。segments から動的に生成します。
     public var path: String {
         segments.toSVGString()
     }
 
-    /// ターゲット地点におけるパスの接線角度（ラジアン）。マーカーの向きに使用。
+    /// Tangent angle of the path at the target point (in radians). Used for marker orientation. | ターゲット地点におけるパスの接線角度（ラジアン）。マーカーの向きに使用。
     public var targetTangentAngle: Double?
 
-    /// ソース地点におけるパスの接線角度（ラジアン）。始点マーカーの向きに使用。
+    /// Tangent angle of the path at the source point (in radians). Used for source marker orientation. | ソース地点におけるパスの接線角度（ラジアン）。始点マーカーの向きに使用。
     public var sourceTangentAngle: Double?
 
     public init(
@@ -38,7 +38,7 @@ public struct EdgePathResult: Sendable, Equatable {
 }
 
 extension Array where Element == PathSegment {
-    /// SVG 互換のパス文字列に変換します。
+    /// Converts to an SVG-compatible path string. | SVG 互換のパス文字列に変換します。
     public func toSVGString() -> String {
         self.map { segment in
             switch segment {
@@ -181,12 +181,12 @@ public enum EdgePathAlgorithms {
         }
         segments.append(.line(to: result.points[result.points.count - 1]))
 
-        // 接線角度: 最後のセグメントの方向
+        // Tangent angle: Direction of the last segment | 接線角度: 最後のセグメントの方向
         let lastPoint = result.points[result.points.count - 1]
         let prevPoint = result.points[result.points.count - 2]
         let targetTangent = atan2(lastPoint.y - prevPoint.y, lastPoint.x - prevPoint.x)
 
-        // 始点の接線角度: 最初のセグメントの方向
+        // Tangent angle of the start point: Direction of the first segment | 始点の接線角度: 最初のセグメントの方向
         let firstPoint = result.points[0]
         let secondPoint = result.points[1]
         let sourceTangent = atan2(secondPoint.y - firstPoint.y, secondPoint.x - firstPoint.x)
@@ -391,9 +391,9 @@ public enum EdgePathAlgorithms {
             }
         }
 
-        // 視覚的中心の最終調整: 
-        // 複雑なパスや曲げがある場合でも、主たる水平または垂直なセグメントの中央を指すようにし、
-        // 意図しない「端」への寄りを防ぐ（現状の実装で主セグメントの中央を捉えていることを確認済み）。
+        // Final adjustment of the visual center: | 視覚的中心の最終調整:
+        // Even for complex paths with multiple bends, ensure it points to the center of the main horizontal or vertical segment, | 複雑なパスや曲げがある場合でも、主たる水平または垂直なセグメントの中央を指すようにし、
+        // preventing unintended bias toward the ends (confirmed that current implementation captures the center of the main segment). | 意図しない「端」への寄りを防ぐ（現状の実装で主セグメントの中央を捉えていることを確認済み）。
 
         let gappedSource = XYPosition(x: sourceGapped.x + sourceGapOffset.x, y: sourceGapped.y + sourceGapOffset.y)
         let gappedTarget = XYPosition(x: targetGapped.x + targetGapOffset.x, y: targetGapped.y + targetGapOffset.y)

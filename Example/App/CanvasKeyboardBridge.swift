@@ -74,9 +74,9 @@ final class CanvasKeyboardView: NSView {
         keyMonitor = NSEvent.addLocalMonitorForEvents(matching: [.keyDown]) { [weak self] event in
             guard let self, let window else { return event }
 
-            // ガード: テキストフィールドなどがフォーカスされている場合は処理しない
+            // Guard: Do not process if text fields, etc., are focused | ガード: テキストフィールドなどがフォーカスされている場合は処理しない
             if let firstResponder = window.firstResponder {
-                // NSTextView (SwiftUI TextFieldの内部実装) や NSTextField を除外
+                // Exclude NSTextView (internal implementation of SwiftUI TextField) and NSTextField | NSTextView (SwiftUI TextFieldの内部実装) や NSTextField を除外
                 if firstResponder is NSText || firstResponder is NSTextField {
                     return event
                 }

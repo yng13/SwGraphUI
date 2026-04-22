@@ -7,8 +7,8 @@ import AppKit
 import UniformTypeIdentifiers
 #endif
 
-/// サンプルアプリ固有の状態（ログ、表示オプション、サンプル切り替え）を管理するストア。
-/// ライブラリ本体の GraphStore とは独立して動作します。
+/// A store that manages sample-app-specific states (logs, display options, sample switching). | サンプルアプリ固有の状態（ログ、表示オプション、サンプル切り替え）を管理するストア。
+/// Operates independently from the library's main GraphStore. | ライブラリ本体の GraphStore とは独立して動作します。
 @Observable @MainActor
 public final class ExampleAppStore {
     
@@ -33,15 +33,15 @@ public final class ExampleAppStore {
     public var selectedCategory: SampleCategory = .basic
     public var selectedSample: (any GraphSample)?
     
-    /// スナップショットのメモリ保持用
+    /// For memory retention of snapshots | スナップショットのメモリ保持用
     public var savedSnapshot: GraphSnapshot<String>?
     
-    /// 実測が必要なサンプル（Custom等）において、初回実測後の自動 fitView が完了したか
+    /// In samples requiring measurement (e.g., Custom), whether initial automatic fitView after measurement has completed | 実測が必要なサンプル（Custom等）において、初回実測後の自動 fitView が完了したか
     public var didAutoFitMeasuredSample: Bool = false
     
     // MARK: - Size Tracking
     
-    /// 現在の GraphView の表示領域サイズ。fitView 時に使用します。
+    /// Current display area size of GraphView. Used during fitView. | 現在の GraphView の表示領域サイズ。fitView 時に使用します。
     public var currentGraphSize: Dimensions = Dimensions(width: 800, height: 600)
     
     // MARK: - UI Options
@@ -58,10 +58,10 @@ public final class ExampleAppStore {
     public var isMiniMapVisible: Bool = true
     public var isControlsVisible: Bool = true
     
-    /// 背景の描画スタイル (dots, lines, cross)
+    /// Background drawing style (dots, lines, cross) | 背景の描画スタイル (dots, lines, cross)
     public var backgroundVariant: BackgroundVariant = .dots
     
-    /// エクスポート時に背景を含めるか
+    /// Whether to include the background during export | エクスポート時に背景を含めるか
     public var isExportBackgroundEnabled: Bool = false
     
     // MARK: - Debug Logging
@@ -81,7 +81,7 @@ public final class ExampleAppStore {
     
     public func appendLog(kind: String, payload: String = "") {
         let entry = LogEntry(kind: kind, payload: payload)
-        logs.insert(entry, at: 0) // 最新を上に
+        logs.insert(entry, at: 0) // Newest at top | 最新を上に
         
         if logs.count > maxLogCount {
             logs.removeLast()
@@ -94,7 +94,7 @@ public final class ExampleAppStore {
     
     // MARK: - Sample Registry
     
-    /// 全サンプルのレジストリ
+    /// Registry of all samples | 全サンプルのレジストリ
     private let allSamples: [any GraphSample] = [
         BasicSample(),
         HierarchySample(),
@@ -112,30 +112,30 @@ public final class ExampleAppStore {
         StressTestSample()
     ]
     
-    /// カテゴリに属するサンプルを返します
+    /// Returns samples belonging to a category | カテゴリに属するサンプルを返します
     public func samples(in category: SampleCategory) -> [any GraphSample] {
         allSamples.filter { $0.category == category }
     }
     
-    /// ID からサンプルを取得します。
+    /// Retrieves a sample by ID. | ID からサンプルを取得します。
     public func sample(id: String) -> (any GraphSample)? {
         allSamples.first { $0.id == id }
     }
     
-    /// 指定したサンプルのデータを GraphStore に適用します。
+    /// Applies data from the specified sample to GraphStore. | 指定したサンプルのデータを GraphStore に適用します。
     public func switchSample(to sample: any GraphSample, in graphStore: GraphStore<String>) {
         self.selectedCategory = sample.category
         self.selectedSample = sample
-        self.didAutoFitMeasuredSample = false // リセット
+        self.didAutoFitMeasuredSample = false // Reset | リセット
         appendLog(kind: "sample.select", payload: sample.title)
         
         sample.setup(in: graphStore, appStore: self)
         
-        // 切り替え時に自動で fitView を実行
+        // Automatically execute fitView when switching | 切り替え時に自動で fitView を実行
         graphStore.fitView(in: currentGraphSize)
     }
 
-    /// カテゴリのデフォルト要素を適用します（後方互換用）
+    /// Applies the default element of a category (for backward compatibility) | カテゴリのデフォルト要素を適用します（後方互換用）
     public func switchSample(to category: SampleCategory, in graphStore: GraphStore<String>) {
         if let firstSample = allSamples.first(where: { $0.category == category }) {
             switchSample(to: firstSample, in: graphStore)
@@ -144,11 +144,11 @@ public final class ExampleAppStore {
     
     // MARK: - Connection
     
-    /// 接続ドラッグが成功した際に呼ばれ、グラフに新しいエッジを追加します。
+    /// Called when connection drag is successful, adding a new edge to the graph. | 接続ドラッグが成功した際に呼ばれ、グラフに新しいエッジを追加します。
     public func addEdge(connection: Connection, in graphStore: GraphStore<String>) {
         appendLog(kind: "onConnect", payload: "\(connection.source) -> \(connection.target)")
         
-        // 簡易的な重複チェック
+        // Simple duplication check | 簡易的な重複チェック
         if graphStore.edges.contains(where: { $0.source == connection.source && $0.target == connection.target }) {
             appendLog(kind: "skip", payload: "Edge already exists")
             return
@@ -173,13 +173,13 @@ public final class ExampleAppStore {
     // MARK: - Export
     
     #if os(macOS)
-    /// グラフの内容を PNG として書き出します（macOS専用）
+    /// Exports graph content as PNG (macOS only) | グラフの内容を PNG として書き出します（macOS専用）
     public func exportToPNG(
         in graphStore: GraphStore<String>,
         @ViewBuilder nodeBuilder: @escaping (BaseNode<String>) -> AnyView
     ) {
         let exporter = PNGExporter(store: graphStore)
-        // 設定を適用 (scale: 2.0, margin: 32, 背景トグル反映)
+        // Apply settings (scale: 2.0, margin: 32, reflects background toggle) | 設定を適用 (scale: 2.0, margin: 32, 背景トグル反映)
         let settings = GraphExportSettings(
             scale: 2.0,
             margin: 32.0,
@@ -214,7 +214,7 @@ public final class ExampleAppStore {
         }
     }
     
-    /// グラフの内容を PDF として書き出します（macOS専用）
+    /// Exports graph content as PDF (macOS only) | グラフの内容を PDF として書き出します（macOS専用）
     public func exportToPDF(
         in graphStore: GraphStore<String>,
         @ViewBuilder nodeBuilder: @escaping (BaseNode<String>) -> AnyView

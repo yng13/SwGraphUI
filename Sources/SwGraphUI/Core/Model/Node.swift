@@ -122,10 +122,11 @@ public struct BaseNode<NodeData: Sendable>: Sendable, Identifiable {
         self.measured = measured
     }
 
-    /// 最小構成でノードを作成するためのイニシャライザ。
+    /// Initializer to create a node with minimal configuration. | 最小構成でノードを作成するためのイニシャライザ。
     ///
-    /// 必須項目（id, position, data）のみを引数に取り、それ以外（zIndex, handles, resizable 等）はシステム既定のデフォルト値が適用されます。
-    /// 詳細な初期化が必要な場合は、全引数を網羅したフルイニシャライザを使用してください。
+    /// Only essential properties (id, position, data) are passed as arguments, and others (zIndex, handles, resizable, etc.) use system-defined default values. | 必須項目（id, position, data）のみを引数に取り、それ以外（zIndex, handles, resizable 等）はシステム既定のデフォルト値が適用されます。
+    ///
+    /// Use the full initializer if detailed configuration is required. | 詳細な初期化が必要な場合は、全引数を網羅したフルイニシャライザを使用してください。
     public init(
         id: String,
         position: XYPosition,
@@ -212,7 +213,7 @@ extension BaseNode: Codable where NodeData: Codable {
         self.initialWidth = try container.decodeIfPresent(Double.self, forKey: .initialWidth)
         self.initialHeight = try container.decodeIfPresent(Double.self, forKey: .initialHeight)
         
-        // 過渡的状態やランタイム計算値は常にデフォルト値で初期化
+        // Transient states and runtime calculation values are always initialized with default values | 過渡的状態やランタイム計算値は常にデフォルト値で初期化
         self.selected = false
         self.dragging = false
         self.measured = nil
@@ -246,7 +247,7 @@ extension BaseNode: Codable where NodeData: Codable {
         try container.encode(minWidth, forKey: .minWidth)
         try container.encode(minHeight, forKey: .minHeight)
         
-        // infinity は JSON で扱えないため nil (null) としてエンコード
+        // encode infinity as nil (null) since it cannot be handled in JSON | infinity は JSON で扱えないため nil (null) としてエンコード
         try container.encode(maxWidth == .infinity ? nil : maxWidth, forKey: .maxWidth)
         try container.encode(maxHeight == .infinity ? nil : maxHeight, forKey: .maxHeight)
         

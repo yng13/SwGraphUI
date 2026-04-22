@@ -1,18 +1,18 @@
 import SwiftUI
 import SwGraphUI
 
-/// 自動レイアウト（階層型/Tree）のデモンストレーションを行うサンプル。
-/// 複雑な接続関係を持つノード群を、ボタン一つで整列させることができます。
+/// A sample demonstrating automatic layout (hierarchical/tree). | 自動レイアウト（階層型/Tree）のデモンストレーションを行うサンプル。
+/// Nodes with complex connectivity can be arranged with a single button. | 複雑な接続関係を持つノード群を、ボタン一つで整列させることができます。
 public struct DagreTreeSample: GraphSample {
     public let title = "Dagre Tree Layout"
     public let category: ExampleAppStore.SampleCategory = .layout
-    public let description = "階層型レイアウトアルゴリズムのデモ。複雑な接続を自動で整列します。"
+    public let description = "Demo of hierarchical layout algorithm. Automatically arranges complex connections. | 階層型レイアウトアルゴリズムのデモ。複雑な接続を自動で整列します。"
     
     public init() {}
     
     @MainActor
     public func setup(in graphStore: GraphStore<String>, appStore: ExampleAppStore) {
-        // 初期ノードを生成 (バラバラに配置)
+        // Generate initial nodes (placed randomly) | 初期ノードを生成 (バラバラに配置)
         let nodes: [BaseNode<String>] = [
             BaseNode(id: "1", position: .init(x: 10, y: 10), data: "Root", width: 100, height: 40),
             BaseNode(id: "2", position: .init(x: 150, y: 10), data: "Child A", width: 100, height: 40),

@@ -1,11 +1,9 @@
 import Foundation
 import Observation
 
-/// 
-/// グラフの実行時状態（一時的な状態）を一括管理するクラス。
-/// 
+/// Class that centrally manages the runtime state (temporary state) of the graph. | グラフの実行時状態（一時的な状態）を一括管理するクラス。
 
-/// ノードの選択状態
+/// Node selection state | ノードの選択状態
 public struct SelectionState: Sendable, Equatable {
     public private(set) var selectedNodeIDs: Set<String>
     public private(set) var selectedEdgeIDs: Set<String>
@@ -53,7 +51,7 @@ public struct SelectionState: Sendable, Equatable {
     }
 }
 
-/// ホバー状態
+/// Hover state | ホバー状態
 public struct HoverState: Sendable, Equatable {
     public var hoveredNodeID: String?
     public var hoveredEdgeID: String?
@@ -69,7 +67,7 @@ public struct HoverState: Sendable, Equatable {
     }
 }
 
-/// ドラッグ状態
+/// Drag state | ドラッグ状態
 public struct DragState: Sendable, Equatable {
     public var draggedNodes: [NodeDragItem]
     public var currentPointer: XYPosition?
@@ -106,19 +104,19 @@ public struct DragState: Sendable, Equatable {
     }
 }
 
-/// 接続操作のモード（新規または再接続）
+/// Connection operation mode (new or reconnect) | 接続操作のモード（新規または再接続）
 public enum ConnectionActionType: Sendable, Equatable {
     case connect
     case reconnect(edgeID: String, isSource: Bool)
     
-    /// 再接続中のエッジID（新規接続時はnil）
+    /// ID of the edge being reconnected (nil during new connection) | 再接続中のエッジID（新規接続時はnil）
     public var edgeID: String? {
         if case .reconnect(let id, _) = self { return id }
         return nil
     }
 }
 
-/// 進行中の接続状態
+/// State of a connection in progress | 進行中の接続状態
 public struct ConnectionInProgressState: Sendable, Equatable {
     public var mode: ConnectionActionType
     public var fromNodeID: String
@@ -156,7 +154,7 @@ public struct ConnectionInProgressState: Sendable, Equatable {
     }
 }
 
-/// 接続操作の実行時状態
+/// Runtime state of connection operations | 接続操作の実行時状態
 public struct ConnectionState: Sendable, Equatable {
     public var active: ConnectionInProgressState?
 
@@ -202,7 +200,7 @@ public struct ConnectionState: Sendable, Equatable {
     }
 }
 
-/// ビューポート状態
+/// Viewport state | ビューポート状態
 public struct ViewportState: Sendable, Equatable {
     public private(set) var viewport: Viewport
 
@@ -246,13 +244,13 @@ public struct ViewportState: Sendable, Equatable {
         )
     }
 
-    /// スクリーン座標をグラフ空間の座標に変換します。
+    /// Converts screen coordinates to coordinates in graph space. | スクリーン座標をグラフ空間の座標に変換します。
     public func toGraphSpace(_ screenPoint: XYPosition) -> XYPosition {
         screenPoint.fromScreen(viewport: viewport)
     }
 }
 
-/// ハンドルの実測座標を保持する状態
+/// State holding the measured coordinates of handles | ハンドルの実測座標を保持する状態
 public struct HandleMeasurementState: Sendable, Equatable {
     public internal(set) var positions: [HandleKey: XYPosition] = [:]
     
@@ -261,15 +259,15 @@ public struct HandleMeasurementState: Sendable, Equatable {
     }
 }
 
-/// オートパン（自動スクロール）の状態
+/// State of auto-pan (automatic scrolling) | オートパン（自動スクロール）の状態
 public struct AutoPanState: Sendable, Equatable {
-    /// オートパンが現在動作中かどうか
+    /// Whether auto-pan is currently active | オートパンが現在動作中かどうか
     public var isActive: Bool = false
-    /// 現在のマウス/ポインタ位置（スクリーン座標系）
+    /// Current mouse/pointer position (screen coordinate system) | 現在のマウス/ポインタ位置（スクリーン座標系）
     public var mousePosition: XYPosition?
-    /// 現在の算出速度（加算量）
+    /// Current calculated velocity (increment amount) | 現在の算出速度（加算量）
     public var velocity: XYPosition = .zero
-    /// 描画コンテナの寸法（速度計算の基準）
+    /// Dimensions of the drawing container (reference for velocity calculation) | 描画コンテナの寸法（速度計算の基準）
     public var containerSize: Dimensions?
     
     public init(
@@ -291,7 +289,7 @@ public struct AutoPanState: Sendable, Equatable {
     }
 }
 
-/// インタラクション制御状態
+/// Interaction control state | インタラクション制御状態
 public struct InteractivityState: Sendable, Equatable {
     public var nodesDraggable: Bool = true
     public var nodesConnectable: Bool = true
@@ -323,7 +321,7 @@ public struct InteractivityState: Sendable, Equatable {
     }
 }
 
-/// グラフの実行時状態（一時的な状態）を一括管理するクラス。
+/// Class that centrally manages the runtime state (temporary state) of the graph. | グラフの実行時状態（一時的な状態）を一括管理するクラス。
 @Observable
 @MainActor
 public final class GraphRuntimeState: Sendable {
@@ -336,12 +334,12 @@ public final class GraphRuntimeState: Sendable {
     public var autoPan: AutoPanState
     public var interactivity: InteractivityState
     
-    /// 矩形選択（Marquee）の状態。
+    /// State of marquee selection (Marquee). | 矩形選択（Marquee）の状態。
     public struct MarqueeState: Sendable, Equatable {
         public let startPos: CGPoint
         public var currentPos: CGPoint
         
-        /// ビューポート座標系での矩形領域。
+        /// Rectangular area in the viewport coordinate system. | ビューポート座標系での矩形領域。
         public var rect: CGRect {
             CGRect(
                 x: min(startPos.x, currentPos.x),
@@ -354,12 +352,12 @@ public final class GraphRuntimeState: Sendable {
     
     public var marquee: MarqueeState?
     
-    /// 描画順序が確定済みのノード ID リスト（zIndex や階層を考慮）。
+    /// List of node IDs with determined rendering order (accounting for zIndex and hierarchy). | 描画順序が確定済みのノード ID リスト（zIndex や階層を考慮）。
     public var sortedNodeIDs: [String] = []
     
-    /// 絶対座標のキャッシュ。再計算コストを削減するための内部用。
+    /// Cache of absolute coordinates. Internal use to reduce recalculation costs. | 絶対座標のキャッシュ。再計算コストを削減するための内部用。
     public var absolutePositionCache: [String: XYPosition] = [:]
-    /// キャッシュが有効かどうか。ノードの位置が変更されたら false になります。
+    /// Whether the cache is valid. Becomes false when node positions are changed. | キャッシュが有効かどうか。ノードの位置が変更されたら false になります。
     public var isAbsolutePositionCacheValid: Bool = false
     
     public init(

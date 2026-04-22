@@ -9,7 +9,7 @@ struct NodeResizerSample: GraphSample {
     @MainActor
     func setup(in graphStore: GraphStore<String>, appStore: ExampleAppStore) {
         graphStore.nodes = [
-            // アスペクト比維持のデモ用ノード
+            // Node for aspect ratio maintenance demo | アスペクト比維持のデモ用ノード
             BaseNode(
                 id: "resizer-1", 
                 position: XYPosition(x: 50, y: 50), 
@@ -20,7 +20,7 @@ struct NodeResizerSample: GraphSample {
                 minWidth: 80,
                 minHeight: 65
             ),
-            // 最小・最大の両方の制約を持たせたノード
+            // Node with both minimum and maximum constraints | 最小・最大の両方の制約を持たせたノード
             BaseNode(
                 id: "resizer-2", 
                 position: XYPosition(x: 350, y: 100), 
@@ -40,7 +40,7 @@ struct NodeResizerSample: GraphSample {
     }
 }
 
-/// NodeResizerSample で使用するノードの見た目
+/// Appearance of the node used in NodeResizerSample | NodeResizerSample で使用するノードの見た目
 struct ResizableNodeView: View {
     let node: BaseNode<String>
     @Environment(\.graphZoomLevel) private var zoomLevel
@@ -51,7 +51,7 @@ struct ResizableNodeView: View {
         let height = node.height.map { CGFloat($0) * scale }
         
         ZStack {
-            // 背景（ここがノードの実体サイズを決定する。クリッピングの影響を受けないように個別に frame を適用）
+            // Background (determines the actual size of the node. Apply frame individually to avoid clipping effects) | 背景（ここがノードの実体サイズを決定する。クリッピングの影響を受けないように個別に frame を適用）
             RoundedRectangle(cornerRadius: 12 * scale)
                 .fill(Color(NSColor.windowBackgroundColor))
                 .shadow(color: .black.opacity(node.selected ? 0.2 : 0.1), radius: node.selected ? 8 : 2)
@@ -61,7 +61,7 @@ struct ResizableNodeView: View {
                 )
                 .frame(width: width, height: height)
             
-            // コンテンツ（ここでもサイズを固定し、はみ出しを内部でクリップする）
+            // Content (fix size here too, and clip overflow internally) | コンテンツ（ここでもサイズを固定し、はみ出しを内部でクリップする）
             VStack {
                 Text(node.id)
                     .font(.system(size: 12 * scale))
@@ -82,7 +82,7 @@ struct ResizableNodeView: View {
             .frame(width: width, height: height)
             .clipped()
         }
-        // リサイザーは枠外のハンドルを表示可能にするため、クリップされていない親 ZStack の overlay として配置
+        // Placed as an overlay of the unclipped parent ZStack to allow resizer handles outside the frame | リサイザーは枠外のハンドルを表示可能にするため、クリップされていない親 ZStack の overlay として配置
         .overlay {
             NodeResizer<String>(node: node)
         }

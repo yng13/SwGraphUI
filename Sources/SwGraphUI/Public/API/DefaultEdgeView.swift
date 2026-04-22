@@ -3,8 +3,8 @@ import SwiftUI
 import AppKit
 #endif
 
-/// グラフライブラリ標準のエッジ（接続線）表示。
-/// ノードの背面に配置されるパス本体を担当します。
+/// Standard edge (connection line) display for the graph library. | グラフライブラリ標準のエッジ（接続線）表示。
+/// Responsible for the path body placed behind nodes. | ノードの背面に配置されるパス本体を担当します。
 public struct DefaultEdgeView<NodeData: Sendable>: View {
     let edge: BaseEdge<NodeData>
     let store: GraphStore<NodeData>
@@ -86,11 +86,11 @@ public struct DefaultEdgeView<NodeData: Sendable>: View {
             let targetNode = store.node(id: edge.target)
             let sourceLabel = sourceNode?.ariaLabel ?? sourceNode?.label ?? edge.source
             let targetLabel = targetNode?.ariaLabel ?? targetNode?.label ?? edge.target
-            let edgeLabel = edge.ariaLabel ?? edge.label ?? "\(sourceLabel) から \(targetLabel) への接続"
+            let edgeLabel = edge.ariaLabel ?? edge.label ?? "Connection from \(sourceLabel) to \(targetLabel) | \(sourceLabel) から \(targetLabel) への接続"
 
             return AnyView(
                 ZStack {
-                    // 1. ヒットエリア（太いパス判定）
+                    // 1. Hit area (thick path judgment) | 1. ヒットエリア（太いパス判定）
                     path
                         .stroke(Color.black.opacity(0.0001), lineWidth: 20)
                         .contentShape(path.stroke(lineWidth: 20))
@@ -102,7 +102,7 @@ public struct DefaultEdgeView<NodeData: Sendable>: View {
                             }
                         }
 
-                    // 2. 表示用エッジ
+                    // 2. Edge for display | 2. 表示用エッジ
                     Group {
                         edgeBodyBuilder(
                             adjustedSegments,
@@ -115,7 +115,7 @@ public struct DefaultEdgeView<NodeData: Sendable>: View {
                     }
                     .opacity(isReconnecting ? 0.3 : 1.0)
                     
-                    // 3. 始点マーカー
+                    // 3. Start marker | 3. 始点マーカー
                     if let marker = edge.markerStart {
                         let screenPos = sourceHandlePos.toScreen(viewport: viewport)
                         ArrowHead(
@@ -132,7 +132,7 @@ public struct DefaultEdgeView<NodeData: Sendable>: View {
                         .opacity(isReconnecting ? 0.3 : 1.0)
                     }
 
-                    // 4. 終了マーカー（矢印）
+                    // 4. End marker (arrow) | 4. 終了マーカー（矢印）
                     if let marker = edge.markerEnd {
                         let screenPos = targetHandlePos.toScreen(viewport: viewport)
                         ArrowHead(
@@ -171,8 +171,8 @@ public struct DefaultEdgeView<NodeData: Sendable>: View {
     }
 }
 
-/// エッジのオーバーレイ（ラベル、再接続ハンドル）を表示。
-/// ノードの前面に配置されることを想定しています。
+/// Displays the edge overlay (labels, reconnection handles). | エッジのオーバーレイ（ラベル、再接続ハンドル）を表示。
+/// Assumed to be placed in front of nodes. | ノードの前面に配置されることを想定しています。
 public struct DefaultEdgeOverlayView<NodeData: Sendable>: View {
     let edge: BaseEdge<NodeData>
     let store: GraphStore<NodeData>
@@ -210,14 +210,14 @@ public struct DefaultEdgeOverlayView<NodeData: Sendable>: View {
             let screenLabelPos = XYPosition(x: baseResult.labelX, y: baseResult.labelY).toScreen(viewport: viewport)
 
             ZStack {
-                // 1. ラベル表示
+                // 1. Label display | 1. ラベル表示
                 if let label = edge.label, !label.isEmpty {
                     EdgeLabelView(label: label, style: edge.labelStyle)
                         .position(x: screenLabelPos.x, y: screenLabelPos.y)
                 }
 
-                // 2. 再接続ハンドル（ラベルより前面へ）
-                // エクスポート時（onReconnect == nil）は表示しない
+                // 2. Reconnection handle (brought to the front of the label) | 2. 再接続ハンドル（ラベルより前面へ）
+                // Not displayed during export (onReconnect == nil) | エクスポート時（onReconnect == nil）は表示しない
                 if edge.selected, onReconnect != nil {
                     let sourceKey = HandleKey(nodeID: edge.source, handleID: edge.sourceHandle, type: .source, placement: edge.sourcePosition ?? .right)
                     let targetKey = HandleKey(nodeID: edge.target, handleID: edge.targetHandle, type: .target, placement: edge.targetPosition ?? .left)
@@ -254,7 +254,7 @@ public struct DefaultEdgeOverlayView<NodeData: Sendable>: View {
     }
 }
 
-// 共通ユーティリティを内部クラスに集約
+// Aggregate common utilities into an internal class | 共通ユーティリティを内部クラスに集約
 private struct DefaultEdgeViewUtils {
     static func shortenedPosition(
         at original: XYPosition,
@@ -270,10 +270,10 @@ private struct DefaultEdgeViewUtils {
         let dy = sin(angle) * backoff
         
         if isSource {
-            // Source はパスの進行方向へ移動して短縮
+            // Source is shortened by moving in the direction of the path | Source はパスの進行方向へ移動して短縮
             return XYPosition(x: original.x + dx, y: original.y + dy)
         } else {
-            // Target はパスの進行方向の逆へ移動して短縮
+            // Target is shortened by moving opposite to the direction of the path | Target はパスの進行方向の逆へ移動して短縮
             return XYPosition(x: original.x - dx, y: original.y - dy)
         }
     }
@@ -315,7 +315,7 @@ private struct DefaultEdgeViewUtils {
     }
 }
 
-/// 再接続のためのドラッグハンドル
+/// Drag handle for reconnection | 再接続のためのドラッグハンドル
 struct ReconnectAnchor<NodeData: Sendable>: View {
     let edge: BaseEdge<NodeData>
     let handleType: HandleType
@@ -328,7 +328,7 @@ struct ReconnectAnchor<NodeData: Sendable>: View {
     var body: some View {
         let isConnecting = store.runtimeState.connection.isConnecting
         let isActive = store.runtimeState.connection.active?.mode.edgeID == edge.id
-        // ドラッグ中のもう片方のハンドルは半透明にする
+        // Make the other handle semi-transparent during dragging | ドラッグ中のもう片方のハンドルは半透明にする
         let opacity = (isConnecting && !isActive) ? 0.3 : 1.0
         
         Circle()
@@ -337,7 +337,7 @@ struct ReconnectAnchor<NodeData: Sendable>: View {
             .scaleEffect(isHovering || isActive ? 1.2 : 1.0)
             .animation(.spring(response: 0.2), value: isHovering || isActive)
             .opacity(opacity)
-            .padding(12) // ヒットエリア
+            .padding(12) // Hit area | ヒットエリア
             .contentShape(Circle())
             .position(position)
             .onHover { inside in
@@ -377,7 +377,7 @@ struct ReconnectAnchor<NodeData: Sendable>: View {
                                 mode: .reconnect(edgeID: edge.id, isSource: isReconnectingSource)
                             )
                         } else {
-                            // オートパンへの通知 (Screen space)
+                            // Notify auto-pan (Screen space) | オートパンへの通知 (Screen space)
                             store.updateAutoPan(at: XYPosition(x: value.location.x, y: value.location.y))
                             
                             if let nearest = store.findHandle(near: graphPointer, threshold: ConnectionInteractionManager.snapDistance) {
@@ -435,7 +435,7 @@ private struct ArrowHead: View {
 
 
 extension EdgePathAlgorithms {
-    // 既存の calculatePath への公開アクセスをサポート
+    // Support public access to existing calculatePath | 既存の calculatePath への公開アクセスをサポート
     static func calculatePath(
         source: XYPosition,
         target: XYPosition,

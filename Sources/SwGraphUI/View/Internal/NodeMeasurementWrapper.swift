@@ -1,6 +1,6 @@
 import SwiftUI
 
-/// コンテンツのサイズを測定し、PreferenceKey を通じて通知するラッパー
+/// Wrapper that measures the size of content and notifies via PreferenceKey | コンテンツのサイズを測定し、PreferenceKey を通じて通知するラッパー
 struct NodeMeasurementWrapper<Content: View>: View {
     let id: String
     let content: Content

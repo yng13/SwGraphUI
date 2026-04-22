@@ -2,8 +2,8 @@
 import AppKit
 import SwiftUI
 
-/// キャンバス上での macOS のスクロールイベントを捕捉する監視クラス。
-/// GraphView 内でローカルにスコープされ、GraphView のライフサイクルと isHovering 状態に追従します。
+/// Monitoring class that captures macOS scroll events on the canvas. | キャンバス上での macOS のスクロールイベントを捕捉する監視クラス。
+/// Locally scoped within GraphView, it follows GraphView's lifecycle and isHovering state. | GraphView 内でローカルにスコープされ、GraphView のライフサイクルと isHovering 状態に追従します。
 final class ScrollMonitor: ObservableObject {
     var isHovering: Bool = false
     var location: CGPoint = .zero

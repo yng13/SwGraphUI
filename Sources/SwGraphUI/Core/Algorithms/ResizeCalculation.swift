@@ -1,6 +1,6 @@
 import Foundation
 
-/// リサイズ操作用のハンドル/ラインの位置
+/// Positions of handles/lines for resize operations. | リサイズ操作用のハンドル/ラインの位置
 public enum ResizeControlPosition: String, Sendable, CaseIterable {
     case top = "top"
     case bottom = "bottom"
@@ -12,7 +12,7 @@ public enum ResizeControlPosition: String, Sendable, CaseIterable {
     case bottomRight = "bottom-right"
 }
 
-/// リサイズ計算の結果
+/// Result of a resize calculation. | リサイズ計算の結果
 public struct ResizeResult: Sendable, Equatable {
     public let x: Double
     public let y: Double
@@ -27,19 +27,19 @@ public struct ResizeResult: Sendable, Equatable {
     }
 }
 
-/// リサイズ計算ロジック。ドラッグ操作による寸法変化と位置の変化を計算します。
+/// Resize calculation logic. Calculates dimensional and positional changes resulting from a drag operation. | リサイズ計算ロジック。ドラッグ操作による寸法変化と位置の変化を計算します。
 public struct ResizeCalculation {
-    /// 与えられたパラメータに基づき、新しいノードの矩形を計算します。
+    /// Calculates the new node rect based on the given parameters. | 与えられたパラメータに基づき、新しいノードの矩形を計算します。
     /// - Parameters:
-    ///   - original: ドラッグ開始時点の座標と寸法
-    ///   - position: 操作しているハンドルの位置
-    ///   - deltaX: ドラッグの開始点からの累積変位 (Graph Space)
-    ///   - deltaY: ドラッグの開始点からの累積変位 (Graph Space)
-    ///   - minWidth: 最小幅制約
-    ///   - minHeight: 最小高さ制約
-    ///   - maxWidth: 最大幅制約
-    ///   - maxHeight: 最大高さ制約
-    ///   - preserveAspectRatio: 比率を維持するかどうか
+    ///   - original: Coordinates and dimensions at the start of the drag. | ドラッグ開始時点の座標と寸法
+    ///   - handlePosition: Position of the handle being operated. | 操作しているハンドルの位置
+    ///   - deltaX: Cumulative displacement from the start of the drag (Graph Space). | ドラッグの開始点からの累積変位 (Graph Space)
+    ///   - deltaY: Cumulative displacement from the start of the drag (Graph Space). | ドラッグの開始点からの累積変位 (Graph Space)
+    ///   - minWidth: Minimum width constraint. | 最小幅制約
+    ///   - minHeight: Minimum height constraint. | 最小高さ制約
+    ///   - maxWidth: Maximum width constraint. | 最大幅制約
+    ///   - maxHeight: Maximum height constraint. | 最大高さ制約
+    ///   - preserveAspectRatio: Whether to preserve the aspect ratio. | 比率を維持するかどうか
     public static func calculate(
         original: ResizeResult,
         handlePosition: ResizeControlPosition,
@@ -57,22 +57,22 @@ public struct ResizeCalculation {
         var newHeight = original.height
 
         if preserveAspectRatio {
-            // アスペクト比の算出
+            // Calculate aspect ratio | アスペクト比の算出
             let ratio = original.width / original.height
             
-            // 変化量が大きい方を主軸とする（より意図に近い拡大率を採用）
+            // The axis with the larger change becomes the primary axis (adopting the scale factor closer to the user's intent) | 変化量が大きい方を主軸とする（より意図に近い拡大率を採用）
             let absDeltaX = abs(deltaX)
             let absDeltaY = abs(deltaY)
             
             if absDeltaX / original.width > absDeltaY / original.height {
-                // Width 主導
+                // Width-driven | Width 主導
                 let isLeft = handlePosition == .left || handlePosition == .topLeft || handlePosition == .bottomLeft
                 let sign: Double = isLeft ? -1 : 1
                 let targetWidth = max(minWidth, min(maxWidth, original.width + deltaX * sign))
                 newWidth = targetWidth
                 newHeight = newWidth / ratio
                 
-                // Height 側の制約チェック
+                // Constraint check for the Height side | Height 側の制約チェック
                 if newHeight < minHeight {
                     newHeight = minHeight
                     newWidth = newHeight * ratio
@@ -81,14 +81,14 @@ public struct ResizeCalculation {
                     newWidth = newHeight * ratio
                 }
             } else {
-                // Height 主導
+                // Height-driven | Height 主導
                 let isTop = handlePosition == .top || handlePosition == .topLeft || handlePosition == .topRight
                 let sign: Double = isTop ? -1 : 1
                 let targetHeight = max(minHeight, min(maxHeight, original.height + deltaY * sign))
                 newHeight = targetHeight
                 newWidth = newHeight * ratio
                 
-                // Width 側の制約チェック
+                // Constraint check for the Width side | Width 側の制約チェック
                 if newWidth < minWidth {
                     newWidth = minWidth
                     newHeight = newWidth / ratio
@@ -98,8 +98,8 @@ public struct ResizeCalculation {
                 }
             }
             
-            // X/Y 座標の補正 (反対側を固定するため)
-            // 左側/上側のハンドル操作時のみオフセットが必要
+            // X/Y coordinate correction (to fix the opposite side) | X/Y 座標の補正 (反対側を固定するため)
+            // Offset is required only when operating top/left side handles | 左側/上側のハンドル操作時のみオフセットが必要
             switch handlePosition {
             case .topLeft:
                 newX = original.x + (original.width - newWidth)
@@ -112,8 +112,8 @@ public struct ResizeCalculation {
                 break
             }
         } else {
-            // 自由リサイズ (従来通り)
-            // 水平方向のリサイズ
+            // Free resize (standard behavior) | 自由リサイズ (従来通り)
+            // Horizontal resizing | 水平方向のリサイズ
             switch handlePosition {
             case .left, .topLeft, .bottomLeft:
                 let nextWidth = max(minWidth, min(maxWidth, original.width - deltaX))
@@ -125,7 +125,7 @@ public struct ResizeCalculation {
                 break
             }
 
-            // 垂直方向のリサイズ
+            // Vertical resizing | 垂直方向のリサイズ
             switch handlePosition {
             case .top, .topLeft, .topRight:
                 let nextHeight = max(minHeight, min(maxHeight, original.height - deltaY))

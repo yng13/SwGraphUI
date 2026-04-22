@@ -1,7 +1,7 @@
 import SwiftUI
 import SwGraphUI
 
-/// グループノード（親ノード）表示用のシンプルなビュー
+/// A simple view for displaying group nodes (parent nodes) | グループノード（親ノード）表示用のシンプルなビュー
 struct GroupNodeView: View {
     let node: BaseNode<String>
     @Environment(\.graphZoomLevel) private var zoomLevel

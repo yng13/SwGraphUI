@@ -84,13 +84,13 @@ import Foundation
         let spacing = 50.0
         let results = GraphLayoutAlgorithms.layoutNodesTreeStyle(nodes: nodes, edges: edges, direction: .topToBottom, spacing: spacing)
         
-        // Node 2 と Node 3 は同一レイヤー（Layer 1）に配置されるはず
+        // Node 2 and Node 3 should be placed in the same layer (Layer 1) | Node 2 と Node 3 は同一レイヤー（Layer 1）に配置されるはず
         guard let pos2 = results["2"], let pos3 = results["3"] else {
             Issue.record("Nodes not found in result")
             return
         }
         
-        // ノード間の距離が幅(100) + spacing(50) 以上であることを確認
+        // Verify that the distance between nodes is at least width (100) + spacing (50) | ノード間の距離が幅(100) + spacing(50) 以上であることを確認
         let distance = abs(pos3.x - pos2.x)
         #expect(distance >= 100.0 + spacing)
     }

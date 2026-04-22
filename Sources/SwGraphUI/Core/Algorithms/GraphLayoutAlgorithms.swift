@@ -1,7 +1,7 @@
 import Foundation
 import CoreGraphics
 
-/// 自動レイアウトの方向を定義します（SwiftUI.LayoutDirection との衝突を避けるため GraphLayoutDirection と命名）。
+/// Defines the direction of automatic layout (named GraphLayoutDirection to avoid conflict with SwiftUI.LayoutDirection). | 自動レイアウトの方向を定義します（SwiftUI.LayoutDirection との衝突を避けるため GraphLayoutDirection と命名）。
 public enum GraphLayoutDirection: Sendable, Codable {
     case topToBottom
     case bottomToTop
@@ -9,17 +9,17 @@ public enum GraphLayoutDirection: Sendable, Codable {
     case rightToLeft
 }
 
-/// 階層型（Tree/DAG 向け）自動レイアウトアルゴリズムを提供するユーティリティ。
-/// 循環参照のないグラフ構造（Tree または DAG）を受け入れ、ノード間隔とノードサイズを考慮した配置を算出します。
+/// Utility providing hierarchical (Tree/DAG) automatic layout algorithms. | 階層型（Tree/DAG 向け）自動レイアウトアルゴリズムを提供するユーティリティ。
+/// Accepts graph structures without circular references (Tree or DAG) and calculates positions considering node spacing and sizes. | 循環参照のないグラフ構造（Tree または DAG）を受け入れ、ノード間隔とノードサイズを考慮した配置を算出します。
 public enum GraphLayoutAlgorithms {
     
-    /// シンプルな階層型レイアウトを実行し、各ノードの新しい推奨座標を算出します。
+    /// Performs a simple hierarchical layout and calculates new recommended coordinates for each node. | シンプルな階層型レイアウトを実行し、各ノードの新しい推奨座標を算出します。
     /// - Parameters:
-    ///   - nodes: 対象ノード群（現在は parentID == nil のフラットな集合を想定）
-    ///   - edges: 接続エッジ群
-    ///   - direction: レイアウトの方向
-    ///   - spacing: ノード間の最低間隔
-    /// - Returns: ノードIDをキーとした新しい推奨座標のマップ
+    ///   - nodes: Target nodes (currently assuming a flat set where parentID == nil) | 対象ノード群（現在は parentID == nil のフラットな集合を想定）
+    ///   - edges: Connection edges | 接続エッジ群
+    ///   - direction: Layout direction | レイアウトの方向
+    ///   - spacing: Minimum spacing between nodes | ノード間の最低間隔
+    /// - Returns: A map of new recommended coordinates keyed by node ID | ノードIDをキーとした新しい推奨座標のマップ
     public static func layoutNodesTreeStyle<Data: Sendable>(
         nodes: [BaseNode<Data>],
         edges: [BaseEdge<Data>],
@@ -30,13 +30,13 @@ public enum GraphLayoutAlgorithms {
         
         let nodeLookup = Dictionary(uniqueKeysWithValues: nodes.map { ($0.id, $0) })
         
-        // 1. レイヤー分割 (Ranking)
+        // 1. Layer division (Ranking) | 1. レイヤー分割 (Ranking)
         let nodeLayers = assignLayers(nodes: nodes, edges: edges)
         
-        // 2. 順序決定 (Ordering / sibling arrangement)
+        // 2. Ordering determination (Ordering / sibling arrangement) | 2. 順序決定 (Ordering / sibling arrangement)
         let orderedLayers = orderNodes(nodeLayers: nodeLayers, nodeLookup: nodeLookup)
         
-        // 3. 座標割り当て (Coordinate Assignment)
+        // 3. Coordinate assignment | 3. 座標割り当て (Coordinate Assignment)
         return assignCoordinates(
             orderedLayers: orderedLayers,
             nodeLookup: nodeLookup,
@@ -47,7 +47,7 @@ public enum GraphLayoutAlgorithms {
     
     // MARK: - Internal Phases
     
-    /// ノードを依存関係（エッジ）に基づいて階層（ランク）に分割します。
+    /// Divides nodes into layers (ranks) based on dependencies (edges). | ノードを依存関係（エッジ）に基づいて階層（ランク）に分割します。
     private static func assignLayers<Data: Sendable>(
         nodes: [BaseNode<Data>],
         edges: [BaseEdge<Data>]
@@ -63,18 +63,18 @@ public enum GraphLayoutAlgorithms {
             nodeInDegrees[edge.target, default: 0] += 1
         }
         
-        // Root (In-degree == 0) をレイヤー 0 に
+        // Root (In-degree == 0) to layer 0 | Root (In-degree == 0) をレイヤー 0 に
         var queue: [(id: String, layer: Int)] = nodes
             .filter { (nodeInDegrees[$0.id] ?? 0) == 0 }
             .map { ($0.id, 0) }
         
-        // 1.5 隣接リストの構築 (O(E))
+        // 1.5 Construction of adjacency list (O(E)) | 1.5 隣接リストの構築 (O(E))
         var outEdgesMap: [String: [String]] = [:]
         for edge in edges {
             outEdgesMap[edge.source, default: []].append(edge.target)
         }
         
-        // 2. BFS/DFS 的な階層決定 (O(N+E))
+        // 2. BFS/DFS-like layer determination (O(N+E)) | 2. BFS/DFS 的な階層決定 (O(N+E))
         var visited = Set<String>()
         var nodeToLayer: [String: Int] = [:]
         
@@ -85,7 +85,7 @@ public enum GraphLayoutAlgorithms {
             
             nodeToLayer[id] = max(nodeToLayer[id, default: 0], layer)
             
-            // 隣接リストを使用して O(d) で探索
+            // Search in O(d) using the adjacency list | 隣接リストを使用して O(d) で探索
             if let targets = outEdgesMap[id] {
                 for target in targets {
                     queue.append((target, layer + 1))
@@ -100,19 +100,19 @@ public enum GraphLayoutAlgorithms {
         return layers
     }
     
-    /// 同一レイヤー内でのノードの並び順を決定します。
+    /// Determines the order of nodes within the same layer. | 同一レイヤー内でのノードの並び順を決定します。
     private static func orderNodes<Data: Sendable>(
         nodeLayers: [Int: [String]],
         nodeLookup: [String: BaseNode<Data>]
     ) -> [Int: [String]] {
         var sortedLayers: [Int: [String]] = [:]
         for (layer, ids) in nodeLayers {
-            sortedLayers[layer] = ids.sorted() // 決定的挙動のため ID ソート
+            sortedLayers[layer] = ids.sorted() // Sort by ID for deterministic behavior | 決定的挙動のため ID ソート
         }
         return sortedLayers
     }
     
-    /// レイヤーと順序に基づき、ノードサイズを考慮した最終座標を計算します。
+    /// Calculates final coordinates based on layers and order, taking node sizes into account. | レイヤーと順序に基づき、ノードサイズを考慮した最終座標を計算します。
     private static func assignCoordinates<Data: Sendable>(
         orderedLayers: [Int: [String]],
         nodeLookup: [String: BaseNode<Data>],
@@ -146,7 +146,7 @@ public enum GraphLayoutAlgorithms {
             currentOffset += maxLayerBreadth + spacing
         }
         
-        // 1. 各レイヤーの必要最小限の占有幅（Breadth）を計算
+        // 1. Calculate minimum required occupancy width (Breadth) for each layer | 1. 各レイヤーの必要最小限の占有幅（Breadth）を計算
         var layerTotalBreadths: [Int: Double] = [:]
         var maxBreadth: Double = 0
         
@@ -170,13 +170,13 @@ public enum GraphLayoutAlgorithms {
             maxBreadth = max(maxBreadth, currentLayerBreadth)
         }
         
-        // 2. 座標割り当て
+        // 2. Coordinate assignment | 2. 座標割り当て
         for layerIdx in sortedLayerIndices {
             let ids = orderedLayers[layerIdx] ?? []
             let longitudinalOffset = layerOffsets[layerIdx] ?? 0
             let layerBreadth = layerTotalBreadths[layerIdx] ?? 0
             
-            // 全体の中央に寄せるための開始オフセット
+            // Starting offset for centering the whole | 全体の中央に寄せるための開始オフセット
             var lateralOffset: Double = (maxBreadth - layerBreadth) / 2.0
             
             for id in ids {

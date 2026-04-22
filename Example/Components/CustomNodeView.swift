@@ -10,9 +10,9 @@ struct CustomNodeView: View {
     var body: some View {
         let scale = max(CGFloat(zoomLevel), 0.0001)
         VStack(spacing: 0) {
-            // 上ハンドル
+            // Top handle | 上ハンドル
             HandleView(nodeID: node.id, type: .target, placement: .top, store: store, onConnect: onConnect)
-                .padding(.bottom, -3 * scale) // ハンドルの中心がノードの端に重なるように
+                .padding(.bottom, -3 * scale) // So that the handle center overlaps with the node edge | ハンドルの中心がノードの端に重なるように
             
             VStack(spacing: 8 * scale) {
                 Text("CUSTOM NODE")
@@ -20,7 +20,7 @@ struct CustomNodeView: View {
                     .foregroundColor(.purple.opacity(0.8))
                 
                 HStack(spacing: 0) {
-                    // 左ハンドル
+                    // Left handle | 左ハンドル
                     HandleView(nodeID: node.id, type: .target, placement: .left, store: store, onConnect: onConnect)
                     
                     VStack(spacing: 12 * scale) {
@@ -53,14 +53,14 @@ struct CustomNodeView: View {
                             .stroke(node.selected ? Color.purple : Color.clear, lineWidth: 2)
                     )
                     
-                    // 右ハンドル
+                    // Right handle | 右ハンドル
                     HandleView(nodeID: node.id, type: .source, placement: .right, store: store, onConnect: onConnect)
                 }
             }
             
-            // 下ハンドル
+            // Bottom handle | 下ハンドル
             HandleView(nodeID: node.id, type: .source, placement: .bottom, store: store, onConnect: onConnect)
-                .padding(.top, -3 * scale) // ハンドルの中心がノードの端に重なるように
+                .padding(.top, -3 * scale) // So that the handle center overlaps with the node edge | ハンドルの中心がノードの端に重なるように
         }
         .scaleEffect((node.selected && zoomLevel <= 1.0) ? 1.05 : 1.0)
         .animation(.spring(response: 0.3, dampingFraction: 0.6), value: node.selected)

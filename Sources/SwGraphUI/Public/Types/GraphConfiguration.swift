@@ -1,14 +1,14 @@
 import SwiftUI
 
-/// グラフの表示設定を管理する構造体
+/// Structure that manages graph display settings | グラフの表示設定を管理する構造体
 public struct GraphConfiguration {
-    /// グリッドやドットを表示するかどうか
+    /// Whether to display grids or dots | グリッドやドットを表示するかどうか
     public var showGrid: Bool
-    /// グリッドの間隔
+    /// Grid interval | グリッドの間隔
     public var gridSize: CGFloat
-    /// 背景のパターン（ライン、ドット、クロス）
+    /// Background pattern (lines, dots, cross) | 背景のパターン（ライン、ドット、クロス）
     public var backgroundVariant: BackgroundVariant
-    /// パターンの色
+    /// Color of the pattern | パターンの色
     public var gridColor: Color
     
     public init(

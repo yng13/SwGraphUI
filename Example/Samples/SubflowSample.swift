@@ -8,18 +8,18 @@ struct SubflowSample: GraphSample {
     
     @MainActor
     func setup(in graphStore: GraphStore<String>, appStore: ExampleAppStore) {
-        // グループ親ノード
+        // Group parent node | グループ親ノード
         let parent = BaseNode(
             id: "parent-group",
             position: XYPosition(x: 50, y: 50),
             data: "Group Node (Parent)",
             kind: "group",
-            zIndex: -1, // 明示的に背面に
+            zIndex: -1, // Explicitly place in the background | 明示的に背面に
             width: 400,
             height: 300
         )
         
-        // 子ノード 1
+        // Child node 1 | 子ノード 1
         let child1 = BaseNode(
             id: "child-1",
             position: XYPosition(x: 20, y: 40),
@@ -30,7 +30,7 @@ struct SubflowSample: GraphSample {
             height: 60
         )
         
-        // 子ノード 2
+        // Child node 2 | 子ノード 2
         let child2 = BaseNode(
             id: "child-2",
             position: XYPosition(x: 100, y: 150),
@@ -40,7 +40,7 @@ struct SubflowSample: GraphSample {
             height: 60
         )
         
-        // 親なしのノード（重なり確認用）
+        // Node without a parent (for overlap verification) | 親なしのノード（重なり確認用）
         let regular = BaseNode(
             id: "regular-node",
             position: XYPosition(x: 400, y: 200),
@@ -51,7 +51,7 @@ struct SubflowSample: GraphSample {
         
         graphStore.nodes = [parent, child1, child2, regular]
         
-        // エッジ
+        // Edges | エッジ
         graphStore.edges = [
             BaseEdge(id: "e1-2", source: "child-1", target: "child-2", markerEnd: EdgeMarker(type: .arrowClosed)),
             BaseEdge(id: "e-p-r", source: "child-2", target: "regular-node", markerEnd: EdgeMarker(type: .arrowClosed))

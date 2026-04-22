@@ -7,7 +7,7 @@ public enum MarkerType: String, Sendable, Codable {
     case arrowClosed = "arrowclosed"
 }
 
-/// エッジの再接続許可モード。
+/// Reconnection mode for edges. | エッジの再接続許可モード。
 public enum ReconnectMode: String, Sendable, CaseIterable, Codable {
     case none
     case source
@@ -184,10 +184,11 @@ public struct BaseEdge<NodeData: Sendable>: Sendable, Identifiable {
         self.reconnectable = reconnectable
     }
 
-    /// 最小構成でエッジを作成するためのイニシャライザ。
+    /// Initializer to create an edge with minimal configuration. | 最小構成でエッジを作成するためのイニシャライザ。
     ///
-    /// 接続情報（id, source, target）およびデータのみを指定し、その他（marker, animated, zIndex等）はデフォルト値が適用されます。
-    /// 高度な設定が必要な場合は、フルイニシャライザを使用してください。
+    /// Only connection info (id, source, target) and data are specified, and other properties (marker, animated, zIndex, etc.) use default values. | 接続情報（id, source, target）およびデータのみを指定し、その他（marker, animated, zIndex等）はデフォルト値が適用されます。
+    ///
+    /// Use the full initializer if advanced configuration is required. | 高度な設定が必要な場合は、フルイニシャライザを使用してください。
     public init(
         id: String,
         source: String,
@@ -256,7 +257,7 @@ extension BaseEdge: Codable where NodeData: Codable {
         self.deletable = try container.decode(Bool.self, forKey: .deletable)
         self.selectable = try container.decode(Bool.self, forKey: .selectable)
         
-        // 過渡的状態は常にデフォルト値で初期化
+        // Transient states are always initialized with default values | 過渡的状態は常にデフォルト値で初期化
         self.selected = false
     }
 

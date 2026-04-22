@@ -4,7 +4,7 @@ import SwGraphUI
 import AppKit
 #endif
 
-/// Xcode のプロジェクトナビゲーター風サイドバー。
+/// A sidebar similar to Xcode's project navigator. | Xcode のプロジェクトナビゲーター風サイドバー。
 struct SidebarView: View {
     @Bindable var appStore: ExampleAppStore
     let graphStore: GraphStore<String>
@@ -17,11 +17,11 @@ struct SidebarView: View {
         MacSidebarOutlineView(appStore: appStore, graphStore: graphStore)
             .background(Color(nsColor: .windowBackgroundColor))
             .accessibilityElement(children: .contain)
-            .accessibilityLabel("サンプルナビゲータ")
+            .accessibilityLabel("Sample Navigator | サンプルナビゲータ")
         #else
         MobileSidebarView(appStore: appStore, graphStore: graphStore)
             .accessibilityElement(children: .contain)
-            .accessibilityLabel("サンプルナビゲータ")
+            .accessibilityLabel("Sample Navigator | サンプルナビゲータ")
         #endif
     }
 }
@@ -84,7 +84,7 @@ private struct MacSidebarOutlineView: NSViewRepresentable {
         scrollView.autohidesScrollers = true
         scrollView.borderType = .noBorder
         scrollView.setAccessibilityElement(true)
-        scrollView.setAccessibilityLabel("サンプルナビゲータ")
+        scrollView.setAccessibilityLabel("Sample Navigator | サンプルナビゲータ")
 
         let outlineView = NSOutlineView()
         outlineView.headerView = nil
@@ -103,7 +103,7 @@ private struct MacSidebarOutlineView: NSViewRepresentable {
         outlineView.dataSource = context.coordinator
         outlineView.autoresizesOutlineColumn = true
         outlineView.setAccessibilityElement(true)
-        outlineView.setAccessibilityLabel("サンプル一覧")
+        outlineView.setAccessibilityLabel("Sample List | サンプル一覧")
 
         let column = NSTableColumn(identifier: NSUserInterfaceItemIdentifier("main"))
         column.isEditable = false

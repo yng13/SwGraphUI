@@ -3,23 +3,17 @@
 SwGraphUI is a SwiftUI-native graph UI library for macOS and iOS.  
 It uses `xyflow` as a strong behavioral and architectural reference, but it is not a direct clone. The state model, rendering pipeline, and interaction layer are adapted to SwiftUI and Apple platforms.
 
-## Installation
+SwGraphUI は、macOS および iOS 向けの SwiftUI ネイティブなグラフ UI ライブラリです。  
+`xyflow` を強力な振る舞いおよびアーキテクチャの参照先としていますが、直接のクローンではありません。状態モデル、レンダリングパイプライン、およびインタラクション層は、SwiftUI および Apple プラットフォームに最適化されています。
 
-### Local Development
-To use `SwGraphUI` in your local project, drag the folder into your Xcode project or add it via `Package.swift`:
+## Installation | インストール
 
-```swift
-dependencies: [
-    .package(path: "../SwGraphUI")
-]
-```
+Add `SwGraphUI` to your project using Swift Package Manager.  
+Swift Package Manager を使用して、プロジェクトに `SwGraphUI` を追加します。
 
-## Installation
-
-Add `SwGraphUI` to your project using Swift Package Manager.
-
-### Remote (Stable Release)
-Add the package via URL:
+### Remote (Stable Release) | リモート（安定版）
+Add the package via URL:  
+URL を介してパッケージを追加します：
 
 ```swift
 dependencies: [
@@ -27,8 +21,9 @@ dependencies: [
 ]
 ```
 
-### Local Development
-For local experimentation or contribution:
+### Local Development | ローカル開発
+For local experimentation or contribution:  
+ローカルでの実験や貢献のために：
 
 ```swift
 dependencies: [
@@ -36,7 +31,8 @@ dependencies: [
 ]
 ```
 
-Then add the product to your target:
+Then add the product to your target:  
+その後、ターゲットに製品を追加します：
 
 ```swift
 dependencies: [
@@ -44,7 +40,7 @@ dependencies: [
 ]
 ```
 
-## Core Concepts
+## Core Concepts | コアコンセプト
 
 - `GraphStore`: the single source of truth for nodes, edges, viewport, selection, drag, connection, and interaction state.
 - `GraphView`: the main canvas view that renders nodes and edges and bridges gestures into `GraphStore`.
@@ -52,18 +48,29 @@ dependencies: [
 - `PathSegment`: an intermediate geometry model used to keep edge rendering, markers, labels, and custom edge bodies consistent.
 - `Viewport`: pan/zoom state represented as plain data and updated through store APIs.
 
-## Architecture
+- `GraphStore`: ノード、エッジ、ビューポート、選択、ドラッグ、接続、およびインタラクション状態の唯一の信頼光源 (Single Source of Truth) です。
+- `GraphView`: ノードとエッジをレンダリングし、ジェスチャを `GraphStore` にブリッジするメインキャンバスビューです。
+- `GraphNode` / `GraphEdge`: 汎用コアモデルのパブリック型エイリアスです。
+- `PathSegment`: エッジのレンダリング、マーカー、ラベル、およびカスタムエッジ本体の一貫性を保つために使用される中間幾何モデルです。
+- `Viewport`: プレーンなデータとして表現され、ストア API を通じて更新されるパン/ズーム状態です。
 
-SwGraphUI is organized into four main layers:
+## Architecture | アーキテクチャ
+
+SwGraphUI is organized into four main layers:  
+SwGraphUI は主に4つのレイヤーで構成されています：
 
 - `Sources/SwGraphUI/Core`
-  Pure models and algorithms such as geometry, bounds, edge paths, node positioning, resize calculation, and snapshots.
+  Pure models and algorithms such as geometry, bounds, edge paths, node positioning, resize calculation, and snapshots.  
+  幾何学、境界計算、エッジパス、ノード測位、リサイズ計算、スナップショットなどの純粋なモデルとアルゴリズム。
 - `Sources/SwGraphUI/Runtime`
-  Observable store and runtime state for selection, drag, connection, viewport, marquee, and interactivity flags.
+  Observable store and runtime state for selection, drag, connection, viewport, marquee, and interactivity flags.  
+  選択、ドラッグ、接続、ビューポート、矩形選択、およびインタラクションフラグのための Observable ストアとランタイム状態。
 - `Sources/SwGraphUI/Public`
-  Public SwiftUI-facing API such as `GraphView`, default node and edge rendering, handles, and public typealiases.
+  Public SwiftUI-facing API such as `GraphView`, default node and edge rendering, handles, and public typealiases.  
+  `GraphView`、デフォルトのノード/エッジレンダリング、ハンドル、パブリック型エイリアスなどの SwiftUI 向けパブリック API。
 - `Sources/SwGraphUI/View`
-  Internal rendering and plugin-style views such as edge labels, minimap, controls, and node resizer.
+  Internal rendering and plugin-style views such as edge labels, minimap, controls, and node resizer.  
+  エッジラベル、ミニマップ、コントロール、ノードリサイザーなどの内部レンダリングおよびブラグイン形式のビュー。
 
 ```mermaid
 flowchart TB
@@ -98,45 +105,72 @@ The design goal is:
 - keep SwiftUI rendering composable
 - keep interaction entry points centralized in `GraphStore`
 
-## Features
+## Features | 機能一覧
 
-Current capabilities include:
+Current capabilities include:  
+現在の機能には以下が含まれます：
 
 - node and edge rendering
+  ノードとエッジのレンダリング
 - pan, wheel zoom, and pinch zoom
+  パン、ホイールズーム、およびピンチズーム
 - node drag
+  ノードのドラッグ
 - handle-based connection with screen-space snapping
+  スクリーン空間スナップによるハンドルベースの接続
 - edge reconnection
+  エッジの再接続
 - single selection, multi-selection, and marquee selection
+  単一選択、複数選択、および矩形選択
 - edge labels with styled backgrounds
+  規定の背景スタイルを持つエッジラベル
 - custom node views and custom edge bodies
+  カスタムノードビューおよびカスタムエッジ本体
 - node toolbar style composition in examples
+  サンプルコードにおけるノードツールバー形式の合成
 - minimap and controls
+  ミニマップとコントロール
 - configurable backgrounds (dots / lines / grid-like variants)
+  設定可能な背景（ドット / ライン / グリッドなどのバリエーション）
 - node resizer
+  ノードリサイザー
 - auto pan during drag / connect
+  ドラッグ / 接続中のオートパン
 - tree-style layout application
+  ツリー形式のレイアウト適用
 - save / restore snapshots for nodes, edges, and viewport
+  ノード、エッジ、およびビューポートのスナップショット保存 / 復元
 - PNG / PDF export backends
+  PNG / PDF エクスポートバックエンド
 - undo / redo refinement with symmetry and no-op guard tests
+  対称性および no-op ガードテストを伴う Undo / Redo の洗練
 - accessibility baseline for nodes, edges, controls, and minimap
+  ノード、エッジ、コントロール、およびミニマップのアクセシビリティ基盤
 
-Platform support:
+Platform support:  
+プラットフォームサポート：
 
 - macOS 14+
 - iOS 17+
 
-Platform notes:
+Platform notes:  
+プラットフォームに関する注記：
 
-- The core library is intended to work on both macOS and iOS.
-- The Example app is currently developed and verified primarily on macOS.
-- Some interactions are platform-specific:
-  - wheel zoom, hover-driven behavior, and keyboard shortcuts are macOS-centric
-  - pinch zoom and core canvas interactions are available on iOS, but the full Example workflow is not as thoroughly validated there yet
+- The core library is intended to work on both macOS and iOS.  
+  コアライブラリは、macOS と iOS の両方での動作を意図しています。
+- The Example app is currently developed and verified primarily on macOS.  
+  Example アプリは、現在主に macOS で開発および検証されています。
+- Some interactions are platform-specific:  
+  一部のインタラクションはプラットフォーム固有です：
+  - wheel zoom, hover-driven behavior, and keyboard shortcuts are macOS-centric  
+    ホイールズーム、ホバー駆動の挙動、およびキーボードショートカットは macOS 中心です。
+  - pinch zoom and core canvas interactions are available on iOS, but the full Example workflow is not as thoroughly validated there yet  
+    ピンチズームやコアキャンバスのインタラクションは iOS でも利用可能ですが、フル機能の Example ワークフローはまだ iOS では十分に検証されていません。
 
-## Examples
+## Examples | サンプル
 
-The package includes an `Example` app with focused samples such as:
+The package includes an `Example` app with focused samples such as:  
+パッケージには、以下のような重点的なサンプルを含む `Example` アプリが含まれています：
 
 - `Basic`
 - `Feature Overview`
@@ -149,7 +183,8 @@ The package includes an `Example` app with focused samples such as:
 - `Dagre Tree`
 - `Subflow`
 
-A minimal graph setup looks like this:
+A minimal graph setup looks like this:  
+最小限のグラフ設定は以下のようになります：
 
 ```swift
 import SwiftUI
@@ -175,7 +210,8 @@ struct GraphScreen: View {
 }
 ```
 
-For a customized node:
+For a customized node:  
+カスタムノードの場合：
 
 ```swift
 GraphView(store: store) { node in
@@ -188,7 +224,8 @@ GraphView(store: store) { node in
 }
 ```
 
-For a customized edge body:
+For a customized edge body:  
+カスタムエッジ本体の場合：
 
 ```swift
 GraphView(
@@ -211,7 +248,8 @@ GraphView(
 }
 ```
 
-For save / restore snapshots:
+For save / restore snapshots:  
+スナップショットの保存 / 復元：
 
 ```swift
 let snapshot = store.snapshot()
@@ -222,7 +260,8 @@ let restored = try JSONDecoder().decode(GraphSnapshot<String>.self, from: data)
 store.apply(snapshot: restored)
 ```
 
-For optional UI helpers such as a minimap and controls:
+For optional UI helpers such as a minimap and controls:  
+ミニマップやコントロールなどのオプションの UI ヘルパーを使用する場合：
 
 ```swift
 ZStack(alignment: .bottomTrailing) {
@@ -243,33 +282,47 @@ ZStack(alignment: .bottomTrailing) {
 }
 ```
 
-## Running the Example in Xcode
+## Running the Example in Xcode | Xcode でのサンプルの実行
 
-To run the included Example app from Xcode:
+To run the included Example app from Xcode:  
+付属の Example アプリを Xcode から実行するには：
 
-1. Open the package folder in Xcode:
-
-2. In Xcode, choose the `Example` scheme.
-3. Select a destination:
+1. Open the package folder in Xcode:  
+   Xcode でパッケージフォルダを開きます。
+2. In Xcode, choose the `Example` scheme.  
+   Xcode で `Example` スキームを選択します。
+3. Select a destination:  
+   送信先を選択します：
    - for macOS, choose `My Mac`
    - for iOS, choose an iOS Simulator or connected device
-4. Run with `Cmd+R`.
+4. Run with `Cmd+R`.  
+   `Cmd+R` で実行します。
 
-If Xcode does not pick the scheme automatically, use:
+If Xcode does not pick the scheme automatically, use:  
+Xcode がスキームを自動的に選択しない場合は、以下を使用してください：
 
 - `Product > Scheme > Example`
 
-Current recommendation:
+Current recommendation:  
+現在の推奨事項：
 
-- use the Example app on macOS for the most complete validation flow
-- use iOS mainly to validate the core canvas, drag, connect, zoom, and rendering behavior
+- use the Example app on macOS for the most complete validation flow  
+  最も完全な検証フローのために、macOS で Example アプリを使用してください。
+- use iOS mainly to validate the core canvas, drag, connect, zoom, and rendering behavior  
+  iOS は主にコアキャンバス、ドラッグ、接続、ズーム、およびレンダリングの挙動を検証するために使用してください。
 
-## Status
+## Status | ステータス
 
 SwGraphUI already covers most core flow-editor interactions.  
-It still intentionally differs from `xyflow` in several areas, especially around internal caching strategy, Apple-platform input behavior, and the remaining whiteboard / advanced UI example scope.
+SwGraphUI は既に主要なフローエディタのインタラクションの大部分をカバーしています。
 
-Note:
+It still intentionally differs from `xyflow` in several areas, especially around internal caching strategy, Apple-platform input behavior, and the remaining whiteboard / advanced UI example scope.  
+依然として `xyflow` とは意図的に異なる部分がいくつかあり、特に内部キャッシュ戦略、Apple プラットフォームの入力挙動、および残りのホワイトボード / 高度な UI サンプルのスコープなどが挙げられます。
 
-- Internal planning, audit, and migration documents are maintained outside the public repository surface.
-- Public usage guidance is kept in this README and in the source-level API documentation.
+Note:  
+注意：
+
+- Internal planning, audit, and migration documents are maintained outside the public repository surface.  
+  内部的な計画、監査、および移行ドキュメントは、公開リポジトリの外部で維持されています。
+- Public usage guidance is kept in this README and in the source-level API documentation.  
+  公開されている使用ガイダンスは、この README およびソースレベルの API ドキュメントに保持されています。

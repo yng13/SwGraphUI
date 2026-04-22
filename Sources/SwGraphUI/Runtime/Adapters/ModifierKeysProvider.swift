@@ -4,17 +4,17 @@ import AppKit
 import Foundation
 import Observation
 
-/// プラットフォーム（現在は macOS）における修飾キー（Shift 等）の状態を監視するアダプター。
+/// Adapter that monitors the status of modifier keys (e.g., Shift) on the platform (currently macOS). | プラットフォーム（現在は macOS）における修飾キー（Shift 等）の状態を監視するアダプター。
 @Observable
 @MainActor
 public final class ModifierKeysProvider {
-    // 内部キャッシュ
+    // Internal cache | 内部キャッシュ
     private var _isShiftPressed: Bool = false
     
-    /// 現在 Shift キーが押されているか
+    /// Whether the Shift key is currently pressed | 現在 Shift キーが押されているか
     public var isShiftPressed: Bool {
         #if os(macOS)
-        // モニターによる非同期更新だけでなく、アクセス時に直接フラグも確認する
+        // Check the flags directly upon access, in addition to asynchronous updates via the monitor | モニターによる非同期更新だけでなく、アクセス時に直接フラグも確認する
         return NSEvent.modifierFlags.contains(.shift)
         #else
         return _isShiftPressed
@@ -22,7 +22,7 @@ public final class ModifierKeysProvider {
     }
     
     #if os(macOS)
-    /// モニターの保持と自動解除を行うヘルパー
+    /// Helper that holds and automatically releases the monitor | モニターの保持と自動解除を行うヘルパー
     private final class MonitorHolder: @unchecked Sendable {
         var monitor: Any?
         deinit {
@@ -40,9 +40,9 @@ public final class ModifierKeysProvider {
         #if os(macOS)
         self._isShiftPressed = NSEvent.modifierFlags.contains(.shift)
         
-        // 修飾キーが変更された際のモニターを追加
+        // Add a monitor for when modifier keys are changed | 修飾キーが変更された際のモニターを追加
         holder.monitor = NSEvent.addLocalMonitorForEvents(matching: [.flagsChanged]) { [weak self] event in
-            // Shift キーの状態が変更された際に再描画を促す
+            // Prompt a redraw when the state of the Shift key changes | Shift キーの状態が変更された際に再描画を促す
             Task { @MainActor in
                 self?._isShiftPressed = event.modifierFlags.contains(.shift)
             }

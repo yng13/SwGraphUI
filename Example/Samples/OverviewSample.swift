@@ -31,7 +31,7 @@ struct OverviewSample: GraphSample {
             BaseEdge<String>(id: "e-anim", source: "welcome", target: "n-styled", animated: true, markerStart: EdgeMarker(type: .arrow), markerEnd: EdgeMarker(type: .arrowClosed), label: "Animated Markers", reconnectable: .both)
         ]
         
-        // ズーム制限の緩和
+        // Relaxing zoom limits | ズーム制限の緩和
         graphStore.runtimeState.interactivity.minZoom = 0.1
         graphStore.runtimeState.interactivity.maxZoom = 4.0
         

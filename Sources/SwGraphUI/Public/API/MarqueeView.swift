@@ -1,6 +1,6 @@
 import SwiftUI
 
-/// 矩形選択（Marquee）の視覚的フィードバックを表示するビュー。
+/// View that displays visual feedback for marquee selection (Marquee). | 矩形選択（Marquee）の視覚的フィードバックを表示するビュー。
 struct MarqueeView: View {
     let marquee: GraphRuntimeState.MarqueeState
     
@@ -15,7 +15,7 @@ struct MarqueeView: View {
             )
             .frame(width: rect.width, height: rect.height)
             .position(x: rect.midX, y: rect.midY)
-            // Marquee 自体は操作を邪魔しないようにヒットテストを無効化
+            // Disable hit testing so that the Marquee itself does not interfere with operations | Marquee 自体は操作を邪魔しないようにヒットテストを無効化
             .allowsHitTesting(false)
     }
 }

@@ -12,7 +12,7 @@ struct CustomEdgeBody: View {
     
     var body: some View {
         ZStack {
-            // 背景に太い光彩を入れる例
+            // Example of adding a thick glow to the background | 背景に太い光彩を入れる例
             EdgeRenderer(
                 segments: segments,
                 strokeColor: color.opacity(0.2),
@@ -23,7 +23,7 @@ struct CustomEdgeBody: View {
                 isReconnecting: reconnecting
             )
             
-            // 本体
+            // Main body | 本体
             EdgeRenderer(
                 segments: segments,
                 strokeColor: color,
@@ -34,7 +34,7 @@ struct CustomEdgeBody: View {
                 isReconnecting: reconnecting
             )
             
-            // 中心に模様を入れる点線
+            // Dotted line for patterns in the center | 中心に模様を入れる点線
             if !reconnecting {
                 EdgeRenderer(
                     segments: segments,

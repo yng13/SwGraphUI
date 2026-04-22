@@ -2,11 +2,11 @@ import Foundation
 import SwGraphUI
 import SwiftUI
 
-/// 1,000ノード表示時の UI 負荷を確認するためのベンチマーク用サンプル。
+/// A benchmark sample for verifying UI load when displaying 1,000 nodes. | 1,000ノード表示時の UI 負荷を確認するためのベンチマーク用サンプル。
 public struct StressTestSample: GraphSample {
     public let title = "Integrated Stress Test"
     public let category: ExampleAppStore.SampleCategory = .overview
-    public let description = "1,000ノード / 900エッジによる UI 負荷検証（M35b）用デモ。"
+    public let description = "1,000 nodes / 900 edges UI load verification (M35b) demo. | 1,000ノード / 900エッジによる UI 負荷検証（M35b）用デモ。"
 
     public func setup(in graphStore: GraphStore<String>, appStore: ExampleAppStore) {
         var nodes: [BaseNode<String>] = []
@@ -26,7 +26,7 @@ public struct StressTestSample: GraphSample {
                     height: 40
                 ))
                 
-                // 隣接するノードとエッジを生成
+                // Generate adjacent nodes and edges | 隣接するノードとエッジを生成
                 if col > 0 {
                     edges.append(BaseEdge(
                         id: "e-\(row)-\(col-1)-\(col)",

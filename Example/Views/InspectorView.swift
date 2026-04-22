@@ -1,7 +1,7 @@
 import SwiftUI
 import SwGraphUI
 
-/// Xcode の属性インスペクター風のビュー (M28a-Polish: 1px Alignment & Density Precision)
+/// A view similar to Xcode's attributes inspector (M28a-Polish: 1px Alignment & Density Precision) | Xcode の属性インスペクター風のビュー (M28a-Polish: 1px Alignment & Density Precision)
 struct InspectorView: View {
     @Bindable var appStore: ExampleAppStore
     let graphStore: GraphStore<String>
@@ -10,9 +10,9 @@ struct InspectorView: View {
     private enum Constants {
         static let labelWidth: CGFloat = 92
         static let headerHeight: CGFloat = 22
-        static let rowHeight: CGFloat = 20 // 22から20にさらに凝縮
-        static let horizontalPadding: CGFloat = 6 // Xcode準拠
-        static let contentIndent: CGFloat = 4 // ラベルとコンテンツの間
+        static let rowHeight: CGFloat = 20 // Further condensed from 22 to 20 | 22から20にさらに凝縮
+        static let horizontalPadding: CGFloat = 6 // Xcode-compliant | Xcode準拠
+        static let contentIndent: CGFloat = 4 // Between label and content | ラベルとコンテンツの間
         static let fontSize: CGFloat = 11
         static let headerBackground = Color.primary.opacity(0.05)
     }
@@ -140,7 +140,7 @@ struct InspectorView: View {
                         Toggle("", isOn: $appStore.isMiniMapVisible)
                             .labelsHidden()
                             .toggleStyle(.switch)
-                            .scaleEffect(0.7) // Xcode風に小型化
+                            .scaleEffect(0.7) // Downsized like Xcode | Xcode風に小型化
                             .offset(x: -8, y: 0.5)
                     }
                     InspectorRow("Controls") {
@@ -206,7 +206,7 @@ struct InspectorView: View {
             }
         }
         .accessibilityElement(children: .contain)
-        .accessibilityLabel("インスペクタ")
+        .accessibilityLabel("Inspector | インスペクタ")
     }
 
     // MARK: - Sections
@@ -265,7 +265,7 @@ struct InspectorView: View {
                     set: { val in graphStore.updateSelectedEdges { $0.animated = val } }
                 ))
                 .labelsHidden()
-                .toggleStyle(.checkbox) // Xcode風チェックボックス
+                .toggleStyle(.checkbox) // Xcode-style checkbox | Xcode風チェックボックス
                 .offset(y: 0.5)
             }
             
@@ -385,7 +385,7 @@ struct InspectorView: View {
     
     // MARK: - Components
     
-    /// Xcode 風の入力欄
+    /// Xcode-style input field | Xcode 風の入力欄
     private struct InspectorTextField: View {
         @Binding var text: String
         var body: some View {
@@ -405,7 +405,7 @@ struct InspectorView: View {
         }
     }
     
-    /// 座標・数値入力用
+    /// For coordinate/numeric input | 座標・数値入力用
     private struct InspectorNumberField: View {
         @Binding var value: Double
         var body: some View {
@@ -425,7 +425,7 @@ struct InspectorView: View {
         }
     }
     
-    /// 数値用小型入力欄
+    /// Small input field for numeric values | 数値用小型入力欄
     private struct CompactNumberField: View {
         @Binding var value: Double
         var body: some View {
@@ -441,7 +441,7 @@ struct InspectorView: View {
         }
     }
     
-    /// Xcode 風のプロパティ行 (1px Polish)
+    /// Xcode-style property row (1px Polish) | Xcode 風 properties 行 (1px Polish)
     @ViewBuilder
     private func InspectorRow<Content: View>(_ label: String, @ViewBuilder content: @escaping () -> Content) -> some View {
         HStack(alignment: .center, spacing: Constants.contentIndent) {
@@ -458,7 +458,7 @@ struct InspectorView: View {
         .frame(minHeight: Constants.rowHeight)
     }
     
-    /// Xcode 風のセクションヘッダー (Density Polish)
+    /// Xcode-style section header (Density Polish) | Xcode 風 properties ヘッダー (Density Polish)
     @ViewBuilder
     private func InspectorHeader(_ title: String) -> some View {
         HStack {
@@ -478,7 +478,7 @@ struct InspectorView: View {
         withAnimation(.spring()) {
             graphStore.applyLayout(direction: direction, spacing: 50.0)
             
-            // レイアウト後に全体が見えるように画面フィット (少しディレイを置いてアニメーションを繋げる)
+            // Fit to screen so the entire layout is visible (with a slight delay to connect animations) | レイアウト後に全体が見えるように画面フィット (少しディレイを置いてアニメーションを繋げる)
             DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) {
                 withAnimation {
                     graphStore.fitView(in: appStore.currentGraphSize, padding: .all(.points(50)))

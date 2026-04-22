@@ -1,19 +1,19 @@
 import SwiftUI
 
-/// 複数ノードが選択されている場合に、その全体を囲む境界枠を表示する View。
-/// 座標系はグラフ空間（絶対座標）を想定しています。
+/// View that displays a bounding box surrounding all selected nodes when multiple nodes are selected. | 複数ノードが選択されている場合に、その全体を囲む境界枠を表示する View。
+/// The coordinate system is assumed to be graph space (absolute coordinates). | 座標系はグラフ空間（絶対座標）を想定しています。
 struct SelectionBoxView<Data: Sendable>: View {
     let store: GraphStore<Data>
     
-    // エクスポート中などの判定用（もし将来的に必要であれば）
+    // For determining status during export, etc. (if needed in the future) | エクスポート中などの判定用（もし将来的に必要であれば）
     @Environment(\.isGraphExporting) private var isGraphExporting
     @Environment(\.graphRenderingViewport) private var renderingViewport
     
     var body: some View {
         let selectedNodes = store.selectedNodes
         
-        // 2つ以上のノードが選択されている場合のみ表示
-        // かつエクスポート中ではない場合に表示
+        // Displayed only when 2 or more nodes are selected | 2つ以上のノードが選択されている場合のみ表示
+        // And only when not currently exporting | かつエクスポート中ではない場合に表示
         if selectedNodes.count >= 2 && !isGraphExporting {
             let lookup = store.nodeLookup
             let bounds = NodePositioningAlgorithms.getNodesBounds(selectedNodes, nodeLookup: lookup)
@@ -21,8 +21,8 @@ struct SelectionBoxView<Data: Sendable>: View {
             let viewport = renderingViewport ?? store.runtimeState.viewport.viewport
             let screenBounds = bounds.toScreen(viewport: viewport)
             
-            // 境界枠のレンダリング
-            // ズームにかかわらず視認性を保つため、lineWidth をクランプ (1.0 to 2.5 pt on screen)
+            // Rendering of the bounding box | 境界枠のレンダリング
+            // Clamp lineWidth (1.0 to 2.5 pt on screen) to maintain visibility regardless of zoom | ズームにかかわらず視認性を保つため、lineWidth をクランプ (1.0 to 2.5 pt on screen)
             let zoom = viewport.zoom
             let lineWidth = min(max(1.0 / zoom, 1.0), 2.5)
             

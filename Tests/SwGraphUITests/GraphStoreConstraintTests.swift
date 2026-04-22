@@ -54,7 +54,7 @@ struct GraphStoreConstraintTests {
     
     @Test
     func testNewUpdateNodePositionTo_DirectCall() {
-        // 新設された updateNodePosition(id:to:) (=インスペクター等で使用) を検証
+        // Verify the newly added updateNodePosition(id:to:) (used in Inspector, etc.) | 新設された updateNodePosition(id:to:) (=インスペクター等で使用) を検証
         let parent = BaseNode(id: "p", position: XYPosition(x: 100, y: 100), data: EmptyPayload(), width: 200, height: 200)
         var child = BaseNode(id: "c", position: XYPosition(x: 10, y: 10), data: EmptyPayload(), width: 50, height: 50)
         child.parentID = "p"
@@ -63,14 +63,14 @@ struct GraphStoreConstraintTests {
         let undoManager = UndoManager()
         let store = GraphStore<EmptyPayload>(nodes: [parent, child], undoManager: undoManager)
         
-        // 相対座標 (10, 10) から (160, 160) へ移動命令
-        // 親子関係がある場合、内部で絶対変換 -> 制約適用 -> 相対変換 が行われ
-        // Max (150, 150) にクランプされる必要がある
+        // Command to move from relative coordinate (10, 10) to (160, 160) | 相対座標 (10, 10) から (160, 160) へ移動命令
+        // If there's a parent-child relationship, internal absolute conversion -> constraint application -> relative conversion is performed | 親子関係がある場合、内部で絶対変換 -> 制約適用 -> 相対変換 が行われ
+        // and it needs to be clamped to max (150, 150) | Max (150, 150) にクランプされる必要がある
         store.updateNodePosition(id: "c", to: XYPosition(x: 160, y: 160))
         
         #expect(store.nodeLookup["c"]?.position == XYPosition(x: 150, y: 150))
         
-        // Undo 履歴に登録されているか (新API は内部で registerUndo を呼ぶ)
+        // Check if it's registered in Undo history (new API calls registerUndo internally) | Undo 履歴に登録されているか (新API は内部で registerUndo を呼ぶ)
         #expect(store.undoManager?.canUndo == true)
     }
 }

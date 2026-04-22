@@ -3,7 +3,7 @@ import SwiftUI
 #if os(macOS)
 import AppKit
 
-/// macOS 用の視覚効果ビュー (Glassmorphism 用)
+/// Visual effect view for macOS (for Glassmorphism) | macOS 用の視覚効果ビュー (Glassmorphism 用)
 public struct VisualEffectView: NSViewRepresentable {
     public init() {}
     public func makeNSView(context: Context) -> NSVisualEffectView {

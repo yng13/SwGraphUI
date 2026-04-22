@@ -27,7 +27,7 @@ struct SwGraphUIExampleApp: App {
         .windowToolbarStyle(.unified)
         #endif
         .commands {
-            // macOSデフォルトメニューが表示されない環境でも確実に出すために明示的に "Edit" メニューを設ける
+            // Explicitly provide an "Edit" menu to ensure it appears even in environments where the macOS default menu is hidden | macOSデフォルトメニューが表示されない環境でも確実に出すために明示的に "Edit" メニューを設ける
             CommandMenu("Edit") {
                 Button("Select All") {
                     graphStore.selectAll()

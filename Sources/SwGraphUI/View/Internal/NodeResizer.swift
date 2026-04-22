@@ -1,17 +1,17 @@
 import SwiftUI
 
-/// ノードのリサイズ操作を提供する View。
-/// カスタムノードの body 内でオーバーレイとして使用することを想定しています。
+/// View providing node resizing operations. | ノードのリサイズ操作を提供する View。
+/// Intended to be used as an overlay within the body of custom nodes. | カスタムノードの body 内でオーバーレイとして使用することを想定しています。
 public struct NodeResizer<NodeData: Sendable>: View {
     @Environment(GraphStore<NodeData>.self) private var store
     @Environment(\.graphZoomLevel) private var zoomLevel
     let node: BaseNode<NodeData>
     let isVisible: Bool
     
-    /// NodeResizer を作成します。
+    /// Creates a NodeResizer. | NodeResizer を作成します。
     /// - Parameters:
-    ///   - node: 対象ノード
-    ///   - isVisible: リサイザーの可視性（デフォルトは true。store の選択状態と組み合わせて判定されます）
+    ///   - node: Target node | 対象ノード
+    ///   - isVisible: Resizer visibility (default is true. Determined in combination with store selection state) | リサイザーの可視性（デフォルトは true。store の選択状態と組み合わせて判定されます）
     public init(node: BaseNode<NodeData>, isVisible: Bool = true) {
         self.node = node
         self.isVisible = isVisible
@@ -20,13 +20,13 @@ public struct NodeResizer<NodeData: Sendable>: View {
     @Environment(\.isGraphExporting) private var isGraphExporting
     
     public var body: some View {
-        // 選択中かつモデルがリサイズを許可している場合のみ表示
-        // エクスポート時（isGraphExporting == true）は非表示
+        // Displayed only when selected and the model allows resizing | 選択中かつモデルがリサイズを許可している場合のみ表示
+        // Hidden during export (isGraphExporting == true) | エクスポート時（isGraphExporting == true）は非表示
         if node.selected && isVisible && node.resizable && !isGraphExporting {
             let scale = max(CGFloat(zoomLevel), 0.0001)
             ZStack {
-                // ガイド枠線
-                // lineWidth も SelectionBox と同様に視認性を確保 (1.0 to 2.5 pt)
+                // Guide border | ガイド枠線
+                // lineWidth ensures visibility similar to SelectionBox (1.0 to 2.5 pt) | lineWidth も SelectionBox と同様に視認性を確保 (1.0 to 2.5 pt)
                 Rectangle()
                     .stroke(Color.accentColor.opacity(0.6), lineWidth: min(max(1.0 / scale, 1.0), 2.5))
                 
@@ -42,7 +42,7 @@ public struct NodeResizer<NodeData: Sendable>: View {
                 ResizeControlView<NodeData>(node: node, position: .bottomLeft, variant: .handle)
                 ResizeControlView<NodeData>(node: node, position: .bottomRight, variant: .handle)
             }
-            // 親側のレイアウトに左右されないよう、明示的にリサイザー枠のサイズを確定させる
+            // Explicitly finalize the size of the resizer frame so it isn't affected by parent layout | 親側のレイアウトに左右されないよう、明示的にリサイザー枠のサイズを確定させる
             .frame(
                 width: (node.width ?? node.measured?.width ?? 0) * scale,
                 height: (node.height ?? node.measured?.height ?? 0) * scale
@@ -99,16 +99,16 @@ private struct ResizeControlView<NodeData: Sendable>: View {
             .shadow(color: .black.opacity(0.2), radius: 1, x: 0, y: 1)
             .overlay(Circle().stroke(Color.accentColor, lineWidth: 1.5))
             .frame(width: 11, height: 11)
-            // 視覚上のサイズはクランプするが、当たり判定（frameの外側）を確保
-            // 画面上で 8pt 〜 18pt 程度の範囲に収まるように制限
+            // Visual size is clamped, but ensure hit detection area (outside the frame) | 視覚上のサイズはクランプするが、当たり判定（frameの外側）を確保
+            // Limited to a range of about 8pt to 18pt on the screen | 画面上で 8pt 〜 18pt 程度の範囲に収まるように制限
             .scaleEffect(min(max(1.0 / CGFloat(zoomLevel), 0.8), 1.8))
-            .contentShape(Circle().inset(by: -10)) // 操作しやすさを維持 (実質 31pt 程度の判定領域)
+            .contentShape(Circle().inset(by: -10)) // Maintains ease of operation (effective detection area of about 31pt) | 操作しやすさを維持 (実質 31pt 程度の判定領域)
             .modifier(ControlPositionModifier(position: position))
     }
     
     private var lineShape: some View {
         Rectangle()
-            .fill(Color.accentColor.opacity(0.001)) // 当たり判定用
+            .fill(Color.accentColor.opacity(0.001)) // For hit detection | 当たり判定用
             .modifier(LinePositionModifier(position: position))
     }
     
@@ -127,11 +127,11 @@ private struct ResizeControlView<NodeData: Sendable>: View {
         
         guard let start = startBounds else { return }
         
-        // translation を Graph Space のデルタに変換
+        // Convert translation to Graph Space delta | translation を Graph Space のデルタに変換
         let deltaX = translation.width / zoom
         let deltaY = translation.height / zoom
         
-        // コーナードラッグかつ Shift 押下時のみ比率維持
+        // Maintain aspect ratio only for corner drags with Shift key pressed | コーナードラッグかつ Shift 押下時のみ比率維持
         let preserve = modifierKeys.isShiftPressed && isCorner
         
         let result = ResizeCalculation.calculate(

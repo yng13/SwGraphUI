@@ -1,20 +1,20 @@
 import Foundation
 
-/// グラフのエクスポート（PNG書き出し等）に関する設定を保持します。
+/// Holds settings for graph export (PNG export, etc.). | グラフのエクスポート（PNG書き出し等）に関する設定を保持します。
 public struct GraphExportSettings: Sendable {
-    /// 書き出し時のスケール（1.0 が標準。2.0 や 3.0 で高解像度化）。
+    /// Export scale (1.0 is standard. 2.0 or 3.0 for high resolution). | 書き出し時のスケール（1.0 が標準。2.0 や 3.0 で高解像度化）。
     public var scale: Double
     
-    /// キャンバス周囲の余白（ポイント単位）。
+    /// Margin around the canvas (in points). | キャンバス周囲の余白（ポイント単位）。
     public var margin: Double
     
-    /// 背景グリッドを含めるかどうか。
+    /// Whether to include the background grid. | 背景グリッドを含めるかどうか。
     public var includeBackground: Bool
     
-    /// 背景グリッドのバリアント。
+    /// Background grid variant. | 背景グリッドのバリアント。
     public var backgroundVariant: BackgroundVariant
     
-    /// 背景を透明にするかどうか。
+    /// Whether to make the background transparent. | 背景を透明にするかどうか。
     public var isTransparent: Bool
     
     public init(

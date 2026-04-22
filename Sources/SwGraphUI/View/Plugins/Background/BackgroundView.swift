@@ -1,15 +1,15 @@
 import SwiftUI
 
-/// グラフの背景にドットやグリッドを表示するコンポーネント
+/// Component that displays dots or grids in the background of the graph | グラフの背景にドットやグリッドを表示するコンポーネント
 public struct BackgroundView: View {
     let viewport: Viewport
-    /// 基本のグリッド間隔 (デフォルト 20)
+    /// Basic grid interval (default 20) | 基本のグリッド間隔 (デフォルト 20)
     let gap: CGFloat
-    /// 描画パターン（ドット、ライン、クロス）
+    /// Drawing pattern (dots, lines, cross) | 描画パターン（ドット、ライン、クロス）
     let variant: BackgroundVariant
-    /// ドットの直径または線の太さ
+    /// Diameter of dots or thickness of lines | ドットの直径または線の太さ
     let size: CGFloat
-    /// パターンの基本色
+    /// Basic color of the pattern | パターンの基本色
     let patternColor: Color
     
     public init(
@@ -29,22 +29,22 @@ public struct BackgroundView: View {
     public var body: some View {
         Canvas { context, canvasSize in
             let zoom = viewport.zoom
-            guard zoom > 0.001 else { return } // 極小ズームガード
+            guard zoom > 0.001 else { return } // Guard for extremely small zoom | 極小ズームガード
             
-            // ズームに応じた密度（LOD）制御
+            // Density (LOD) control according to zoom | ズームに応じた密度（LOD）制御
             let currentScaledGap = gap * zoom
             let minGap: CGFloat = (variant == .dots) ? 12 : 16
             
-            // 下限密度（densityStep = 1.0）から開始し、間隔が minGap を下回るまで密度を粗くする（5倍ずつ）
+            // Start from the lower density limit (densityStep = 1.0) and decrease density (by 5x) until the interval is less than minGap | 下限密度（densityStep = 1.0）から開始し、間隔が minGap を下回るまで密度を粗くする（5倍ずつ）
             var densityStep: Double = 1.0
             while CGFloat(densityStep) * currentScaledGap < minGap {
                 densityStep *= 5.0
             }
             
-            // 切り替わり付近（densityStep が変わる直前）の滑らかなフェードアウト
-            // 間隔が minGap に近づくにつれて opacity を 0 に落とす
+            // Smooth fade-out near transitions (just before densityStep changes) | 切り替わり付近（densityStep が変わる直前）の滑らかなフェードアウト
+            // Reduce opacity to 0 as the interval approaches minGap | 間隔が minGap に近づくにつれて opacity を 0 に落とす
             let stepGap = CGFloat(densityStep) * currentScaledGap
-            let fadeRange: CGFloat = 8.0 // 8pt の範囲でフェード
+            let fadeRange: CGFloat = 8.0 // Fade within a range of 8pt | 8pt の範囲でフェード
             let opacityFactor: Double = {
                 let diff = stepGap - minGap
                 if diff < fadeRange {

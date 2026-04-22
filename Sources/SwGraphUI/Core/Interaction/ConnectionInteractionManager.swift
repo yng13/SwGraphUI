@@ -1,13 +1,13 @@
 import Foundation
 
-/// ノード間の接続操作（ドラッグ、スナップ、バリデーション）のロジックを管理するクラス。
+/// Class that manages the logic for connection operations between nodes (dragging, snapping, validation). | ノード間の接続操作（ドラッグ、スナップ、バリデーション）のロジックを管理するクラス。
 public enum ConnectionInteractionManager {
     
-    /// 吸着判定の閾値（UIピクセル）。
-    /// ズームにかかわらず一定の操作感を提供するため、スクリーン座標系で判定します。
+    /// Threshold for snap detection (UI pixels). | 吸着判定の閾値（UIピクセル）。
+    /// Judging in the screen coordinate system to provide a consistent operational feel regardless of zoom. | ズームにかかわらず一定の操作感を提供するため、スクリーン座標系で判定します。
     public static let snapDistance: Double = 24.0
     
-    /// 接続候補となるハンドルの情報（判定用）
+    /// Information on handles that are candidates for connection (for judgment) | 接続候補となるハンドルの情報（判定用）
     public struct HandleCandidate: Sendable, Equatable {
         public let key: HandleKey
         public let position: XYPosition
@@ -22,15 +22,15 @@ public enum ConnectionInteractionManager {
         }
     }
 
-    /// スクリーン空間においてポインタに最も近いハンドルを候補から選択します。
+    /// Selects the handle closest to the pointer in screen space from the candidates. | スクリーン空間においてポインタに最も近いハンドルを候補から選択します。
     /// 
     /// - Parameters:
-    ///   - pointerInGraph: グラフ空間でのポインタ位置
-    ///   - candidates: 判定対象となる解決済みハンドルのリスト
-    ///   - viewport: スクリーン座標変換用のビューポート
-    ///   - threshold: 吸着閾値（デフォルトは snapDistance）
-    ///   - fromNodeID: 接続開始ノード（自己接続防止用）
-    /// - Returns: スナップ条件を満たす最も近いハンドルのキー
+    ///   - pointerInGraph: Pointer position in graph space | グラフ空間でのポインタ位置
+    ///   - candidates: List of resolved handles to be judged | 判定対象となる解決済みハンドルのリスト
+    ///   - viewport: Viewport for screen coordinate conversion | スクリーン座標変換用のビューポート
+    ///   - threshold: Snapping threshold (default is snapDistance) | 吸着閾値（デフォルトは snapDistance）
+    ///   - fromNodeID: Connection start node (to prevent self-connection) | 接続開始ノード（自己接続防止用）
+    /// - Returns: Key of the nearest handle satisfying the snap condition | スナップ条件を満たす最も近いハンドルのキー
     public static func findNearestHandle(
         near pointerInGraph: XYPosition,
         candidates: [HandleCandidate],
@@ -44,7 +44,7 @@ public enum ConnectionInteractionManager {
         var bestMatch: (key: HandleKey, distSq: Double)? = nil
         
         for candidate in candidates {
-            // 基本バリデーション
+            // Basic validation | 基本バリデーション
             guard !candidate.isHidden && candidate.isConnectable else { continue }
             if let fromNodeID, candidate.key.nodeID == fromNodeID { continue }
             
@@ -63,8 +63,8 @@ public enum ConnectionInteractionManager {
         return bestMatch?.key
     }
     
-    /// 指定されたグラフ空間のポインタ位置付近に吸着対象となるハンドルがあるか検索します。
-    /// ※ 後方互換性および単純な検索用
+    /// Searches for a handle to snap to near the specified pointer position in graph space. | 指定されたグラフ空間のポインタ位置付近に吸着対象となるハンドルがあるか検索します。
+    /// * For backward compatibility and simple searches | ※ 後方互換性および単純な検索用
     public static func findTargetHandle<NodeData: Sendable>(
         near pointerInGraph: XYPosition,
         in nodes: [BaseNode<NodeData>],
@@ -72,11 +72,11 @@ public enum ConnectionInteractionManager {
         viewport: Viewport,
         fromNodeID: String?
     ) -> (node: BaseNode<NodeData>, handle: NodeHandle)? {
-        // 既存の findTargetHandle も共通ロジックに寄せる（任意）が、
-        // 今回の GraphStore 統合では findNearestHandle を主導線とする。
+        // Optionally move existing findTargetHandle to common logic, | 既存の findTargetHandle も共通ロジックに寄せる（任意）が、
+        // but findNearestHandle is the main path in this GraphStore integration. | 今回の GraphStore 統合では findNearestHandle を主導線とする。
         
-        // 簡易実装として以前のロジックを維持しつつ、もし必要なら findNearestHandle にリダイレクト可能
-        // 現時点では GraphStore 側の統合を優先。
+        // While maintaining the previous logic as a simple implementation, it can be redirected to findNearestHandle if necessary. | 簡易実装として以前のロジックを維持しつつ、もし必要なら findNearestHandle にリダイレクト可能
+        // For now, prioritize integration on the GraphStore side. | 現時点では GraphStore 側の統合を優先。
         let pointerInScreen = pointerInGraph.toScreen(viewport: viewport)
         
         var bestMatch: (node: BaseNode<NodeData>, handle: NodeHandle)?
@@ -111,7 +111,7 @@ public enum ConnectionInteractionManager {
         return bestMatch
     }
     
-    /// ノードの絶対座標とサイズから、ハンドルのグラフ空間絶対座標を計算します。
+    /// Calculates the absolute graph space coordinates of a handle from the node's absolute coordinates and size. | ノードの絶対座標とサイズから、ハンドルのグラフ空間絶対座標を計算します。
     public static func calcHandlePosition(
         absolutePosition: XYPosition,
         dimensions: Dimensions,
@@ -122,7 +122,7 @@ public enum ConnectionInteractionManager {
         let x = absolutePosition.x
         let y = absolutePosition.y
         
-        // DefaultNodeView の標準オフセット（8px）を考慮した推測値
+        // Estimated value considering the standard offset (8px) of DefaultNodeView | DefaultNodeView の標準オフセット（8px）を考慮した推測値
         let handleOffset: Double = 8.0
         
         switch placement {

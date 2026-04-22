@@ -1,8 +1,8 @@
 import SwiftUI
 import Observation
 
-/// グラフの状態管理を担う中心的なクラス。
-/// ノード、エッジ、ビューポート、選択状態などを一括管理し、UIへのリアクティブな更新を提供します。
+/// Central class responsible for graph state management. | グラフの状態管理を担う中心的なクラス。
+/// Manages nodes, edges, viewport, selection status, etc., and provides reactive updates to the UI. | ノード、エッジ、ビューポート、選択状態などを一括管理し、UIへのリアクティブな更新を提供します。
 @Observable
 @MainActor
 public final class GraphStore<NodeData: Sendable>: Sendable {
@@ -75,24 +75,24 @@ public final class GraphStore<NodeData: Sendable>: Sendable {
     
     // MARK: - Measurement & Positioning API
     
-    /// ハンドルの実測座標を更新します。
+    /// Updates the measured coordinates of a handle. | ハンドルの実測座標を更新します。
     public func updateHandlePosition(key: HandleKey, absolutePosition: XYPosition) {
         runtimeState.handleMeasurements.positions[key] = absolutePosition
     }
     
-    /// ハンドルの実測座標を取得します（存在すれば）。
+    /// Retrieves the measured coordinates of a handle (if they exist). | ハンドルの実測座標を取得します（存在すれば）。
     public func measuredHandlePosition(for key: HandleKey) -> XYPosition? {
         runtimeState.handleMeasurements.positions[key]
     }
     
-    /// ハンドルの解決済み座標を取得します（実測値を優先し、なければ推測を使用）。
+    /// Retrieves the resolved coordinates of a handle (prioritizes measured values, falls back to estimation). | ハンドルの解決済み座標を取得します（実測値を優先し、なければ推測を使用）。
     public func resolvedHandlePosition(for key: HandleKey) -> XYPosition {
-        // 1. 実測値があれば最優先
+        // 1. Highest priority if measured value exists | 1. 実測値があれば最優先
         if let measured = measuredHandlePosition(for: key) {
             return measured
         }
         
-        // 2. なければ従来の数学的推測にフォールバック
+        // 2. Fallback to traditional mathematical estimation if not available | 2. なければ従来の数学的推測にフォールバック
         guard let node = node(id: key.nodeID) else { return .zero }
         let absPos = absolutePosition(for: key.nodeID)
         return ConnectionInteractionManager.calcHandlePosition(
@@ -110,14 +110,14 @@ public final class GraphStore<NodeData: Sendable>: Sendable {
     public func updateNodePosition(id: String, position: XYPosition) {
         let lookup = self.nodeLookup
         if let node = lookup[id], let index = nodes.firstIndex(where: { $0.id == id }) {
-            // 指定された相対座標を絶対座標に変換してから制約を適用
+            // Apply constraints after converting the specified relative coordinates to absolute coordinates | 指定された相対座標を絶対座標に変換してから制約を適用
             let targetAbsPos = NodePositioningAlgorithms.toAbsolutePosition(
                 position,
                 parent: node.parentID.flatMap { lookup[$0] },
                 nodeLookup: lookup
             )
             
-            // 常に制約を適用
+            // Always apply constraints | 常に制約を適用
             let constrainedPos = DragManager.applyConstraints(
                 to: targetAbsPos,
                 node: node,
@@ -132,10 +132,10 @@ public final class GraphStore<NodeData: Sendable>: Sendable {
         }
     }
 
-    /// 自動測定ロジックによってノードの実測サイズを更新します。
+    /// Updates the measured size of a node via automatic measurement logic. | 自動測定ロジックによってノードの実測サイズを更新します。
     public func updateNodeDimensions(id: String, dimensions: Dimensions) {
         if let index = nodes.firstIndex(where: { $0.id == id }) {
-            // 差分ガード：値が同じ場合は更新をスキップして再描画を抑制
+            // Difference guard: Skip update if values are identical to suppress re-renders | 差分ガード：値が同じ場合は更新をスキップして再描画を抑制
             if nodes[index].measured != dimensions {
                 withNodeOrderRecalculationSuspended {
                     nodes[index].measured = dimensions
@@ -144,12 +144,12 @@ public final class GraphStore<NodeData: Sendable>: Sendable {
         }
     }
 
-    /// リサイズ操作によってノードの寸法と位置を更新します。
+    /// Updates node dimensions and position via resize operation. | リサイズ操作によってノードの寸法と位置を更新します。
     /// - Parameters:
-    ///   - id: 更新対象ノード ID
-    ///   - width: リサイズ後の幅
-    ///   - height: リサイズ後の高さ
-    ///   - position: リサイズ後の位置
+    ///   - id: Target node ID | 更新対象ノード ID
+    ///   - width: Width after resizing | リサイズ後の幅
+    ///   - height: Height after resizing | リサイズ後の高さ
+    ///   - position: Position after resizing | リサイズ後の位置
     public func updateNodeDimensionsAfterResize(id: String, width: Double, height: Double, position: XYPosition) {
         if let index = nodes.firstIndex(where: { $0.id == id }) {
             withNodeOrderRecalculationSuspended {
@@ -157,7 +157,7 @@ public final class GraphStore<NodeData: Sendable>: Sendable {
                 nodes[index].height = height
                 nodes[index].position = position
                 
-                // measured も同期。
+                // Also synchronize measured size. | measured も同期。
                 nodes[index].measured = Dimensions(width: width, height: height)
             }
             runtimeState.isAbsolutePositionCacheValid = false
@@ -168,7 +168,7 @@ public final class GraphStore<NodeData: Sendable>: Sendable {
         self.resizeStartSnapshot = self.snapshot()
     }
     
-    /// リサイズ操作を確定し、実効変化がある場合のみ Undo 履歴を登録します。
+    /// Finalizes the resize operation and registers Undo history only if there is an effective change. | リサイズ操作を確定し、実効変化がある場合のみ Undo 履歴を登録します。
     public func stopResizing() {
         if let before = resizeStartSnapshot {
             let after = self.snapshot()
@@ -177,12 +177,12 @@ public final class GraphStore<NodeData: Sendable>: Sendable {
                 let dy = (a.position.y - b.position.y)
                 let dw = (a.width ?? 0) - (b.width ?? 0)
                 let dh = (a.height ?? 0) - (b.height ?? 0)
-                // 座標またはサイズに有意な差（0.1px 以上の変化）があるか
+                // Check if there is a significant difference (change of 0.1px or more) in coordinates or size | 座標またはサイズに有意な差（0.1px 以上の変化）があるか
                 return (dx * dx + dy * dy > 0.01) || (abs(dw) > 0.1) || (abs(dh) > 0.1)
             } || before.nodes.count != after.nodes.count
             
             if hasChanged {
-                registerUndo(title: "ノードのリサイズ", snapshot: before)
+                registerUndo(title: "Resize Node | ノードのリサイズ", snapshot: before)
             }
         }
         self.resizeStartSnapshot = nil
@@ -195,13 +195,13 @@ public final class GraphStore<NodeData: Sendable>: Sendable {
         return runtimeState.absolutePositionCache[nodeID] ?? .zero
     }
 
-    /// 全ノードの絶対座標を一括計算してキャッシュします。
+    /// Batch calculates and caches absolute coordinates for all nodes. | 全ノードの絶対座標を一括計算してキャッシュします。
     public func recalculateAbsolutePositions() {
         let lookup = self.nodeLookup
         var cache: [String: XYPosition] = [:]
         
         let sortedIDs = runtimeState.sortedNodeIDs
-        // トポロジカル順に近い順序（sortedNodeIDs は深さ考慮済み）で辿れば効率的
+        // Efficient to traverse in order close to topological (sortedNodeIDs accounts for depth) | トポロジカル順に近い順序（sortedNodeIDs は深さ考慮済み）
         for id in sortedIDs {
             if let node = lookup[id] {
                 cache[id] = NodePositioningAlgorithms.evaluateAbsolutePosition(node, nodeLookup: lookup)
@@ -271,7 +271,7 @@ public final class GraphStore<NodeData: Sendable>: Sendable {
         )
         
         if runtimeState.viewport.viewport != prevViewport {
-            registerViewportUndo(title: "表示範囲を調整", previousViewport: prevViewport)
+            registerViewportUndo(title: "Adjust Viewport | 表示範囲を調整", previousViewport: prevViewport)
         }
     }
     
@@ -391,6 +391,7 @@ public final class GraphStore<NodeData: Sendable>: Sendable {
         }
     }
 
+    /// Selects a single node. | ノードを単一選択します。
     public func selectNode(_ id: String) {
         runtimeState.selection.clear()
         runtimeState.selection.selectNode(id: id)
@@ -497,7 +498,7 @@ public final class GraphStore<NodeData: Sendable>: Sendable {
         }
         runtimeState.isAbsolutePositionCacheValid = false
         
-        // 移動量に有意な差（0.1px 以上の変化）があるノードが1つでもあるか
+        // Whether at least one node has a significant difference in movement (change of 0.1px or more) | 移動量に有意な差（0.1px 以上の変化）があるノードが1つでもあるか
         let significantMove = nodes.contains { n in
             guard selectedNodeIDs.contains(n.id) else { return false }
             let old = beforeSnapshot.nodes.first(where: { $0.id == n.id })?.position ?? n.position
@@ -507,7 +508,7 @@ public final class GraphStore<NodeData: Sendable>: Sendable {
         }
         
         if significantMove {
-            registerUndo(title: "ノードの移動", snapshot: beforeSnapshot, ignoringViewport: true)
+            registerUndo(title: "Move Node | ノードの移動", snapshot: beforeSnapshot, ignoringViewport: true)
         }
     }
     
@@ -533,9 +534,9 @@ public final class GraphStore<NodeData: Sendable>: Sendable {
             selectedNodeIDs.contains(edge.target)
         }
         
-        // 実際に削除された要素がある場合のみ登録
+        // Register only if there are actually deleted elements | 実際に削除された要素がある場合のみ登録
         if nodes.count != before.nodes.count || edges.count != before.edges.count {
-            registerUndo(title: "要素の削除", snapshot: before, ignoringViewport: true)
+            registerUndo(title: "Delete Elements | 要素の削除", snapshot: before, ignoringViewport: true)
             recalculateSortedNodeIDs()
             runtimeState.isAbsolutePositionCacheValid = false
         }
@@ -636,7 +637,7 @@ public final class GraphStore<NodeData: Sendable>: Sendable {
                 b.id != a.id || b.position != a.position
             } || before.nodes.count != after.nodes.count
             if hasMoved {
-                registerUndo(title: "ノードの移動", snapshot: before)
+                registerUndo(title: "Move Node | ノードの移動", snapshot: before)
             }
         }
         self.dragStartSnapshot = nil
@@ -648,24 +649,24 @@ public final class GraphStore<NodeData: Sendable>: Sendable {
         }
     }
     
-    /// 特定のノードを新しい座標に移動させます。
+    /// Moves a specific node to new coordinates. | 特定のノードを新しい座標に移動させます。
     ///
-    /// インスペクターからの直接入力など「決定的な移動」に使用します。
-    /// 内部で制約適用、Undo登録、およびキャッシュ無効化が自動で行われます。
-    public func updateNodePosition(id: String, to newRelativePosition: XYPosition, title: String = "ノードの移動") {
+    /// Used for "deterministic movement" such as direct input from the inspector. | インスペクターからの直接入力など「決定的な移動」に使用します。
+    /// Application of constraints, Undo registration, and cache invalidation are performed automatically. | 内部で制約適用、Undo登録、およびキャッシュ無効化が自動で行われます。
+    public func updateNodePosition(id: String, to newRelativePosition: XYPosition, title: String = "Move Node | ノードの移動") {
         guard let index = nodes.firstIndex(where: { $0.id == id }) else { return }
         let node = nodes[index]
         let currentPosition = node.position
         
-        // 有意な差がない場合はスキップ
+        // Skip if no significant difference | 有意な差がない場合はスキップ
         guard abs(currentPosition.x - newRelativePosition.x) > 0.01 || abs(currentPosition.y - newRelativePosition.y) > 0.01 else { return }
         
         let before = self.snapshot()
         let lookup = self.nodeLookup
 
-        // 重要: DragManager.applyConstraints は第一引数に「目標とする絶対座標」を期待する。
-        // 引数 newRelativePosition は（親子関係にかかわらず）ノードの position プロパティの目標値なので、
-        // これを絶対座標に変換してから渡す必要がある。
+        // Important: DragManager.applyConstraints expects "target absolute coordinates" as the first argument. | 重要: DragManager.applyConstraints は第一引数に「目標とする絶対座標」を期待する。
+        // Since the newRelativePosition argument is the target value for the node's position property (regardless of parental relationship), | 引数 newRelativePosition は（親子関係にかかわらず）ノードの position プロパティの目標値なので、
+        // it must be converted to absolute coordinates before passing. | これを絶対座標に変換してから渡す必要がある。
         let parent = node.parentID.flatMap { lookup[$0] }
         let targetAbsPos = NodePositioningAlgorithms.toAbsolutePosition(newRelativePosition, parent: parent, nodeLookup: lookup)
         
@@ -770,7 +771,7 @@ public final class GraphStore<NodeData: Sendable>: Sendable {
                 } ?? false
                 
                 if isNoOp {
-                    // 実効的な変化がない場合は nil を返し、Undo 登録も行わない
+                    // If there is no effective change, return nil and do not register Undo | 実効的な変化がない場合は nil を返し、Undo 登録も行わない
                     result = nil
                 } else {
                     updateEdgeConnection(id: edgeID, newConnection: conn)
@@ -780,7 +781,7 @@ public final class GraphStore<NodeData: Sendable>: Sendable {
         
         stopAutoPanTimer()
         if let conn = result {
-            let actionName = (active.mode == .connect) ? "エッジの追加" : "接続の変更"
+            let actionName = (active.mode == .connect) ? "Add Edge | エッジの追加" : "Change Connection | 接続の変更"
             registerUndo(title: actionName, snapshot: beforeSnapshot)
         }
         runtimeState.connection.end()
@@ -802,7 +803,7 @@ public final class GraphStore<NodeData: Sendable>: Sendable {
         }
         
         if hasChanged {
-            registerUndo(title: "レイアウトの適用", snapshot: beforeSnapshot, ignoringViewport: true)
+            registerUndo(title: "Apply Layout | レイアウトの適用", snapshot: beforeSnapshot, ignoringViewport: true)
             runtimeState.isAbsolutePositionCacheValid = false
         }
     }
@@ -909,7 +910,7 @@ public final class GraphStore<NodeData: Sendable>: Sendable {
     
     // MARK: - Performance Cache Overrides
     
-    /// 描画順序（zIndex、階層）を事前に計算してキャッシュします。
+    /// Pre-calculates and caches the rendering order (zIndex, hierarchy). | 描画順序（zIndex、階層）を事前に計算してキャッシュします。
     public func recalculateSortedNodeIDs() {
         let lookup = self.nodeLookup
         let indexedNodes = self.nodes.enumerated().map { ($0, $1) }
@@ -923,12 +924,12 @@ public final class GraphStore<NodeData: Sendable>: Sendable {
             let zB = nodeB.zIndex ?? 0
             if zA != zB { return zA < zB }
             
-            // 2. 階層の深さ (親を先に、子を後に)
+            // 2. Hierarchical depth (parent first, child later) | 2. 階層の深さ (親を先に、子を後に)
             let depthA = NodePositioningAlgorithms.calculateDepth(node: nodeA, nodeLookup: lookup)
             let depthB = NodePositioningAlgorithms.calculateDepth(node: nodeB, nodeLookup: lookup)
             if depthA != depthB { return depthA < depthB }
             
-            // 3. 安定ソート
+            // 3. Stable sort | 3. 安定ソート
             return idxA < idxB
         }.map { $0.1.id }
     }

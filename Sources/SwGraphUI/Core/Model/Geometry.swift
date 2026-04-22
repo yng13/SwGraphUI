@@ -39,7 +39,7 @@ public struct XYPosition: Sendable, Equatable, Codable {
         return XYPosition(x: x + parent.x, y: y + parent.y)
     }
 
-    /// グラフ空間の座標をスクリーン（UI）空間の座標に変換します。
+    /// Converts coordinates from graph space to screen (UI) space. | グラフ空間の座標をスクリーン（UI）空間の座標に変換します。
     public func toScreen(viewport: Viewport) -> XYPosition {
         guard viewport.zoom.isFinite, viewport.zoom != 0,
               viewport.x.isFinite, viewport.y.isFinite,
@@ -52,7 +52,7 @@ public struct XYPosition: Sendable, Equatable, Codable {
         )
     }
 
-    /// スクリーン（UI）空間の座標をグラフ空間の座標に逆変換します。
+    /// Converts coordinates from screen (UI) space back to graph space. | スクリーン（UI）空間の座標をグラフ空間の座標に逆変換します。
     public func fromScreen(viewport: Viewport) -> XYPosition {
         guard viewport.zoom.isFinite, viewport.zoom != 0,
               viewport.x.isFinite, viewport.y.isFinite,
@@ -99,7 +99,7 @@ public struct Dimensions: Sendable, Equatable, Codable {
     
     public static let zero = Dimensions(width: 0, height: 0)
     
-    /// グラフ（論理）空間の寸法をスクリーン（UI）空間の寸法に変換します。
+    /// Converts dimensions from graph (logical) space to screen (UI) space. | グラフ（論理）空間の寸法をスクリーン（UI）空間の寸法に変換します。
     public func toScreen(viewport: Viewport) -> Dimensions {
         guard viewport.zoom.isFinite, viewport.zoom >= 0,
               width.isFinite, height.isFinite else {
@@ -133,7 +133,7 @@ public struct Rect: Sendable, Equatable {
 
     public static let zero = Rect(origin: .zero, size: .zero)
 
-    /// グラフ空間の矩形をスクリーン（UI）空間の矩形に変換します。
+    /// Converts a rect from graph space to screen (UI) space. | グラフ空間の矩形をスクリーン（UI）空間の矩形に変換します。
     public func toScreen(viewport: Viewport) -> Rect {
         Rect(
             origin: origin.toScreen(viewport: viewport),
@@ -206,15 +206,15 @@ public struct CoordinateExtent: Sendable, Equatable, Codable {
         self.max = XYPosition(x: maxX, y: maxY)
     }
 }
-/// パス描画用の中間幾何表現。
-/// プラットフォームに依存せず、線の構成要素（セグメント）を定義します。
+/// Intermediate geometry representation for path drawing. | パス描画用の中間幾何表現。
+/// Defines path components (segments) independent of the platform. | プラットフォームに依存せず、線の構成要素（セグメント）を定義します。
 public enum PathSegment: Sendable, Equatable {
     case move(to: XYPosition)
     case line(to: XYPosition)
     case bezier(to: XYPosition, control1: XYPosition, control2: XYPosition)
     case quadratic(to: XYPosition, control: XYPosition)
     
-    /// パスセグメントをスクリーン（UI）空間の座標に変換します。
+    /// Converts path segments to screen (UI) space coordinates. | パスセグメントをスクリーン（UI）空間の座標に変換します。
     public func toScreen(viewport: Viewport) -> PathSegment {
         switch self {
         case .move(let to):
@@ -237,7 +237,7 @@ public enum PathSegment: Sendable, Equatable {
 }
 
 extension PathSegment {
-    /// セグメントの移動先または終点座標を取得します。
+    /// Gets the move-to or end-point coordinates of the segment. | セグメントの移動先または終点座標を取得します。
     public var target: XYPosition {
         switch self {
         case .move(let to): return to
@@ -247,8 +247,8 @@ extension PathSegment {
         }
     }
 
-    /// セグメントの境界計算に使う全座標を返します。
-    /// ベジェ系は制御点も含めることで張り出しを取りこぼしません。
+    /// Returns all points used for boundary calculation of the segment. | セグメントの境界計算に使う全座標を返します。
+    /// For Bezier types, including control points ensures capture of the full extent. | ベジェ系は制御点も含めることで張り出しを取りこぼしません。
     public var points: [XYPosition] {
         switch self {
         case .move(let to):

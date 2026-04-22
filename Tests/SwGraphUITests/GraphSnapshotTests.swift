@@ -26,38 +26,38 @@ struct GraphSnapshotTests {
         store.nodes = nodes
         store.edges = edges
         store.setViewport(viewport)
-        store.selectNode("n1") // 選択状態にする
+        store.selectNode("n1") // Make it selected | 選択状態にする
         
-        // 1. Snapshot 作成
+        // 1. Create Snapshot | 1. Snapshot 作成
         let snapshot = store.snapshot()
         
-        // 2. JSON シリアライズ
+        // 2. JSON Serialization | 2. JSON シリアライズ
         let encoder = JSONEncoder()
         let data = try encoder.encode(snapshot)
         
-        // 3. デシリアライズ
+        // 3. Deserialization | 3. デシリアライズ
         let decoder = JSONDecoder()
         let restoredSnapshot = try decoder.decode(GraphSnapshot<EmptyPayload>.self, from: data)
         
-        // 4. 新しいストアに適用
+        // 4. Apply to a new store | 4. 新しいストアに適用
         let newStore = GraphStore<EmptyPayload>()
         newStore.apply(snapshot: restoredSnapshot)
         
-        // 5. 検証
+        // 5. Verification | 5. 検証
         #expect(newStore.nodes.count == 2)
         #expect(newStore.edges.count == 1)
         #expect(newStore.runtimeState.viewport.viewport == viewport)
         
-        // configuration が保たれているか
+        // Check if configuration is preserved | configuration が保たれているか
         #expect(newStore.nodes[0].resizable == false)
         #expect(newStore.nodes[1].parentID == "n1")
         
-        // エッジの属性が保たれているか
+        // Check if edge attributes are preserved | エッジの属性が保たれているか
         #expect(newStore.edges[0].markerEnd?.type == .arrowClosed)
         #expect(newStore.edges[0].markerEnd?.color == "#ff0000")
         #expect(newStore.edges[0].label == "Edge Label")
         
-        // 選択状態がクリアされているか (一括置換 + apply 時のクリア両方で保証)
+        // Check if selection state is cleared (guaranteed by both batch replacement and clearing on apply) | 選択状態がクリアされているか (一括置換 + apply 時のクリア両方で保証)
         #expect(newStore.nodes[0].selected == false)
         #expect(newStore.selectedNodes.isEmpty)
     }

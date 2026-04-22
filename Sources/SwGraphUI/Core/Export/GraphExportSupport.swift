@@ -1,11 +1,11 @@
 import SwiftUI
 
-/// エクスポート機能（PNG/PDF）で共通利用するロジックを提供します。
+/// Provides common logic used across export functions (PNG/PDF). | エクスポート機能（PNG/PDF）で共通利用するロジックを提供します。
 @MainActor
 internal struct GraphExportSupport<NodeData: Sendable> {
     let store: GraphStore<NodeData>
     
-    /// エクスポート対象の論理的な境界矩形を計算します。
+    /// Calculates the logical boundary rectangle for export. | エクスポート対象の論理的な境界矩形を計算します。
     func calculateExportBounds() -> Rect? {
         let nodes = store.nodes
         guard !nodes.isEmpty else { return nil }
@@ -13,7 +13,7 @@ internal struct GraphExportSupport<NodeData: Sendable> {
         let nodeLookup = store.nodeLookup
         var bounds = NodePositioningAlgorithms.getNodesBounds(nodes, nodeLookup: nodeLookup)
 
-        // エッジの接続点・ラベル・マーカー、および曲線パスの張り出しも考慮
+        // Account for edge connection points, labels, markers, and path protrusions | エッジの接続点・ラベル・マーカー、および曲線パスの張り出しも考慮
         for edge in store.edges {
             let sourcePos = edge.sourcePosition ?? .right
             let targetPos = edge.targetPosition ?? .left
@@ -35,7 +35,7 @@ internal struct GraphExportSupport<NodeData: Sendable> {
                 curvature: edge.curvature ?? 0.25
             )
 
-            // 曲線エッジの張り出し（制御点）もすべて Bounds に含める
+            // Include all protrusions of curved edges (control points) into bounds | 曲線エッジの張り出し（制御点）もすべて Bounds に含める
             for segment in path.segments {
                 switch segment {
                 case .move(let to), .line(let to):
@@ -65,7 +65,7 @@ internal struct GraphExportSupport<NodeData: Sendable> {
             }
         }
         
-        // 線幅やシャドウによる微細なはみ出しを防ぐため、最終 Bounds に安全マージンを適用
+        // Apply a safety margin to the final Bounds to prevent minor cropping due to line width or shadows | 線幅やシャドウによる微細なはみ出しを防ぐため、最終 Bounds に安全マージンを適用
         return Rect(
             x: bounds.x - 4,
             y: bounds.y - 4,

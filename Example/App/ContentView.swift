@@ -25,7 +25,7 @@ struct ContentView: View {
                 SidebarView(appStore: appStore, graphStore: graphStore)
                     .frame(minWidth: 200, idealWidth: 250, maxWidth: 400)
                     .accessibilityElement(children: .contain)
-                    .accessibilityLabel("サンプルナビゲータ")
+                    .accessibilityLabel("Sample Navigator | サンプルナビゲータ")
                     .overlay(alignment: .trailing) {
                         Rectangle()
                             .fill(Color.secondary.opacity(0.2))
@@ -40,17 +40,17 @@ struct ContentView: View {
                     .frame(minHeight: 400, idealHeight: 1200, maxHeight: .infinity)
                     .layoutPriority(1)
                     .accessibilityElement(children: .contain)
-                    .accessibilityLabel("グラフ編集エリア")
+                    .accessibilityLabel("Graph Editing Area | グラフ編集エリア")
                 
                 if appStore.isCodeViewVisible {
                     CodeView(graphStore: graphStore)
                         .frame(minHeight: 150, idealHeight: 400, maxHeight: .infinity)
                         .accessibilityElement(children: .contain)
-                        .accessibilityLabel("コードビュー")
+                        .accessibilityLabel("Code View | コードビュー")
                 }
             }
             .frame(minWidth: 400)
-            .layoutPriority(1) // 中央ペインを優先的に広げる
+            .layoutPriority(1) // Prioritize expanding the center pane | 中央ペインを優先的に広げる
             
             // Detail/Inspector: Properties & Logs
             if appStore.isInspectorVisible {
@@ -69,7 +69,7 @@ struct ContentView: View {
                 }
                 .frame(minWidth: 250, idealWidth: 300, maxWidth: 500)
                 .accessibilityElement(children: .contain)
-                .accessibilityLabel("インスペクタペイン")
+                .accessibilityLabel("Inspector Pane | インスペクタペイン")
                 .overlay(alignment: .leading) {
                     Rectangle()
                         .fill(Color.secondary.opacity(0.2))
@@ -213,9 +213,9 @@ struct ContentView: View {
                 )
                 .coordinateSpace(name: "graph")
                 .background(Color(NSColor.underPageBackgroundColor))
-                .border(Color.blue.opacity(0.3), width: 2) // FitView対象領域を可視化
+                .border(Color.blue.opacity(0.3), width: 2) // Visualize FitView target area | FitView対象領域を可視化
                 .accessibilityElement(children: .contain)
-                .accessibilityLabel("グラフキャンバス領域")
+                .accessibilityLabel("Graph Canvas Area | グラフキャンバス領域")
                 
                 // Plugins Area
                 ZStack {
@@ -235,19 +235,19 @@ struct ContentView: View {
                             .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .bottomLeading)
                     }
                 }
-                .allowsHitTesting(true) // プラグイン領域への入力を許可
+                .allowsHitTesting(true) // Allow input to the plugin area | プラグイン領域への入力を許可
                 .accessibilityElement(children: .contain)
-                .accessibilityLabel("グラフ補助コントロール")
+                .accessibilityLabel("Graph Auxiliary Controls | グラフ補助コントロール")
             }
             .accessibilityElement(children: .contain)
-            .accessibilityLabel("メインキャンバス")
+            .accessibilityLabel("Main Canvas | メインキャンバス")
             .onAppear {
                 appStore.currentGraphSize = Dimensions(width: geometry.size.width, height: geometry.size.height)
             }
             .onChange(of: geometry.size) { _, newSize in
                 appStore.currentGraphSize = Dimensions(width: newSize.width, height: newSize.height)
             }
-            // 実測完了後の初回自動 fitView 調整
+            // Initial automatic fitView adjustment after measurement completion | 実測完了後の初回自動 fitView 調整
             .onChange(of: graphStore.nodes.map { $0.measured != nil }) { _, measuredStatuses in
                 guard appStore.selectedCategory == .custom, !appStore.didAutoFitMeasuredSample else { return }
                 

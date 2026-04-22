@@ -4,7 +4,7 @@ import SwGraphUI
 struct MiniMapAndControlsSample: GraphSample {
     var title: String = "MiniMap & Controls"
     var category: ExampleAppStore.SampleCategory = .plugins
-    var description: String = "MiniMap と Controls のデモ。広範囲にノードを配置しています。"
+    var description: String = "Demo of MiniMap and Controls. Nodes are arranged over a wide area. | MiniMap と Controls のデモ。広範囲にノードを配置しています。"
     
     func setup(in store: GraphStore<String>, appStore: ExampleAppStore) {
         store.nodes = [
@@ -24,11 +24,11 @@ struct MiniMapAndControlsSample: GraphSample {
             BaseEdge(id: "e5-6", source: "5", target: "6")
         ]
         
-        // ズーム制限の緩和（広範囲なノード配置を表示可能にするため）
+        // Relaxing zoom limits (to allow displaying wide-range node placements) | ズーム制限の緩和（広範囲なノード配置を表示可能にするため）
         store.runtimeState.interactivity.minZoom = 0.1
         store.runtimeState.interactivity.maxZoom = 4.0
         
-        // 初期状態はロック解除
+        // Initial state is unlocked | 初期状態はロック解除
         store.setNodesDraggable(true)
         store.setPanOnDrag(true)
         

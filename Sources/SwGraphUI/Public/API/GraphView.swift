@@ -1,14 +1,14 @@
 import SwiftUI
 
-/// グラフ内で発生したイベントの通知用
+/// For notification of events occurring within the graph | グラフ内で発生したイベントの通知用
 public enum GraphEvent: Sendable {
     case dragStart(nodeIDs: [String])
     case dragUpdate(nodeIDs: [String])
     case dragStop(nodeIDs: [String])
 }
 
-/// SwGraphUI のメインビューの骨格。
-/// ズーム・パンの適用と、ドラッグ入力の GraphStore へのブリッジを担います。
+/// Skeleton of the main view of SwGraphUI. | SwGraphUI のメインビューの骨格。
+/// Responsibilities include applying zoom/pan and bridging drag inputs to the GraphStore. | ズーム・パンの適用と、ドラッグ入力の GraphStore へのブリッジを担います。
 public struct GraphView<NodeData: Sendable, NodeContent: View>: View {
     public let store: GraphStore<NodeData>
     public let nodeBuilder: (BaseNode<NodeData>) -> NodeContent
@@ -20,17 +20,17 @@ public struct GraphView<NodeData: Sendable, NodeContent: View>: View {
     public var onConnect: ((Connection) -> Void)?
     public var onReconnect: ((String, Connection) -> Void)?
     
-    // 修飾キーの状態監視アダプター
+    // Adapter for monitoring modifier key states | 修飾キーの状態監視アダプター
     @State private var modifierKeys = ModifierKeysProvider()
     
-    // Zoom / Hover 用状態
+    // State for Zoom / Hover | Zoom / Hover 用状態
     @State private var hoverLocation: CGPoint = .zero
     @State private var lastMagnification: CGFloat = 1.0
     #if os(macOS)
     @StateObject private var scrollMonitor = ScrollMonitor()
     #endif
     
-    // パンまたは Marquee 操作の継続的な変化量を計算するための内部用ステート
+    // Internal state for calculating continuous changes in pan or marquee operations | パンまたは Marquee 操作の継続的な変化量を計算するための内部用ステート
     @State private var lastPanTranslation: CGSize = .zero
     
     private enum BackgroundInteractionMode {
@@ -64,7 +64,7 @@ public struct GraphView<NodeData: Sendable, NodeContent: View>: View {
 
     
     public var body: some View {
-        let _ = modifierKeys.isShiftPressed // Body のリアクティブ性を確保
+        let _ = modifierKeys.isShiftPressed // Ensure the body is reactive to Shift key presses | Body のリアクティブ性を確保
         
         ZStack {
             GeometryReader { geometry in
@@ -79,19 +79,19 @@ public struct GraphView<NodeData: Sendable, NodeContent: View>: View {
                     )
                 }
                 
-                // ビューポート（グラフ空間）コンテナ
+                // Viewport (graph space) container | ビューポート（グラフ空間）コンテナ
                 viewportContainer
                 
-                // 矩形選択の表示（最前面、ただし座標系は viewport_container / スクリーン座標系）
+                // Marquee selection display (frontmost, but coordinate system is viewport_container / screen coordinates) | 矩形選択の表示（最前面、ただし座標系は viewport_container / スクリーン座標系）
                 if let marquee = store.runtimeState.marquee {
                     MarqueeView(marquee: marquee)
                 }
             }
             .coordinateSpace(name: "viewport_container")
             .onAppear {
-                // 初期サイズの同期
-                // ※ GeometryReader 内部で geometry を直接参照して store を叩くと無限ループのリスクがあるため、
-                // 本来は一方向の通知に留めます。
+                // Sync initial size | 初期サイズの同期
+                // * Referencing geometry directly within GeometryReader and calling the store carries a risk of infinite loops, | ※ GeometryReader 内部で geometry を直接参照して store を叩くと無限ループのリスクがあるため、
+                // so normally this is kept to one-way notifications. | 本来は一方向の通知に留めます。
             }
             .background(
                 GeometryReader { geometry in
@@ -106,9 +106,9 @@ public struct GraphView<NodeData: Sendable, NodeContent: View>: View {
             )
         }
         .accessibilityElement(children: .contain)
-        .accessibilityLabel("グラフキャンバス")
+        .accessibilityLabel("Graph Canvas | グラフキャンバス")
         .onAppear {
-            _ = modifierKeys.isShiftPressed // 初期アクセスで監視開始
+            _ = modifierKeys.isShiftPressed // Start monitoring on initial access | 初期アクセスで監視開始
             
             #if os(macOS)
             scrollMonitor.onEvent = { [store, weak scrollMonitor] event in
@@ -116,7 +116,7 @@ public struct GraphView<NodeData: Sendable, NodeContent: View>: View {
                 
                 let location = scrollMonitor?.location ?? .zero
                 if event.modifierFlags.contains(.command) || event.modifierFlags.contains(.control) {
-                    let factor = exp(event.scrollingDeltaY * 0.01) // ホイール量に応じた倍率
+                    let factor = exp(event.scrollingDeltaY * 0.01) // Magnification factor according to scroll amount | ホイール量に応じた倍率
                     let center = XYPosition(x: location.x, y: location.y)
                     store.zoom(at: center, factor: factor)
                     return nil
@@ -182,7 +182,7 @@ public struct GraphView<NodeData: Sendable, NodeContent: View>: View {
         .onPreferenceChange(HandlePositionPreferenceKey.self) { entries in
             let viewport = store.runtimeState.viewport.viewport
             for entry in entries {
-                // スクリーン（viewport_container）座標系をグラフ絶対座標に変換
+                // Convert screen (viewport_container) coordinates to absolute graph coordinates | スクリーン（viewport_container）座標系をグラフ絶対座標に変換
                 let absoluteCenter = entry.viewportCenter.fromScreen(viewport: viewport)
                 store.updateHandlePosition(key: entry.key, absolutePosition: absoluteCenter)
             }
@@ -193,11 +193,11 @@ public struct GraphView<NodeData: Sendable, NodeContent: View>: View {
         .environment(store)
     }
 
-    // MARK: - Layer Components
+    // MARK: - Layer Components | レイヤーコンポーネント
 
     @ViewBuilder
     private var backgroundLayerPart: some View {
-        // ヒットテストを確実にするため、完全に透明ではない色を使用
+        // Use a color that is not completely transparent to ensure hit testing | ヒットテストを確実にするため、完全に透明ではない色を使用
         Color.black.opacity(0.0001)
             .contentShape(Rectangle())
             .accessibilityHidden(true)
@@ -205,12 +205,12 @@ public struct GraphView<NodeData: Sendable, NodeContent: View>: View {
                 DragGesture(minimumDistance: 0, coordinateSpace: .named("viewport_container"))
                     .onChanged { value in
                         if backgroundInteractionMode == .undecided {
-                            // 操作開始時に Shift キーの状態を見てモードを確定・ロックする
+                            // Check the state of the Shift key at the start of operation to determine and lock the mode | 操作開始時に Shift キーの状態を見てモードを確定・ロックする
                             if modifierKeys.isShiftPressed && store.runtimeState.interactivity.elementsSelectable {
                                 backgroundInteractionMode = .marquee
                                 store.startMarquee(at: value.startLocation)
                             } else if store.runtimeState.interactivity.panOnDrag {
-                                // 単なるタップと区別するため、一定以上の移動で pan にロックする
+                                // Lock to pan if movement exceeds a certain amount to distinguish from a simple tap | 単なるタップと区別するため、一定以上の移動で pan にロックする
                                 let translation = sqrt(pow(value.translation.width, 2) + pow(value.translation.height, 2))
                                 if translation > 5 {
                                     backgroundInteractionMode = .pan
@@ -218,7 +218,7 @@ public struct GraphView<NodeData: Sendable, NodeContent: View>: View {
                             }
                         }
                         
-                        // ロックされたモードに従って処理を実行
+                        // Execute processing according to the locked mode | ロックされたモードに従って処理を実行
                         switch backgroundInteractionMode {
                         case .marquee:
                             store.updateMarquee(to: value.location)
@@ -238,13 +238,13 @@ public struct GraphView<NodeData: Sendable, NodeContent: View>: View {
                         case .pan:
                             break
                         case .undecided:
-                            // 移動なし（タップ）かつ要素選択が許可されている場合、選択クリア
+                            // Clear selection if no movement (tap) and element selection is allowed | 移動なし（タップ）かつ要素選択が許可されている場合、選択クリア
                             if store.runtimeState.interactivity.elementsSelectable {
                                 store.clearSelection()
                             }
                         }
                         
-                        // リセット
+                        // Reset | リセット
                         backgroundInteractionMode = .undecided
                         lastPanTranslation = .zero
                     }
@@ -273,8 +273,7 @@ public struct GraphView<NodeData: Sendable, NodeContent: View>: View {
     }
 }
 
-/// 
-/// 各ノードのジェスチャー操作をカプセル化し、モードのロックと選択意図を管理するラッパービュー。
+/// Wrapper view that encapsulates gesture operations for each node, managing mode locking and selection intent. | 各ノードのジェスチャー操作をカプセル化し、モードのロックと選択意図を管理するラッパービュー。
 /// 
 internal struct NodeGestureWrapper<NodeData: Sendable>: View {
     let node: BaseNode<NodeData>
@@ -283,7 +282,7 @@ internal struct NodeGestureWrapper<NodeData: Sendable>: View {
     let modifierKeys: ModifierKeysProvider?
     let content: AnyView
     
-    // 操作開始時の意図をロックするためのステート
+    // State to lock the intent at the start of operation | 操作開始時の意図をロックするためのステート
     @State private var selectionIntent: SelectionIntent = .replace
     private enum SelectionIntent { case replace, toggle }
     
@@ -296,10 +295,10 @@ internal struct NodeGestureWrapper<NodeData: Sendable>: View {
                 DragGesture(minimumDistance: 0, coordinateSpace: .named("viewport_container"))
                     .onChanged { value in
                         if interactionMode == .undecided {
-                            // 開始時に Shift の状態を見て選択意図（トグルか置換か）を固定
+                            // Lock the selection intent (toggle or replace) based on Shift state at start | 開始時に Shift の状態を見て選択意図（トグルか置換か）を固定
                             selectionIntent = (modifierKeys?.isShiftPressed == true) ? .toggle : .replace
                             
-                            // 移動距離が閾値を超えたらドラッグモードへ移行
+                            // Transition to drag mode if the translation distance exceeds a threshold | 移動距離が閾値を超えたらドラッグモードへ移行
                             let translation = sqrt(pow(value.translation.width, 2) + pow(value.translation.height, 2))
                             if translation > 4 {
                                 interactionMode = .drag
@@ -313,11 +312,11 @@ internal struct NodeGestureWrapper<NodeData: Sendable>: View {
                         if interactionMode == .drag {
                             stopDragging()
                         } else {
-                            // クリック判定: キャプチャされた意図に基づいて選択を実行
+                            // Click judgment: Execute selection based on the captured intent | クリック判定: キャプチャされた意図に基づいて選択を実行
                             performSelection()
                         }
                         
-                        // リセット
+                        // Reset | リセット
                         interactionMode = .undecided
                     }
             )
@@ -328,7 +327,7 @@ internal struct NodeGestureWrapper<NodeData: Sendable>: View {
         let viewport = store.runtimeState.viewport.viewport
         let graphPointer = XYPosition(x: location.x, y: location.y).fromScreen(viewport: viewport)
         
-        // 複数選択時のドラッグ対応
+        // Dragging support for multiple selection | 複数選択時のドラッグ対応
         let dragNodeIDs: [String] = node.selected ? Array(store.runtimeState.selection.selectedNodeIDs) : [node.id]
         store.startDragging(nodeIDs: dragNodeIDs, at: graphPointer)
         onEvent?(.dragStart(nodeIDs: dragNodeIDs))
@@ -358,8 +357,8 @@ internal struct NodeGestureWrapper<NodeData: Sendable>: View {
     }
 }
 
-/// グラフの描画レイヤー（エッジ、ノード、プレビュー）をまとめた共有スタック。
-/// インタラクティブな GraphView と、静的なエクスポートの両方で使用されます。
+/// Shared stack combining graph rendering layers (edges, nodes, preview). | グラフの描画レイヤー（エッジ、ノード、プレビュー）をまとめた共有スタック。
+/// Used both in interactive GraphView and static export. | インタラクティブな GraphView と、静的なエクスポートの両方で使用されます。
 internal struct GraphLayerStack<NodeData: Sendable, NodeContent: View>: View {
     let store: GraphStore<NodeData>
     let nodeBuilder: (BaseNode<NodeData>) -> NodeContent
@@ -426,11 +425,11 @@ internal struct GraphLayerStack<NodeData: Sendable, NodeContent: View>: View {
 
     @ViewBuilder
     private var edgeOverlayLayer: some View {
-        // Pass 1: 非選択のエッジ（ラベルのみ）
+        // Pass 1: Unselected edges (label only) | Pass 1: 非選択のエッジ（ラベルのみ）
         ForEach(store.edges.filter { !$0.selected }) { edge in
             DefaultEdgeOverlayView(edge: edge, store: store, onReconnect: onReconnect, containerSize: containerSize)
         }
-        // Pass 2: 選択中のエッジ（ラベル + ハンドルを最前面に）
+        // Pass 2: Selected edges (label + handle brought to the front) | Pass 2: 選択中のエッジ（ラベル + ハンドルを最前面に）
         ForEach(store.edges.filter { $0.selected }) { edge in
             DefaultEdgeOverlayView(edge: edge, store: store, onReconnect: onReconnect, containerSize: containerSize)
         }
@@ -478,7 +477,7 @@ extension GraphView where NodeContent == DefaultNodeView<NodeData> {
     }
 }
 
-/// 背景描画の Viewport 解決用ラッパー
+/// Wrapper for Viewport resolution in background rendering | 背景描画の Viewport 解決用ラッパー
 private struct GraphBackgroundViewWrapper<NodeData: Sendable>: View {
     let store: GraphStore<NodeData>
     @Environment(\.graphRenderingViewport) private var renderingViewport
@@ -489,7 +488,7 @@ private struct GraphBackgroundViewWrapper<NodeData: Sendable>: View {
     }
 }
 
-/// グラフライブラリ標準のノード表示
+/// Standard node display for the graph library | グラフライブラリ標準のノード表示
 public struct DefaultNodeView<NodeData: Sendable>: View {
     let node: BaseNode<NodeData>
     let store: GraphStore<NodeData>
@@ -531,11 +530,11 @@ public struct DefaultNodeView<NodeData: Sendable>: View {
         )
         .overlay(
             HStack {
-                // 左側ターゲットハンドル
+                // Left target handle | 左側ターゲットハンドル
                 HandleView<NodeData>(nodeID: node.id, type: .target, placement: .left, store: store, onConnect: onConnect)
                     .offset(x: -8 * zoomScale)
                 Spacer()
-                // 右側ソースハンドル
+                // Right source handle | 右側ソースハンドル
                 HandleView<NodeData>(nodeID: node.id, type: .source, placement: .right, store: store, onConnect: onConnect)
                     .offset(x: 8 * zoomScale)
             }
@@ -543,7 +542,7 @@ public struct DefaultNodeView<NodeData: Sendable>: View {
         .accessibilityElement(children: .combine)
         .accessibilityLabel(node.ariaLabel ?? node.label ?? node.id)
         .accessibilityAddTraits(node.selected ? [.isSelected] : [])
-        .accessibilityHint(node.selectable ? "ダブルタップで選択" : "")
+        .accessibilityHint(node.selectable ? "Double tap to select | ダブルタップで選択" : "")
     }
     
     private static var backgroundColor: Color {
@@ -557,7 +556,7 @@ public struct DefaultNodeView<NodeData: Sendable>: View {
     }
 }
 
-/// ドラッグ中に表示される暫定的な接続線。
+/// Provisionary connection line displayed during dragging. | ドラッグ中に表示される暫定的な接続線。
 struct ConnectionPreviewLine<NodeData: Sendable>: View {
     let active: ConnectionInProgressState
     let store: GraphStore<NodeData>
@@ -578,7 +577,7 @@ struct ConnectionPreviewLine<NodeData: Sendable>: View {
             }
         }()
         
-        // 描画用のビューポートを優先
+        // Prioritize viewport used for rendering | 描画用のビューポートを優先
         let viewport = renderingViewport ?? store.runtimeState.viewport.viewport
         let sourceScreen = sourcePos.toScreen(viewport: viewport)
         let targetScreen = targetPos.toScreen(viewport: viewport)

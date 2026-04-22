@@ -1,7 +1,7 @@
 import SwiftUI
 
-/// ノードの接続端点（ハンドル）を表示し、ドラッグによる接続操作を提供するコンポーネント。
-/// カスタムノード内でも自由に配置可能です。
+/// Component that displays connection endpoints (handles) for nodes and provides connection operations via dragging. | ノードの接続端点（ハンドル）を表示し、ドラッグによる接続操作を提供するコンポーネント。
+/// Can be freely positioned within custom nodes. | カスタムノード内でも自由に配置可能です。
 public struct HandleView<NodeData: Sendable>: View {
     public let nodeID: String
     public let handleID: String?
@@ -11,7 +11,7 @@ public struct HandleView<NodeData: Sendable>: View {
     public let onConnect: ((Connection) -> Void)?
     public let onReconnect: ((String, Connection) -> Void)?
     
-    // ヒットエリア拡大用の定数
+    // Constant for expanding the hit area | ヒットエリア拡大用の定数
     private let hitAreaPadding: CGFloat = 8
     private let handleSize: CGFloat = 6
     @Environment(\.graphZoomLevel) private var zoomLevel
@@ -40,7 +40,7 @@ public struct HandleView<NodeData: Sendable>: View {
         Circle()
             .fill(Color.gray.opacity(0.8))
             .frame(width: visibleSize, height: visibleSize)
-            .padding(hitAreaPadding) // ヒットエリアを拡大
+            .padding(hitAreaPadding) // Expand hit area | ヒットエリアを拡大
             .contentShape(Circle())
             .overlay(
                 Circle()
@@ -58,7 +58,7 @@ public struct HandleView<NodeData: Sendable>: View {
                     Color.clear
                         .preference(
                             key: HandlePositionPreferenceKey.self,
-                            // エクスポート中は座標報告を抑制し、ライブデータの破壊を防ぐ
+                            // Suppress coordinate reporting during export to prevent corruption of live data | エクスポート中は座標報告を抑制し、ライブデータの破壊を防ぐ
                             value: isGraphExporting ? [] : [
                                 HandleMeasurementEntry(
                                     key: HandleKey(nodeID: nodeID, handleID: handleID, type: type, placement: placement),
@@ -76,8 +76,8 @@ public struct HandleView<NodeData: Sendable>: View {
                         let pointerInGraph = XYPosition(x: value.location.x, y: value.location.y).fromScreen(viewport: viewport)
                         
                         if !store.runtimeState.connection.isConnecting {
-                            // 開始時にハンドルのグラフ絶対座標を解決して開始
-                            // 測定値がある場合はそれを優先し、なければ推測値（Fallback）を使用
+                            // Resolve and start with the handle's absolute graph coordinates at the start. | 開始時にハンドルのグラフ絶対座標を解決して開始
+                            // Prioritize measured values if available; otherwise, use estimated values (Fallback). | 測定値がある場合はそれを優先し、なければ推測値（Fallback）を使用
                             let key = HandleKey(nodeID: nodeID, handleID: handleID, type: type, placement: placement)
                             let handlePos = store.resolvedHandlePosition(for: key)
                             
@@ -90,7 +90,7 @@ public struct HandleView<NodeData: Sendable>: View {
                                 at: pointerInGraph
                             )
                         } else {
-                            // オートパンへの通知 (Screen space)
+                            // Notification to auto-pan (Screen space) | オートパンへの通知 (Screen space)
                             store.updateAutoPan(at: XYPosition(x: value.location.x, y: value.location.y))
                             
                             let targetKey = store.findHandle(near: pointerInGraph)
@@ -103,8 +103,8 @@ public struct HandleView<NodeData: Sendable>: View {
                         }
                     }
                     .onEnded { _ in
-                        // 再接続 (reconnect) の場合は GraphStore 内部で更新が完結しているため、
-                        // 外部の onConnect コールバック（新規追加用）を呼ばないように制御する。
+                        // For reconnect cases, updates are finalized within GraphStore, so control to avoid | 再接続 (reconnect) の場合は GraphStore 内部で更新が完結しているため、
+                        // calling the external onConnect callback (for new additions). | 外部の onConnect コールバック（新規追加用）を呼ばないように制御する。
                         let active = store.runtimeState.connection.active
                         let mode = active?.mode
                         

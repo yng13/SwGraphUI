@@ -1,6 +1,6 @@
 import SwiftUI
 
-/// グラフの基本操作を提供するコントロールパネル。
+/// Control panel that provides basic graph operations. | グラフの基本操作を提供するコントロールパネル。
 public struct ControlsView<NodeData: Sendable>: View {
     public let store: GraphStore<NodeData>
     
@@ -11,34 +11,34 @@ public struct ControlsView<NodeData: Sendable>: View {
     public var body: some View {
         VStack(spacing: 0) {
             // Zoom In
-            ControlButton(icon: "plus", label: "拡大") {
+            ControlButton(icon: "plus", label: "Zoom In | 拡大") {
                 store.zoomIn()
             }
             Divider()
             
             // Zoom Out
-            ControlButton(icon: "minus", label: "縮小") {
+            ControlButton(icon: "minus", label: "Zoom Out | 縮小") {
                 store.zoomOut()
             }
             Divider()
             
             // Fit View
-            ControlButton(icon: "arrow.up.left.and.arrow.down.right", label: "全体を表示") {
+            ControlButton(icon: "arrow.up.left.and.arrow.down.right", label: "Fit View | 全体を表示") {
                 store.fitView()
             }
             Divider()
             
             // Lock / Unlock
             let isLocked = !store.runtimeState.interactivity.nodesDraggable
-            ControlButton(icon: isLocked ? "lock.fill" : "lock.open.fill", label: "ノードの移動をロック/解除", color: isLocked ? .red : .primary) {
+            ControlButton(icon: isLocked ? "lock.fill" : "lock.open.fill", label: "Lock / Unlock Node Movement | ノードの移動をロック/解除", color: isLocked ? .red : .primary) {
                 let newState = !store.runtimeState.interactivity.nodesDraggable
                 store.setNodesDraggable(newState)
                 store.setPanOnDrag(newState)
             }
         }
         .fixedSize(horizontal: false, vertical: true)
-        .frame(width: 40) // 固定幅により、横への引き延ばしを防止
-        .background(.ultraThinMaterial) // モダンなグラスモフィズム
+        .frame(width: 40) // Fixed width prevents horizontal stretching | 固定幅により、横への引き延ばしを防止
+        .background(.ultraThinMaterial) // Modern glassmorphism | モダンなグラスモフィズム
         .clipShape(RoundedRectangle(cornerRadius: 8))
         .shadow(color: Color.black.opacity(0.15), radius: 8, x: 0, y: 4)
         .overlay(

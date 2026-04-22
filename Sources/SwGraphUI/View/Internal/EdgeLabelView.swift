@@ -1,7 +1,7 @@
 import SwiftUI
 
-/// 標準のエッジラベル表示。
-/// 背景、パディング、角丸などのスタイル指定を反映します。
+/// Standard edge label display. | 標準のエッジラベル表示。
+/// Reflects style specifications such as background, padding, and corner radius. | 背景、パディング、角丸などのスタイル指定を反映します。
 struct EdgeLabelView: View {
     let label: String
     let style: EdgeLabelStyle
@@ -47,7 +47,7 @@ struct EdgeLabelView: View {
             #if os(macOS)
             Group {
                 if isGraphExporting || zoomLevel > 1.0 {
-                    // エクスポート時や拡大時はマテリアルによるにじみを避けるため不透明背景を使用
+                    // Use opaque background during export or when zoomed in to avoid blurring from materials | エクスポート時や拡大時はマテリアルによるにじみを避けるため不透明背景を使用
                     exportBgColor
                 } else {
                     VisualEffectView()
