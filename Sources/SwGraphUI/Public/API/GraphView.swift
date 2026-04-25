@@ -423,14 +423,23 @@ internal struct GraphLayerStack<NodeData: Sendable, NodeContent: View>: View {
         }
     }
 
+    // Single-pass partition: unselected first, selected on top | 1パスで分離: 非選択→選択の順で前面に重ねる
+    private var partitionedOverlayEdges: (unselected: [BaseEdge<NodeData>], selected: [BaseEdge<NodeData>]) {
+        var unselected: [BaseEdge<NodeData>] = []
+        var selected: [BaseEdge<NodeData>] = []
+        for edge in store.edges {
+            if edge.selected { selected.append(edge) } else { unselected.append(edge) }
+        }
+        return (unselected, selected)
+    }
+
     @ViewBuilder
     private var edgeOverlayLayer: some View {
-        // Pass 1: Unselected edges (label only) | Pass 1: 非選択のエッジ（ラベルのみ）
-        ForEach(store.edges.filter { !$0.selected }) { edge in
+        let parts = partitionedOverlayEdges
+        ForEach(parts.unselected) { edge in
             DefaultEdgeOverlayView(edge: edge, store: store, onReconnect: onReconnect, containerSize: containerSize)
         }
-        // Pass 2: Selected edges (label + handle brought to the front) | Pass 2: 選択中のエッジ（ラベル + ハンドルを最前面に）
-        ForEach(store.edges.filter { $0.selected }) { edge in
+        ForEach(parts.selected) { edge in
             DefaultEdgeOverlayView(edge: edge, store: store, onReconnect: onReconnect, containerSize: containerSize)
         }
     }
@@ -509,9 +518,8 @@ public struct DefaultNodeView<NodeData: Sendable>: View {
         let nodeHeight = node.height.map { CGFloat($0) * zoomScale }
         
         VStack {
-            Text(node.id)
+            Text(node.label ?? node.id)
                 .font(.system(size: 12 * zoomScale, weight: .bold))
-                .bold()
         }
         .padding(10 * zoomScale)
         .frame(width: nodeWidth, height: nodeHeight)

@@ -9,6 +9,7 @@ public final class GraphStore<NodeData: Sendable>: Sendable {
     // MARK: - Core State
     public var nodes: [BaseNode<NodeData>] = [] {
         didSet {
+            isNodeLookupCacheValid = false
             if !suspendAutomaticOrderRecalculation {
                 recalculateSortedNodeIDs()
             }
@@ -23,6 +24,10 @@ public final class GraphStore<NodeData: Sendable>: Sendable {
     // MARK: - Interaction State
     private var autoPanTimer: Timer?
     private var suspendAutomaticOrderRecalculation = false
+
+    // MARK: - nodeLookup Cache
+    @ObservationIgnored private var _cachedNodeLookup: [String: BaseNode<NodeData>] = [:]
+    @ObservationIgnored private var isNodeLookupCacheValid = false
     
     // MARK: - Undo/Redo State
     public var undoManager: UndoManager?
@@ -39,7 +44,11 @@ public final class GraphStore<NodeData: Sendable>: Sendable {
     }
     
     public var nodeLookup: [String: BaseNode<NodeData>] {
-        Dictionary(uniqueKeysWithValues: nodes.map { ($0.id, $0) })
+        if !isNodeLookupCacheValid {
+            _cachedNodeLookup = Dictionary(uniqueKeysWithValues: nodes.map { ($0.id, $0) })
+            isNodeLookupCacheValid = true
+        }
+        return _cachedNodeLookup
     }
     
     public init(
@@ -52,7 +61,8 @@ public final class GraphStore<NodeData: Sendable>: Sendable {
         self.edges = edges
         self.runtimeState = runtimeState
         self.undoManager = undoManager
-        
+        _cachedNodeLookup = Dictionary(uniqueKeysWithValues: nodes.map { ($0.id, $0) })
+        isNodeLookupCacheValid = true
         recalculateSortedNodeIDs()
     }
 
