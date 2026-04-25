@@ -22,57 +22,46 @@ public struct EdgeRenderer: View {
     }
     
     public var body: some View {
-        // Simple Culling: Create a Bounding Box from all points (endpoints, control points) of the segments and skip drawing if outside the screen | 簡易 Culling: セグメントの全点（終点・制御点）から Bounding Box を作り、画面外なら描画スキップ
-        if !segments.isEmpty {
-            let containerWidth = containerSize.width
-            let containerHeight = containerSize.height
-            
-            // Calculate the minimum and maximum of all points | 全点の最大最小を計算
-            var minX = CGFloat.infinity
-            var minY = CGFloat.infinity
-            var maxX = -CGFloat.infinity
-            var maxY = -CGFloat.infinity
-
-            for segment in segments {
-                for point in segment.points {
-                    let p = point.toScreen(viewport: viewport)
-                    minX = min(minX, p.x)
-                    minY = min(minY, p.y)
-                    maxX = max(maxX, p.x)
-                    maxY = max(maxY, p.y)
+        if !isCulled {
+            if animated && !isReconnecting {
+                TimelineView(.animation) { context in
+                    buildPath().stroke(strokeColor, style: strokeStyle(at: context.date))
                 }
-            }
-            // Judge with a margin (100px). Returns EmptyView if completely outside the screen | マージン (100px) を持たせて判定。完全に画面外なら EmptyView
-            if maxX < -100 || minX > containerWidth + 100 || maxY < -100 || minY > containerHeight + 100 {
-                return AnyView(EmptyView())
+            } else {
+                buildPath().stroke(strokeColor, style: strokeStyle(at: .now))
             }
         }
+    }
 
-        return AnyView(TimelineView(.animation) { context in
-            Path { path in
-                for segment in segments {
-                    let screenSegment = segment.toScreen(viewport: viewport)
-                    switch screenSegment {
-                    case .move(let to):
-                        path.move(to: CGPoint(x: to.x, y: to.y))
-                    case .line(let to):
-                        path.addLine(to: CGPoint(x: to.x, y: to.y))
-                    case .bezier(let to, let c1, let c2):
-                        path.addCurve(
-                            to: CGPoint(x: to.x, y: to.y),
-                            control1: CGPoint(x: c1.x, y: c1.y),
-                            control2: CGPoint(x: c2.x, y: c2.y)
-                        )
-                    case .quadratic(let to, let c):
-                        path.addQuadCurve(
-                            to: CGPoint(x: to.x, y: to.y),
-                            control: CGPoint(x: c.x, y: c.y)
-                        )
-                    }
+    // Simple Culling: Build bounding box from all segment points and skip if fully off-screen | 簡易 Culling: セグメント全点から BB を構築し、完全画面外なら描画スキップ
+    private var isCulled: Bool {
+        guard !segments.isEmpty else { return false }
+        var minX = CGFloat.infinity, minY = CGFloat.infinity
+        var maxX = -CGFloat.infinity, maxY = -CGFloat.infinity
+        for segment in segments {
+            for point in segment.points {
+                let p = point.toScreen(viewport: viewport)
+                minX = min(minX, p.x); minY = min(minY, p.y)
+                maxX = max(maxX, p.x); maxY = max(maxY, p.y)
+            }
+        }
+        return maxX < -100 || minX > containerSize.width + 100 || maxY < -100 || minY > containerSize.height + 100
+    }
+
+    private func buildPath() -> Path {
+        Path { path in
+            for segment in segments {
+                let s = segment.toScreen(viewport: viewport)
+                switch s {
+                case .move(let to): path.move(to: CGPoint(x: to.x, y: to.y))
+                case .line(let to): path.addLine(to: CGPoint(x: to.x, y: to.y))
+                case .bezier(let to, let c1, let c2):
+                    path.addCurve(to: CGPoint(x: to.x, y: to.y), control1: CGPoint(x: c1.x, y: c1.y), control2: CGPoint(x: c2.x, y: c2.y))
+                case .quadratic(let to, let c):
+                    path.addQuadCurve(to: CGPoint(x: to.x, y: to.y), control: CGPoint(x: c.x, y: c.y))
                 }
             }
-            .stroke(strokeColor, style: strokeStyle(at: context.date))
-        })
+        }
     }
     
     private func strokeStyle(at date: Date) -> StrokeStyle {

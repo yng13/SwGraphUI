@@ -19,7 +19,7 @@ public struct DefaultEdgeView<NodeData: Sendable>: View {
         onReconnect: ((String, Connection) -> Void)? = nil,
         modifierKeys: ModifierKeysProvider,
         containerSize: Dimensions,
-        @ViewBuilder edgeBodyBuilder: @escaping ([PathSegment], Color, CGFloat, Viewport, Bool, Bool) -> AnyView
+        edgeBodyBuilder: @escaping ([PathSegment], Color, CGFloat, Viewport, Bool, Bool) -> AnyView
     ) {
         self.edge = edge
         self.store = store
@@ -88,8 +88,7 @@ public struct DefaultEdgeView<NodeData: Sendable>: View {
             let targetLabel = targetNode?.ariaLabel ?? targetNode?.label ?? edge.target
             let edgeLabel = edge.ariaLabel ?? edge.label ?? "Connection from \(sourceLabel) to \(targetLabel) | \(sourceLabel) から \(targetLabel) への接続"
 
-            return AnyView(
-                ZStack {
+            ZStack {
                     // 1. Hit area (thick path judgment) | 1. ヒットエリア（太いパス判定）
                     path
                         .stroke(Color.black.opacity(0.0001), lineWidth: 20)
@@ -103,18 +102,16 @@ public struct DefaultEdgeView<NodeData: Sendable>: View {
                         }
 
                     // 2. Edge for display | 2. 表示用エッジ
-                    Group {
-                        edgeBodyBuilder(
-                            adjustedSegments,
-                            edge.selected ? (isReconnecting ? Color.blue : Color.primary) : Color.gray,
-                            strokeWidth,
-                            viewport,
-                            edge.animated && !isReconnecting,
-                            isReconnecting
-                        )
-                    }
+                    edgeBodyBuilder(
+                        adjustedSegments,
+                        edge.selected ? (isReconnecting ? Color.blue : Color.primary) : Color.gray,
+                        strokeWidth,
+                        viewport,
+                        edge.animated && !isReconnecting,
+                        isReconnecting
+                    )
                     .opacity(isReconnecting ? 0.3 : 1.0)
-                    
+
                     // 3. Start marker | 3. 始点マーカー
                     if let marker = edge.markerStart {
                         let screenPos = sourceHandlePos.toScreen(viewport: viewport)
@@ -152,9 +149,6 @@ public struct DefaultEdgeView<NodeData: Sendable>: View {
                 .accessibilityElement(children: .combine)
                 .accessibilityLabel(edgeLabel)
                 .accessibilityAddTraits(edge.selected ? [.isSelected] : [])
-            )
-        } else {
-            return AnyView(EmptyView())
         }
     }
 
