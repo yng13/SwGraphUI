@@ -1,8 +1,8 @@
 import Foundation
 
 /// Provides pure geometric logic for viewport calculation (zoom and pan). | ビューポート（ズーム・パン）の計算に関する純粋な幾何ロジックを提供します。
-public enum ViewportManager {
-    
+enum ViewportManager {
+
     /// Calculates a viewport such that the specified elements fit within the screen. | 指定された要素が画面内に収まるようなビューポートを算出します。
     /// - Parameters:
     ///   - nodes: Nodes to be fit. | 収めたいノード群。
@@ -12,7 +12,7 @@ public enum ViewportManager {
     ///   - maxZoom: Maximum zoom rate. | 最大ズーム率。
     ///   - padding: Padding. | 余白。
     /// - Returns: Calculated viewport. | 計算後のビューポート。
-    public static func calculateFitView<Data>(
+    static func calculateFitView<Data>(
         nodes: [BaseNode<Data>],
         nodeLookup: [String: BaseNode<Data>]? = nil,
         in size: Dimensions,
@@ -38,12 +38,12 @@ public enum ViewportManager {
     }
     
     /// Calculates panning (parallel translation). | パン（平行移動）を計算します。
-    public static func calculatePan(current: Viewport, delta: XYPosition) -> Viewport {
+    static func calculatePan(current: Viewport, delta: XYPosition) -> Viewport {
         Viewport(x: current.x + delta.x, y: current.y + delta.y, zoom: current.zoom)
     }
     
     /// Calculates zooming centered on specific coordinates. | 特定の座標を中心としたズームを計算します。
-    public static func calculateZoomAtPoint(
+    static func calculateZoomAtPoint(
         current: Viewport,
         factor: Double,
         at screenPoint: XYPosition,

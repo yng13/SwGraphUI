@@ -1,14 +1,14 @@
 import Foundation
 
 /// Holds the initial state and management information for a node being dragged. | ドラッグ中のノードの初期状態と管理情報を保持します。
-public struct NodeDragItem: Sendable, Equatable {
-    public let id: String
+struct NodeDragItem: Sendable, Equatable {
+    let id: String
     /// Absolute coordinates at the start of the drag | ドラッグ開始時の絶対座標
-    public let lastPosition: XYPosition
+    let lastPosition: XYPosition
     /// Offset from the drag start point (relative distance from the mouse coordinates, etc.) | ドラッグ開始点からのオフセット（マウス座標等との相対距離）
-    public let distance: XYPosition
-    
-    public init(id: String, lastPosition: XYPosition, distance: XYPosition) {
+    let distance: XYPosition
+
+    init(id: String, lastPosition: XYPosition, distance: XYPosition) {
         self.id = id
         self.lastPosition = lastPosition
         self.distance = distance
@@ -16,10 +16,10 @@ public struct NodeDragItem: Sendable, Equatable {
 }
 
 /// Provides pure geometric calculation logic for drag operations (stateless). | ドラッグ操作に関する純粋な幾何計算ロジックを提供します（Stateless）。
-public enum DragManager {
-    
+enum DragManager {
+
     /// Calculates the next coordinates for a group of nodes being dragged. | ドラッグ中のノード群の次の座標を計算します。
-    public static func calculateNextPositions<NodeData>(
+    static func calculateNextPositions<NodeData>(
         draggedNodes: [NodeDragItem],
         pointer: XYPosition,
         nodeLookup: [String: BaseNode<NodeData>],
@@ -58,7 +58,7 @@ public enum DragManager {
     ///   - applySnap: Whether to apply snapping. | スナップを適用するかどうか。
     ///   - defaultOrigin: Coordinate origin. | 基準点。
     /// - Returns: "Relative (position)" coordinates of the node after applying constraints. | 制約適用後のノードの「相対（position）」座標。
-    public static func applyConstraints<NodeData>(
+    static func applyConstraints<NodeData>(
         to targetAbsPos: XYPosition,
         node: BaseNode<NodeData>,
         nodeLookup: [String: BaseNode<NodeData>],

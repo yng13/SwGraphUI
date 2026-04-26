@@ -697,7 +697,7 @@ public final class GraphStore<NodeData: Sendable>: Sendable {
     }
     
     // --- Connection ---
-    public func findHandle(near pointer: XYPosition, threshold: Double = ConnectionInteractionManager.snapDistance) -> HandleKey? {
+    public func findHandle(near pointer: XYPosition, threshold: Double = 24.0) -> HandleKey? {
         let viewport = runtimeState.viewport.viewport
         let fromNodeID = runtimeState.connection.active?.fromNodeID
         var candidates: [ConnectionInteractionManager.HandleCandidate] = []
@@ -921,7 +921,7 @@ public final class GraphStore<NodeData: Sendable>: Sendable {
     // MARK: - Performance Cache Overrides
     
     /// Pre-calculates and caches the rendering order (zIndex, hierarchy). | 描画順序（zIndex、階層）を事前に計算してキャッシュします。
-    public func recalculateSortedNodeIDs() {
+    func recalculateSortedNodeIDs() {
         let lookup = self.nodeLookup
         let indexedNodes = self.nodes.enumerated().map { ($0, $1) }
         

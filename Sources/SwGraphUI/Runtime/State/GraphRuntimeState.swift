@@ -69,10 +69,15 @@ public struct HoverState: Sendable, Equatable {
 
 /// Drag state | ドラッグ状態
 public struct DragState: Sendable, Equatable {
-    public var draggedNodes: [NodeDragItem]
+    var draggedNodes: [NodeDragItem]
     public var currentPointer: XYPosition?
 
-    public init(draggedNodes: [NodeDragItem] = [], currentPointer: XYPosition? = nil) {
+    public init() {
+        self.draggedNodes = []
+        self.currentPointer = nil
+    }
+
+    init(draggedNodes: [NodeDragItem], currentPointer: XYPosition? = nil) {
         self.draggedNodes = draggedNodes
         self.currentPointer = currentPointer
     }
