@@ -12,7 +12,7 @@ public enum GraphEvent: Sendable {
 public struct GraphView<NodeData: Sendable, NodeContent: View>: View {
     public let store: GraphStore<NodeData>
     public let nodeBuilder: (BaseNode<NodeData>) -> NodeContent
-    private let edgeBuilder: (BaseEdge<NodeData>, [PathSegment], Color, CGFloat, Viewport, Dimensions, Bool, Bool) -> AnyView
+    private let edgeBuilder: (EdgeRenderContext<NodeData>) -> AnyView
     public let backgroundBuilder: (() -> AnyView)?
     public let configuration: GraphConfiguration
     public var onEvent: ((GraphEvent) -> Void)?
@@ -47,6 +47,7 @@ public struct GraphView<NodeData: Sendable, NodeContent: View>: View {
         onConnect: ((Connection) -> Void)? = nil,
         onReconnect: ((String, Connection) -> Void)? = nil,
         edgeBuilder: ((BaseEdge<NodeData>, [PathSegment], Color, CGFloat, Viewport, Dimensions, Bool, Bool) -> AnyView)? = nil,
+        edgeContextBuilder: ((EdgeRenderContext<NodeData>) -> AnyView)? = nil,
         @ViewBuilder nodeBuilder: @escaping (BaseNode<NodeData>) -> NodeContent,
         backgroundBuilder: (() -> AnyView)? = nil
     ) {
@@ -57,8 +58,35 @@ public struct GraphView<NodeData: Sendable, NodeContent: View>: View {
         self.onReconnect = onReconnect
         self.nodeBuilder = nodeBuilder
         self.backgroundBuilder = backgroundBuilder
-        self.edgeBuilder = edgeBuilder ?? { edge, segments, color, width, viewport, containerSize, animated, reconnecting in
-            AnyView(EdgeRenderer(segments: segments, strokeColor: color, strokeWidth: width, viewport: viewport, containerSize: containerSize, animated: animated, isReconnecting: reconnecting))
+        if let edgeContextBuilder {
+            self.edgeBuilder = edgeContextBuilder
+        } else if let edgeBuilder {
+            self.edgeBuilder = { context in
+                edgeBuilder(
+                    context.edge,
+                    context.graphSegments,
+                    context.strokeColor,
+                    context.strokeWidth,
+                    context.viewport,
+                    context.containerSize,
+                    context.animated,
+                    context.isReconnecting
+                )
+            }
+        } else {
+            self.edgeBuilder = { context in
+                AnyView(
+                    EdgeRenderer(
+                        segments: context.graphSegments,
+                        strokeColor: context.strokeColor,
+                        strokeWidth: context.strokeWidth,
+                        viewport: context.viewport,
+                        containerSize: context.containerSize,
+                        animated: context.animated,
+                        isReconnecting: context.isReconnecting
+                    )
+                )
+            }
         }
     }
 
@@ -368,7 +396,7 @@ internal struct NodeGestureWrapper<NodeData: Sendable>: View {
 internal struct GraphLayerStack<NodeData: Sendable, NodeContent: View>: View {
     let store: GraphStore<NodeData>
     let nodeBuilder: (BaseNode<NodeData>) -> NodeContent
-    let edgeBuilder: (BaseEdge<NodeData>, [PathSegment], Color, CGFloat, Viewport, Dimensions, Bool, Bool) -> AnyView
+    let edgeBuilder: (EdgeRenderContext<NodeData>) -> AnyView
     let onReconnect: ((String, Connection) -> Void)?
     let modifierKeys: ModifierKeysProvider?
     let containerSize: Dimensions
@@ -379,7 +407,7 @@ internal struct GraphLayerStack<NodeData: Sendable, NodeContent: View>: View {
     init(
         store: GraphStore<NodeData>,
         nodeBuilder: @escaping (BaseNode<NodeData>) -> NodeContent,
-        edgeBuilder: @escaping (BaseEdge<NodeData>, [PathSegment], Color, CGFloat, Viewport, Dimensions, Bool, Bool) -> AnyView,
+        edgeBuilder: @escaping (EdgeRenderContext<NodeData>) -> AnyView,
         onReconnect: ((String, Connection) -> Void)?,
         modifierKeys: ModifierKeysProvider?,
         containerSize: Dimensions,
@@ -422,9 +450,7 @@ internal struct GraphLayerStack<NodeData: Sendable, NodeContent: View>: View {
                 onReconnect: onReconnect,
                 modifierKeys: modifierKeys ?? ModifierKeysProvider(),
                 containerSize: containerSize,
-                edgeBodyBuilder: { segments, color, width, viewport, animated, reconnecting in
-                    edgeBuilder(edge, segments, color, width, viewport, containerSize, animated, reconnecting)
-                }
+                edgeBodyBuilder: edgeBuilder
             )
         }
     }

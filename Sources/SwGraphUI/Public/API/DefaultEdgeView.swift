@@ -11,7 +11,7 @@ public struct DefaultEdgeView<NodeData: Sendable>: View {
     let onReconnect: ((String, Connection) -> Void)?
     let modifierKeys: ModifierKeysProvider
     let containerSize: Dimensions
-    let edgeBodyBuilder: ([PathSegment], Color, CGFloat, Viewport, Bool, Bool) -> AnyView
+    let edgeBodyBuilder: (EdgeRenderContext<NodeData>) -> AnyView
     
     public init(
         edge: BaseEdge<NodeData>,
@@ -19,7 +19,7 @@ public struct DefaultEdgeView<NodeData: Sendable>: View {
         onReconnect: ((String, Connection) -> Void)? = nil,
         modifierKeys: ModifierKeysProvider,
         containerSize: Dimensions,
-        edgeBodyBuilder: @escaping ([PathSegment], Color, CGFloat, Viewport, Bool, Bool) -> AnyView
+        edgeBodyBuilder: @escaping (EdgeRenderContext<NodeData>) -> AnyView
     ) {
         self.edge = edge
         self.store = store
@@ -79,8 +79,20 @@ public struct DefaultEdgeView<NodeData: Sendable>: View {
                 shortenedSource: shortenedSource,
                 shortenedTarget: shortenedTarget
             )
-            
-            let path = DefaultEdgeViewUtils.segmentsToPath(adjustedSegments, viewport: viewport)
+            let screenSegments = adjustedSegments.map { $0.toScreen(viewport: viewport) }
+            let path = DefaultEdgeViewUtils.segmentsToPath(screenSegments)
+            let context = EdgeRenderContext(
+                edge: edge,
+                graphSegments: adjustedSegments,
+                screenSegments: screenSegments,
+                screenPath: path,
+                strokeColor: edge.selected ? (isReconnecting ? Color.blue : Color.primary) : Color.gray,
+                strokeWidth: strokeWidth,
+                viewport: viewport,
+                containerSize: containerSize,
+                animated: edge.animated && !isReconnecting,
+                isReconnecting: isReconnecting
+            )
 
             let sourceNode = store.node(id: edge.source)
             let targetNode = store.node(id: edge.target)
@@ -102,14 +114,7 @@ public struct DefaultEdgeView<NodeData: Sendable>: View {
                         }
 
                     // 2. Edge for display | 2. 表示用エッジ
-                    edgeBodyBuilder(
-                        adjustedSegments,
-                        edge.selected ? (isReconnecting ? Color.blue : Color.primary) : Color.gray,
-                        strokeWidth,
-                        viewport,
-                        edge.animated && !isReconnecting,
-                        isReconnecting
-                    )
+                    edgeBodyBuilder(context)
                     .opacity(isReconnecting ? 0.3 : 1.0)
 
                     // 3. Start marker | 3. 始点マーカー
@@ -294,9 +299,12 @@ private struct DefaultEdgeViewUtils {
     }
 
     static func segmentsToPath(_ segments: [PathSegment], viewport: Viewport) -> Path {
+        segmentsToPath(segments.map { $0.toScreen(viewport: viewport) })
+    }
+
+    static func segmentsToPath(_ screenSegments: [PathSegment]) -> Path {
         Path { path in
-            for segment in segments {
-                let screenSegment = segment.toScreen(viewport: viewport)
+            for screenSegment in screenSegments {
                 switch screenSegment {
                 case .move(let to): path.move(to: CGPoint(x: to.x, y: to.y))
                 case .line(let to): path.addLine(to: CGPoint(x: to.x, y: to.y))

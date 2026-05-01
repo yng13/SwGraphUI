@@ -28,8 +28,31 @@ public struct PNGExporter<NodeData: Sendable> {
             store: store,
             settings: settings,
             nodeBuilder: nodeBuilder,
-            edgeBuilder: edgeBuilder ?? { _, segments, color, width, viewport, size, animated, reconnecting in
-                AnyView(EdgeRenderer(segments: segments, strokeColor: color, strokeWidth: width, viewport: viewport, containerSize: size, animated: animated, isReconnecting: reconnecting))
+            edgeBuilder: edgeBuilder.map { legacyBuilder in
+                { context in
+                    legacyBuilder(
+                        context.edge,
+                        context.graphSegments,
+                        context.strokeColor,
+                        context.strokeWidth,
+                        context.viewport,
+                        context.containerSize,
+                        context.animated,
+                        context.isReconnecting
+                    )
+                }
+            } ?? { context in
+                AnyView(
+                    EdgeRenderer(
+                        segments: context.graphSegments,
+                        strokeColor: context.strokeColor,
+                        strokeWidth: context.strokeWidth,
+                        viewport: context.viewport,
+                        containerSize: context.containerSize,
+                        animated: context.animated,
+                        isReconnecting: context.isReconnecting
+                    )
+                )
             },
             bounds: bounds
         )
