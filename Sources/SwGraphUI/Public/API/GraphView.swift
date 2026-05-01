@@ -168,13 +168,12 @@ public struct GraphView<NodeData: Sendable, NodeContent: View>: View {
         .background(Color(.secondarySystemBackground))
         #endif
         .onPreferenceChange(NodeSizePreferenceKey.self) { entries in
-            let zoom = max(store.runtimeState.viewport.viewport.zoom, 0.0001)
             for entry in entries {
                 store.updateNodeDimensions(
                     id: entry.id,
                     dimensions: Dimensions(
-                        width: Double(entry.size.width) / Double(zoom),
-                        height: Double(entry.size.height) / Double(zoom)
+                        width: Double(entry.size.width),
+                        height: Double(entry.size.height)
                     )
                 )
             }
