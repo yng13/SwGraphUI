@@ -202,7 +202,7 @@ struct ContentView: View {
                         appStore.addEdge(connection: connection, in: graphStore)
                     },
                     onReconnect: { _, _ in },
-                    edgeBuilder: buildCustomEdge,
+                    edgeContextBuilder: buildCustomEdge,
                     nodeBuilder: buildCustomNode,
                     backgroundBuilder: {
                         AnyView(BackgroundView(
@@ -346,28 +346,19 @@ extension ContentView {
         }
     }
     
-    private func buildCustomEdge(
-        _ edge: BaseEdge<String>,
-        _ segments: [PathSegment],
-        _ color: Color,
-        _ width: CGFloat,
-        _ viewport: Viewport,
-        _ containerSize: Dimensions,
-        _ animated: Bool,
-        _ reconnecting: Bool
-    ) -> AnyView {
-        if edge.kind == "custom" {
-            return AnyView(CustomEdgeBody(segments: segments, color: color, width: width, viewport: viewport, animated: animated, reconnecting: reconnecting, containerSize: containerSize))
+    private func buildCustomEdge(_ context: EdgeRenderContext<String>) -> AnyView {
+        if context.edge.kind == "custom" {
+            return AnyView(CustomEdgeBody(context: context))
         } else {
             return AnyView(
                 EdgeRenderer(
-                    segments: segments,
-                    strokeColor: color,
-                    strokeWidth: width,
-                    viewport: viewport,
-                    containerSize: containerSize,
-                    animated: animated,
-                    isReconnecting: reconnecting
+                    segments: context.graphSegments,
+                    strokeColor: context.strokeColor,
+                    strokeWidth: context.strokeWidth,
+                    viewport: context.viewport,
+                    containerSize: context.containerSize,
+                    animated: context.animated,
+                    isReconnecting: context.isReconnecting
                 )
             )
         }

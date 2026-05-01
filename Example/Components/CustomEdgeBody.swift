@@ -2,56 +2,50 @@ import SwiftUI
 import SwGraphUI
 
 struct CustomEdgeBody: View {
-    let segments: [PathSegment]
-    let color: Color
-    let width: CGFloat
-    let viewport: Viewport
-    let animated: Bool
-    let reconnecting: Bool
-    let containerSize: Dimensions
+    let context: EdgeRenderContext<String>
     
     var body: some View {
         ZStack {
             // Example of adding a thick glow to the background | 背景に太い光彩を入れる例
             EdgeRenderer(
-                segments: segments,
-                strokeColor: color.opacity(0.2),
-                strokeWidth: width + 4,
-                viewport: viewport,
-                containerSize: containerSize,
-                animated: animated,
-                isReconnecting: reconnecting
+                segments: context.graphSegments,
+                strokeColor: context.strokeColor.opacity(0.2),
+                strokeWidth: context.strokeWidth + 4,
+                viewport: context.viewport,
+                containerSize: context.containerSize,
+                animated: context.animated,
+                isReconnecting: context.isReconnecting
             )
             
             // Main body | 本体
             EdgeRenderer(
-                segments: segments,
-                strokeColor: color,
-                strokeWidth: width,
-                viewport: viewport,
-                containerSize: containerSize,
-                animated: animated,
-                isReconnecting: reconnecting
+                segments: context.graphSegments,
+                strokeColor: context.strokeColor,
+                strokeWidth: context.strokeWidth,
+                viewport: context.viewport,
+                containerSize: context.containerSize,
+                animated: context.animated,
+                isReconnecting: context.isReconnecting
             )
             
             // Dotted line for patterns in the center | 中心に模様を入れる点線
-            if !reconnecting {
+            if !context.isReconnecting {
                 EdgeRenderer(
-                    segments: segments,
+                    segments: context.graphSegments,
                     strokeColor: .white.opacity(0.5),
                     strokeWidth: 1,
-                    viewport: viewport,
-                    containerSize: containerSize,
-                    animated: animated,
+                    viewport: context.viewport,
+                    containerSize: context.containerSize,
+                    animated: context.animated,
                     isReconnecting: false
                 )
                 .mask(
                     EdgeRenderer(
-                        segments: segments,
+                        segments: context.graphSegments,
                         strokeColor: .black,
-                        strokeWidth: width,
-                        viewport: viewport,
-                        containerSize: containerSize,
+                        strokeWidth: context.strokeWidth,
+                        viewport: context.viewport,
+                        containerSize: context.containerSize,
                         animated: false,
                         isReconnecting: false
                     )

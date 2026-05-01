@@ -194,6 +194,18 @@ final class GraphStoreTests: XCTestCase {
     }
 
     @MainActor
+    func testResolvedEdgePositionsPreferHorizontalOnDiagonalTie() {
+        let source = BaseNode(id: "s", position: XYPosition(x: 0, y: 0), data: "s", measured: Dimensions(width: 100, height: 100))
+        let target = BaseNode(id: "t", position: XYPosition(x: 200, y: 200), data: "t", measured: Dimensions(width: 100, height: 100))
+        let edge = BaseEdge<String>(id: "e", source: "s", target: "t")
+        let store = GraphStore(nodes: [source, target], edges: [edge])
+
+        let resolved = store.resolvedEdgePositions(for: edge)
+        XCTAssertEqual(resolved.source, .right)
+        XCTAssertEqual(resolved.target, .left)
+    }
+
+    @MainActor
     func testResolvedEdgePositionsPrefersHandlePlacementOverAutoSide() {
         let source = BaseNode(
             id: "s",

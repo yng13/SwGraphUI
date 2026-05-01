@@ -230,16 +230,16 @@ For a customized edge body:
 ```swift
 GraphView(
     store: store,
-    edgeBuilder: { edge, segments, color, width, viewport, containerSize, animated, reconnecting in
+    edgeContextBuilder: { context in
         AnyView(
             EdgeRenderer(
-                segments: segments,
-                strokeColor: edge.kind == "custom" ? .orange : color,
-                strokeWidth: width,
-                viewport: viewport,
-                containerSize: containerSize,
-                animated: animated,
-                isReconnecting: reconnecting
+                segments: context.graphSegments,
+                strokeColor: context.edge.kind == "custom" ? .orange : context.strokeColor,
+                strokeWidth: context.strokeWidth,
+                viewport: context.viewport,
+                containerSize: context.containerSize,
+                animated: context.animated,
+                isReconnecting: context.isReconnecting
             )
         )
     }
@@ -247,6 +247,13 @@ GraphView(
     DefaultNodeView(node: node, store: store)
 }
 ```
+
+`edgeContextBuilder` is the preferred API for new code. It exposes both graph-space and screen-space edge data explicitly:
+新規コードでは `edgeContextBuilder` を推奨します。graph-space と screen-space の両方を明示的に扱えます。
+
+- `graphSegments`: edge geometry in graph coordinates
+- `screenSegments`: edge geometry already transformed into screen coordinates
+- `screenPath`: ready-to-draw SwiftUI `Path`
 
 For save / restore snapshots:  
 スナップショットの保存 / 復元：
