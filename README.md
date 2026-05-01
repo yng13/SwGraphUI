@@ -183,6 +183,14 @@ The package includes an `Example` app with focused samples such as:
 - `Dagre Tree`
 - `Subflow`
 
+Note: the Example app is a verification harness, not a complete surface map of every public API.  
+注記: `Example` アプリは検証用ハーネスであり、すべての公開 API や機能が個別サンプルとして反映されているわけではありません。
+
+- some newer APIs may be documented in `README.md` before they receive a dedicated Example screen  
+  一部の新しい API は、専用の Example 画面が追加される前に `README.md` 側で先に公開される場合があります
+- the library surface should be treated as the source of truth over the sample inventory  
+  サンプル一覧よりも、ライブラリ本体の公開 API をソース・オブ・トゥルースとして扱ってください
+
 A minimal graph setup looks like this:  
 最小限のグラフ設定は以下のようになります：
 
@@ -254,6 +262,50 @@ GraphView(
 - `graphSegments`: edge geometry in graph coordinates
 - `screenSegments`: edge geometry already transformed into screen coordinates
 - `screenPath`: ready-to-draw SwiftUI `Path`
+
+For external layout engines or application-defined ranks/orders:  
+外部レイアウトエンジンや、アプリ側で決めた rank/order を使う場合：
+
+```swift
+let ranked = GraphLayoutAlgorithms.layoutRanked(
+    nodes: store.nodes,
+    ranks: [
+        "router-1": 0,
+        "core-1": 1,
+        "access-1": 2,
+        "access-2": 2,
+    ],
+    order: [
+        "access-1": 0,
+        "access-2": 1,
+    ],
+    direction: .leftToRight,
+    spacing: 56
+)
+
+store.applyLayout(
+    positions: ranked,
+    undoTitle: "Apply Ranked Layout | ランク付きレイアウトの適用"
+)
+```
+
+`layoutRanked(...)` is intended for cases where the application owns the semantic layer model.  
+`layoutRanked(...)` は、意味的なレイヤー構造をアプリ側が持っているケース向けです。
+
+- the app decides `ranks` and `order`
+- SwGraphUI assigns coordinates and preserves spacing/direction rules
+- `store.applyLayout(positions:)` applies the result with undo/no-op protection
+
+If your application stores node centers instead of top-left origins, use the built-in helpers:
+アプリ側がノード位置を top-left ではなく center 基準で持っている場合は、組み込み helper を使えます。
+
+```swift
+let size = Dimensions(width: 160, height: 72)
+let center = XYPosition(x: 400, y: 200)
+
+let origin = GraphLayoutAlgorithms.centerToTopLeft(center, size: size)
+let restoredCenter = GraphLayoutAlgorithms.topLeftToCenter(origin, size: size)
+```
 
 For save / restore snapshots:  
 スナップショットの保存 / 復元：
