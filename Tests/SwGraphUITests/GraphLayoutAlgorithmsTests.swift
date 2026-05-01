@@ -94,4 +94,60 @@ import Foundation
         let distance = abs(pos3.x - pos2.x)
         #expect(distance >= 100.0 + spacing)
     }
+
+    @Test func testLayoutRankedRespectsExternalRanksAndOrder() {
+        let nodes: [BaseNode<String>] = [
+            BaseNode(id: "a", position: .zero, data: "a", width: 100, height: 40),
+            BaseNode(id: "b", position: .zero, data: "b", width: 100, height: 40),
+            BaseNode(id: "c", position: .zero, data: "c", width: 100, height: 40),
+            BaseNode(id: "d", position: .zero, data: "d", width: 100, height: 40)
+        ]
+
+        let results = GraphLayoutAlgorithms.layoutRanked(
+            nodes: nodes,
+            ranks: ["a": 0, "b": 1, "c": 1, "d": 2],
+            order: ["c": 0, "b": 1],
+            direction: .topToBottom,
+            spacing: 50
+        )
+
+        #expect(results["a"]?.y == 0)
+        #expect(results["d"]?.y == 180)
+        #expect(results["c"]?.x == 0)
+        #expect(results["b"]?.x == 150)
+    }
+
+    @Test func testLayoutRankedPlacesAllNodesEvenWithoutRanks() {
+        let nodes: [BaseNode<String>] = [
+            BaseNode(id: "a", position: .zero, data: "a", width: 100, height: 40),
+            BaseNode(id: "b", position: .zero, data: "b", width: 100, height: 40),
+            BaseNode(id: "c", position: .zero, data: "c", width: 100, height: 40)
+        ]
+
+        let results = GraphLayoutAlgorithms.layoutRanked(
+            nodes: nodes,
+            ranks: ["a": 0],
+            order: [:],
+            direction: .topToBottom,
+            spacing: 50
+        )
+
+        #expect(results.keys.sorted() == ["a", "b", "c"])
+        #expect(results["b"] != nil)
+        #expect(results["c"] != nil)
+    }
+
+    @Test func testTreeLayoutPlacesAllNodesEvenWithCycle() {
+        let nodes: [BaseNode<String>] = [
+            BaseNode(id: "a", position: .zero, data: "a", width: 100, height: 40),
+            BaseNode(id: "b", position: .zero, data: "b", width: 100, height: 40)
+        ]
+        let edges: [BaseEdge<String>] = [
+            BaseEdge(id: "e1", source: "a", target: "b"),
+            BaseEdge(id: "e2", source: "b", target: "a")
+        ]
+
+        let results = GraphLayoutAlgorithms.layoutNodesTreeStyle(nodes: nodes, edges: edges)
+        #expect(results.keys.sorted() == ["a", "b"])
+    }
 }

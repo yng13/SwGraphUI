@@ -59,6 +59,29 @@ public enum GraphLayoutAlgorithms {
             spacing: spacing
         )
     }
+
+    /// Performs ranked layout using externally supplied rank and order maps.
+    /// The caller is responsible for semantic layer assignment; this algorithm only assigns coordinates.
+    public static func layoutRanked<Data: Sendable>(
+        nodes: [BaseNode<Data>],
+        ranks: [String: Int],
+        order: [String: Int] = [:],
+        direction: GraphLayoutDirection = .topToBottom,
+        spacing: Double = 50.0
+    ) -> [String: XYPosition] {
+        guard !nodes.isEmpty else { return [:] }
+
+        let nodeLookup = Dictionary(uniqueKeysWithValues: nodes.map { ($0.id, $0) })
+        let rankedLayers = assignExplicitLayers(nodes: nodes, ranks: ranks)
+        let orderedLayers = orderNodes(nodeLayers: rankedLayers, nodeLookup: nodeLookup, explicitOrder: order)
+
+        return assignCoordinates(
+            orderedLayers: orderedLayers,
+            nodeLookup: nodeLookup,
+            direction: direction,
+            spacing: spacing
+        )
+    }
     
     // MARK: - Internal Phases
     
@@ -111,18 +134,49 @@ public enum GraphLayoutAlgorithms {
         for (id, layer) in nodeToLayer {
             layers[layer, default: []].append(id)
         }
+
+        // Deterministic fallback for cyclic / disconnected / otherwise unvisited nodes.
+        let maxVisitedLayer = nodeToLayer.values.max() ?? 0
+        let remaining = nodes.map(\.id).filter { !visited.contains($0) }.sorted()
+        for (index, id) in remaining.enumerated() {
+            layers[maxVisitedLayer + 1 + index, default: []].append(id)
+        }
         
+        return layers
+    }
+
+    private static func assignExplicitLayers<Data: Sendable>(
+        nodes: [BaseNode<Data>],
+        ranks: [String: Int]
+    ) -> [Int: [String]] {
+        var layers: [Int: [String]] = [:]
+        let sortedIDs = nodes.map(\.id).sorted()
+        let fallbackBase = (ranks.values.max() ?? -1) + 1
+
+        for (index, id) in sortedIDs.enumerated() {
+            let layer = ranks[id] ?? (fallbackBase + index)
+            layers[layer, default: []].append(id)
+        }
+
         return layers
     }
     
     /// Determines the order of nodes within the same layer. | 同一レイヤー内でのノードの並び順を決定します。
     private static func orderNodes<Data: Sendable>(
         nodeLayers: [Int: [String]],
-        nodeLookup: [String: BaseNode<Data>]
+        nodeLookup: [String: BaseNode<Data>],
+        explicitOrder: [String: Int] = [:]
     ) -> [Int: [String]] {
         var sortedLayers: [Int: [String]] = [:]
         for (layer, ids) in nodeLayers {
-            sortedLayers[layer] = ids.sorted() // Sort by ID for deterministic behavior | 決定的挙動のため ID ソート
+            sortedLayers[layer] = ids.sorted {
+                let leftOrder = explicitOrder[$0] ?? .max
+                let rightOrder = explicitOrder[$1] ?? .max
+                if leftOrder != rightOrder {
+                    return leftOrder < rightOrder
+                }
+                return $0 < $1
+            }
         }
         return sortedLayers
     }
