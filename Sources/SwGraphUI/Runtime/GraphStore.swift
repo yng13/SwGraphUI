@@ -883,21 +883,27 @@ public final class GraphStore<NodeData: Sendable>: Sendable {
     }
 
     public func applyLayout(direction: GraphLayoutDirection = .topToBottom, spacing: Double = 50.0) {
-        let beforeSnapshot = self.snapshot()
         let newPositions = GraphLayoutAlgorithms.layoutNodesTreeStyle(nodes: nodes, edges: edges, direction: direction, spacing: spacing)
-        
+        applyLayout(positions: newPositions, undoTitle: "Apply Layout | レイアウトの適用")
+    }
+
+    public func applyLayout(
+        positions: [String: XYPosition],
+        undoTitle: String = "Apply Layout | レイアウトの適用"
+    ) {
+        let beforeSnapshot = self.snapshot()
+
         var hasChanged = false
         withNodeOrderRecalculationSuspended {
             for i in 0..<nodes.count {
-                if let newPos = newPositions[nodes[i].id], nodes[i].position != newPos {
-                    nodes[i].position = newPos
-                    hasChanged = true
-                }
+                guard let newPos = positions[nodes[i].id], nodes[i].position != newPos else { continue }
+                nodes[i].position = newPos
+                hasChanged = true
             }
         }
-        
+
         if hasChanged {
-            registerUndo(title: "Apply Layout | レイアウトの適用", snapshot: beforeSnapshot, ignoringViewport: true)
+            registerUndo(title: undoTitle, snapshot: beforeSnapshot, ignoringViewport: true)
             runtimeState.isAbsolutePositionCacheValid = false
         }
     }

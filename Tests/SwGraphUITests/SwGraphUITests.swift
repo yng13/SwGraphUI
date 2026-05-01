@@ -115,3 +115,14 @@ import Testing
     #expect(viewport.x == 50)
     #expect(viewport.y == 0)
 }
+
+@Test func layoutAnchorHelpersRoundTrip() async throws {
+    let size = Dimensions(width: 120, height: 80)
+    let center = XYPosition(x: 300, y: 220)
+
+    let topLeft = GraphLayoutAlgorithms.centerToTopLeft(center, size: size)
+    #expect(topLeft == XYPosition(x: 240, y: 180))
+
+    let restored = GraphLayoutAlgorithms.topLeftToCenter(topLeft, size: size)
+    #expect(restored == center)
+}

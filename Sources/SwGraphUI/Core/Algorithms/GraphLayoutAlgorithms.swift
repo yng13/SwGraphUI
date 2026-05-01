@@ -12,6 +12,21 @@ public enum GraphLayoutDirection: Sendable, Codable {
 /// Utility providing hierarchical (Tree/DAG) automatic layout algorithms. | 階層型（Tree/DAG 向け）自動レイアウトアルゴリズムを提供するユーティリティ。
 /// Accepts graph structures without circular references (Tree or DAG) and calculates positions considering node spacing and sizes. | 循環参照のないグラフ構造（Tree または DAG）を受け入れ、ノード間隔とノードサイズを考慮した配置を算出します。
 public enum GraphLayoutAlgorithms {
+    /// Converts a center-based position into the top-left origin used by `BaseNode.position`.
+    public static func centerToTopLeft(_ center: XYPosition, size: Dimensions) -> XYPosition {
+        XYPosition(
+            x: center.x - size.width / 2,
+            y: center.y - size.height / 2
+        )
+    }
+
+    /// Converts a top-left origin into a center-based position.
+    public static func topLeftToCenter(_ origin: XYPosition, size: Dimensions) -> XYPosition {
+        XYPosition(
+            x: origin.x + size.width / 2,
+            y: origin.y + size.height / 2
+        )
+    }
     
     /// Performs a simple hierarchical layout and calculates new recommended coordinates for each node. | シンプルな階層型レイアウトを実行し、各ノードの新しい推奨座標を算出します。
     /// - Parameters:
