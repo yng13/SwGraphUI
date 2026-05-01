@@ -108,7 +108,90 @@ public final class GraphStore<NodeData: Sendable>: Sendable {
         return ConnectionInteractionManager.calcHandlePosition(
             absolutePosition: absPos,
             dimensions: node.measured ?? Dimensions(width: 100, height: 50),
-            placement: key.placement
+            placement: key.placement,
+            handleOffset: runtimeState.handleAnchorOffset
+        )
+    }
+
+    /// Resolves the effective source/target placements for an edge.
+    /// Priority: explicit edge position -> matched handle placement -> automatic side selection -> legacy fallback.
+    public func resolvedEdgePositions(for edge: BaseEdge<NodeData>) -> (source: Position, target: Position) {
+        let source = resolvedEdgePlacement(
+            nodeID: edge.source,
+            handleID: edge.sourceHandle,
+            handleType: .source,
+            explicit: edge.sourcePosition,
+            peerNodeID: edge.target
+        )
+        let target = resolvedEdgePlacement(
+            nodeID: edge.target,
+            handleID: edge.targetHandle,
+            handleType: .target,
+            explicit: edge.targetPosition,
+            peerNodeID: edge.source
+        )
+        return (source, target)
+    }
+
+    private func resolvedEdgePlacement(
+        nodeID: String,
+        handleID: String?,
+        handleType: HandleType,
+        explicit: Position?,
+        peerNodeID: String
+    ) -> Position {
+        if let explicit {
+            return explicit
+        }
+
+        if let node = node(id: nodeID) {
+            if let handleID,
+               let matched = node.handles.first(where: { $0.id == handleID && $0.type == handleType }) {
+                return matched.placement
+            }
+
+            let typedHandles = node.handles.filter { $0.type == handleType }
+            if typedHandles.count == 1, let only = typedHandles.first {
+                return only.placement
+            }
+        }
+
+        guard let currentNode = node(id: nodeID), let peer = node(id: peerNodeID) else {
+            return handleType == .source ? .right : .left
+        }
+
+        return automaticEdgePlacement(from: currentNode, to: peer)
+    }
+
+    private func automaticEdgePlacement(from node: BaseNode<NodeData>, to peer: BaseNode<NodeData>) -> Position {
+        let nodeAbs = absolutePosition(for: node.id)
+        let peerAbs = absolutePosition(for: peer.id)
+        let nodeSize = resolvedNodeDimensions(for: node)
+        let peerSize = resolvedNodeDimensions(for: peer)
+
+        let nodeCenter = XYPosition(
+            x: nodeAbs.x + nodeSize.width / 2,
+            y: nodeAbs.y + nodeSize.height / 2
+        )
+        let peerCenter = XYPosition(
+            x: peerAbs.x + peerSize.width / 2,
+            y: peerAbs.y + peerSize.height / 2
+        )
+
+        let dx = peerCenter.x - nodeCenter.x
+        let dy = peerCenter.y - nodeCenter.y
+
+        if abs(dx) >= abs(dy) {
+            return dx >= 0 ? .right : .left
+        } else {
+            return dy >= 0 ? .bottom : .top
+        }
+    }
+
+    private func resolvedNodeDimensions(for node: BaseNode<NodeData>) -> Dimensions {
+        Dimensions(
+            width: node.measured?.width ?? node.width ?? node.initialWidth ?? 100,
+            height: node.measured?.height ?? node.height ?? node.initialHeight ?? 50
         )
     }
 
@@ -265,16 +348,17 @@ public final class GraphStore<NodeData: Sendable>: Sendable {
     }
 
     public func fitView(
-        in size: Dimensions = Dimensions(width: 800, height: 600),
+        in size: Dimensions? = nil,
         padding: GeometryAlgorithms.Padding = .all(.relative(0.1))
     ) {
         let lookup = Dictionary(uniqueKeysWithValues: nodes.map { ($0.id, $0) })
         let prevViewport = runtimeState.viewport.viewport
+        let resolvedSize = size ?? runtimeState.autoPan.containerSize ?? Dimensions(width: 800, height: 600)
         
         runtimeState.viewport.fitView(
             nodes: nodes,
             nodeLookup: lookup,
-            in: size,
+            in: resolvedSize,
             padding: padding,
             minZoom: runtimeState.interactivity.minZoom,
             maxZoom: runtimeState.interactivity.maxZoom

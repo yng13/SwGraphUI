@@ -121,6 +121,95 @@ final class GraphStoreTests: XCTestCase {
         // For 500x500 to fit in 1000x1000, zoom = 1000 / 500 = 2.0 | 500x500 が 1000x1000 に収まるには zoom = 1000 / 500 = 2.0
         XCTAssertEqual(zoomAfterMeasure, 2.0, accuracy: 0.0001)
     }
+
+    @MainActor
+    func testFitViewUsesContainerSizeByDefault() {
+        let node = BaseNode(id: "1", position: .zero, data: "test", measured: Dimensions(width: 500, height: 500))
+        let store = GraphStore(nodes: [node])
+
+        store.setContainerSize(Dimensions(width: 1000, height: 1000))
+        store.fitView(padding: .all(.points(0)))
+
+        XCTAssertEqual(store.runtimeState.viewport.viewport.zoom, 2.0, accuracy: 0.0001)
+    }
+
+    @MainActor
+    func testResolvedHandlePositionIsStableAcrossViewportZoomLevels() {
+        let node = BaseNode(id: "1", position: XYPosition(x: 10, y: 20), data: "test", measured: Dimensions(width: 132, height: 60))
+        let store = GraphStore(nodes: [node])
+        let key = HandleKey(nodeID: "1", handleID: nil, type: .source, placement: .right)
+
+        store.runtimeState.viewport.setViewport(Viewport(x: 0, y: 0, zoom: 0.35))
+        let posAt035 = store.resolvedHandlePosition(for: key)
+
+        store.runtimeState.viewport.setViewport(Viewport(x: 0, y: 0, zoom: 1.0))
+        let posAt100 = store.resolvedHandlePosition(for: key)
+
+        store.runtimeState.viewport.setViewport(Viewport(x: 0, y: 0, zoom: 2.0))
+        let posAt200 = store.resolvedHandlePosition(for: key)
+
+        XCTAssertEqual(posAt035.x, 150, accuracy: 0.0001)
+        XCTAssertEqual(posAt035.y, 50, accuracy: 0.0001)
+        XCTAssertEqual(posAt100.x, posAt035.x, accuracy: 0.0001)
+        XCTAssertEqual(posAt100.y, posAt035.y, accuracy: 0.0001)
+        XCTAssertEqual(posAt200.x, posAt035.x, accuracy: 0.0001)
+        XCTAssertEqual(posAt200.y, posAt035.y, accuracy: 0.0001)
+    }
+
+    @MainActor
+    func testResolvedHandlePositionUsesConfigurableAnchorOffset() {
+        let node = BaseNode(id: "1", position: XYPosition(x: 10, y: 20), data: "test", measured: Dimensions(width: 100, height: 60))
+        let store = GraphStore(nodes: [node])
+        let key = HandleKey(nodeID: "1", handleID: nil, type: .source, placement: .right)
+
+        store.runtimeState.handleAnchorOffset = 12
+        let resolved = store.resolvedHandlePosition(for: key)
+
+        XCTAssertEqual(resolved.x, 122, accuracy: 0.0001)
+        XCTAssertEqual(resolved.y, 50, accuracy: 0.0001)
+    }
+
+    @MainActor
+    func testResolvedEdgePositionsAutoSelectsHorizontalSides() {
+        let source = BaseNode(id: "s", position: XYPosition(x: 0, y: 0), data: "s", measured: Dimensions(width: 100, height: 60))
+        let target = BaseNode(id: "t", position: XYPosition(x: 300, y: 20), data: "t", measured: Dimensions(width: 100, height: 60))
+        let edge = BaseEdge<String>(id: "e", source: "s", target: "t")
+        let store = GraphStore(nodes: [source, target], edges: [edge])
+
+        let resolved = store.resolvedEdgePositions(for: edge)
+        XCTAssertEqual(resolved.source, .right)
+        XCTAssertEqual(resolved.target, .left)
+    }
+
+    @MainActor
+    func testResolvedEdgePositionsAutoSelectsVerticalSides() {
+        let source = BaseNode(id: "s", position: XYPosition(x: 40, y: 0), data: "s", measured: Dimensions(width: 100, height: 60))
+        let target = BaseNode(id: "t", position: XYPosition(x: 50, y: 260), data: "t", measured: Dimensions(width: 100, height: 60))
+        let edge = BaseEdge<String>(id: "e", source: "s", target: "t")
+        let store = GraphStore(nodes: [source, target], edges: [edge])
+
+        let resolved = store.resolvedEdgePositions(for: edge)
+        XCTAssertEqual(resolved.source, .bottom)
+        XCTAssertEqual(resolved.target, .top)
+    }
+
+    @MainActor
+    func testResolvedEdgePositionsPrefersHandlePlacementOverAutoSide() {
+        let source = BaseNode(
+            id: "s",
+            position: XYPosition(x: 0, y: 0),
+            data: "s",
+            handles: [NodeHandle(id: "out", placement: .top, type: .source)],
+            measured: Dimensions(width: 100, height: 60)
+        )
+        let target = BaseNode(id: "t", position: XYPosition(x: 300, y: 0), data: "t", measured: Dimensions(width: 100, height: 60))
+        let edge = BaseEdge<String>(id: "e", source: "s", target: "t", sourceHandle: "out")
+        let store = GraphStore(nodes: [source, target], edges: [edge])
+
+        let resolved = store.resolvedEdgePositions(for: edge)
+        XCTAssertEqual(resolved.source, .top)
+        XCTAssertEqual(resolved.target, .left)
+    }
     
     @MainActor
     func testMoveSelectedNodes() {

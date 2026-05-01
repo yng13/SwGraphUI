@@ -10,16 +10,20 @@ public struct GraphConfiguration {
     public var backgroundVariant: BackgroundVariant
     /// Color of the pattern | パターンの色
     public var gridColor: Color
+    /// Built-in handle size, hit target, and anchor offset settings | 組み込みハンドルのサイズ、ヒット領域、アンカーオフセット設定
+    public var handleStyle: GraphHandleStyle
     
     public init(
         showGrid: Bool = false,
         gridSize: CGFloat = 20,
         backgroundVariant: BackgroundVariant = .dots,
-        gridColor: Color = .primary.opacity(0.12)
+        gridColor: Color = .primary.opacity(0.12),
+        handleStyle: GraphHandleStyle = .default
     ) {
         self.showGrid = showGrid
         self.gridSize = gridSize
         self.backgroundVariant = backgroundVariant
         self.gridColor = gridColor
+        self.handleStyle = handleStyle
     }
 }

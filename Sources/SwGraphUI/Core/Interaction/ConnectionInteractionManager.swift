@@ -110,15 +110,13 @@ enum ConnectionInteractionManager {
     static func calcHandlePosition(
         absolutePosition: XYPosition,
         dimensions: Dimensions,
-        placement: Position
+        placement: Position,
+        handleOffset: Double = 8.0
     ) -> XYPosition {
         let w = dimensions.width
         let h = dimensions.height
         let x = absolutePosition.x
         let y = absolutePosition.y
-
-        // Estimated value considering the standard offset (8px) of DefaultNodeView | DefaultNodeView の標準オフセット（8px）を考慮した推測値
-        let handleOffset: Double = 8.0
 
         switch placement {
         case .top:    return XYPosition(x: x + w / 2, y: y - handleOffset)

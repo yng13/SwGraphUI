@@ -189,6 +189,12 @@ public struct GraphView<NodeData: Sendable, NodeContent: View>: View {
         .onDisappear {
             store.cancelInteractions()
         }
+        .onAppear {
+            store.runtimeState.handleAnchorOffset = configuration.handleStyle.anchorOffset
+        }
+        .onChange(of: configuration.handleStyle) { _, newValue in
+            store.runtimeState.handleAnchorOffset = newValue.anchorOffset
+        }
         .environment(store)
     }
 
@@ -268,6 +274,7 @@ public struct GraphView<NodeData: Sendable, NodeContent: View>: View {
                 }
             )
             .environment(\.graphZoomLevel, vp.zoom)
+            .environment(\.graphHandleStyle, configuration.handleStyle)
         }
     }
 }
@@ -510,6 +517,7 @@ public struct DefaultNodeView<NodeData: Sendable>: View {
 
     @Environment(\.graphZoomLevel) private var zoomLevel
     @Environment(\.graphRenderingViewport) private var renderingViewport
+    @Environment(\.graphHandleStyle) private var handleStyle
 
     public var body: some View {
         let zoomScale = max(CGFloat(zoomLevel), 0.0001)
@@ -539,11 +547,11 @@ public struct DefaultNodeView<NodeData: Sendable>: View {
             HStack {
                 // Left target handle | 左側ターゲットハンドル
                 HandleView<NodeData>(nodeID: node.id, type: .target, placement: .left, store: store, onConnect: onConnect)
-                    .offset(x: -8 * zoomScale)
+                    .offset(x: -CGFloat(handleStyle.anchorOffset) * zoomScale)
                 Spacer()
                 // Right source handle | 右側ソースハンドル
                 HandleView<NodeData>(nodeID: node.id, type: .source, placement: .right, store: store, onConnect: onConnect)
-                    .offset(x: 8 * zoomScale)
+                    .offset(x: CGFloat(handleStyle.anchorOffset) * zoomScale)
             }
         )
         .accessibilityElement(children: .combine)

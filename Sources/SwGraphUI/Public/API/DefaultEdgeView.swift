@@ -154,9 +154,9 @@ public struct DefaultEdgeView<NodeData: Sendable>: View {
 
     private func resolvePositions() -> (Position, Position, XYPosition, XYPosition)? {
         guard store.node(id: edge.source) != nil, store.node(id: edge.target) != nil else { return nil }
-        
-        let sourcePos = edge.sourcePosition ?? .right
-        let targetPos = edge.targetPosition ?? .left
+        let resolved = store.resolvedEdgePositions(for: edge)
+        let sourcePos = resolved.source
+        let targetPos = resolved.target
         
         let sourceKey = HandleKey(nodeID: edge.source, handleID: edge.sourceHandle, type: .source, placement: sourcePos)
         let targetKey = HandleKey(nodeID: edge.target, handleID: edge.targetHandle, type: .target, placement: targetPos)
@@ -184,8 +184,9 @@ public struct DefaultEdgeOverlayView<NodeData: Sendable>: View {
 
     public var body: some View {
         if store.node(id: edge.source) != nil, store.node(id: edge.target) != nil {
-            let sourcePos = edge.sourcePosition ?? .right
-            let targetPos = edge.targetPosition ?? .left
+            let resolved = store.resolvedEdgePositions(for: edge)
+            let sourcePos = resolved.source
+            let targetPos = resolved.target
             let sourceKey = HandleKey(nodeID: edge.source, handleID: edge.sourceHandle, type: .source, placement: sourcePos)
             let targetKey = HandleKey(nodeID: edge.target, handleID: edge.targetHandle, type: .target, placement: targetPos)
             let sourceHandlePos = store.resolvedHandlePosition(for: sourceKey)
@@ -213,8 +214,8 @@ public struct DefaultEdgeOverlayView<NodeData: Sendable>: View {
                 // 2. Reconnection handle (brought to the front of the label) | 2. 再接続ハンドル（ラベルより前面へ）
                 // Not displayed during export (onReconnect == nil) | エクスポート時（onReconnect == nil）は表示しない
                 if edge.selected, onReconnect != nil {
-                    let sourceKey = HandleKey(nodeID: edge.source, handleID: edge.sourceHandle, type: .source, placement: edge.sourcePosition ?? .right)
-                    let targetKey = HandleKey(nodeID: edge.target, handleID: edge.targetHandle, type: .target, placement: edge.targetPosition ?? .left)
+                    let sourceKey = HandleKey(nodeID: edge.source, handleID: edge.sourceHandle, type: .source, placement: sourcePos)
+                    let targetKey = HandleKey(nodeID: edge.target, handleID: edge.targetHandle, type: .target, placement: targetPos)
                     let sourceHandlePos = store.resolvedHandlePosition(for: sourceKey)
                     let targetHandlePos = store.resolvedHandlePosition(for: targetKey)
 
@@ -356,7 +357,8 @@ struct ReconnectAnchor<NodeData: Sendable>: View {
                             let fixedNodeID = isReconnectingSource ? edge.target : edge.source
                             let fixedHandleID = isReconnectingSource ? edge.targetHandle : edge.sourceHandle
                             let fixedHandleType: HandleType = isReconnectingSource ? .target : .source
-                            let fixedPlacement = isReconnectingSource ? (edge.targetPosition ?? .left) : (edge.sourcePosition ?? .right)
+                            let resolved = store.resolvedEdgePositions(for: edge)
+                            let fixedPlacement = isReconnectingSource ? resolved.target : resolved.source
                             
                             let fixedKey = HandleKey(nodeID: fixedNodeID, handleID: fixedHandleID, type: fixedHandleType, placement: fixedPlacement)
                             let fixedPos = store.resolvedHandlePosition(for: fixedKey)

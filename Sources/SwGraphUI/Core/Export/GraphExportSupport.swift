@@ -15,8 +15,9 @@ internal struct GraphExportSupport<NodeData: Sendable> {
 
         // Account for edge connection points, labels, markers, and path protrusions | エッジの接続点・ラベル・マーカー、および曲線パスの張り出しも考慮
         for edge in store.edges {
-            let sourcePos = edge.sourcePosition ?? .right
-            let targetPos = edge.targetPosition ?? .left
+            let resolved = store.resolvedEdgePositions(for: edge)
+            let sourcePos = resolved.source
+            let targetPos = resolved.target
             let sourceKey = HandleKey(nodeID: edge.source, handleID: edge.sourceHandle, type: .source, placement: sourcePos)
             let targetKey = HandleKey(nodeID: edge.target, handleID: edge.targetHandle, type: .target, placement: targetPos)
             

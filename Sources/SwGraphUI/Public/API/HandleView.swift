@@ -12,10 +12,9 @@ public struct HandleView<NodeData: Sendable>: View {
     public let onReconnect: ((String, Connection) -> Void)?
     
     // Constant for expanding the hit area | ヒットエリア拡大用の定数
-    private let hitAreaPadding: CGFloat = 8
-    private let handleSize: CGFloat = 6
     @Environment(\.graphZoomLevel) private var zoomLevel
     @Environment(\.isGraphExporting) private var isGraphExporting
+    @Environment(\.graphHandleStyle) private var handleStyle
     
     public init(
         nodeID: String,
@@ -36,7 +35,8 @@ public struct HandleView<NodeData: Sendable>: View {
     }
     
     public var body: some View {
-        let visibleSize = handleSize * max(CGFloat(zoomLevel), 0.0001)
+        let visibleSize = CGFloat(handleStyle.visualSize) * max(CGFloat(zoomLevel), 0.0001)
+        let hitAreaPadding = CGFloat(handleStyle.hitAreaPadding)
         Circle()
             .fill(Color.gray.opacity(0.8))
             .frame(width: visibleSize, height: visibleSize)

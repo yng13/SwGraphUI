@@ -364,6 +364,8 @@ public final class GraphRuntimeState: Sendable {
     public var absolutePositionCache: [String: XYPosition] = [:]
     /// Whether the cache is valid. Becomes false when node positions are changed. | キャッシュが有効かどうか。ノードの位置が変更されたら false になります。
     public var isAbsolutePositionCacheValid: Bool = false
+    /// Fallback distance between node border and handle center used by estimated handle positions. | 推測ハンドル座標で使う、ノード境界とハンドル中心の距離。
+    public var handleAnchorOffset: Double = 8
     
     public init(
         selection: SelectionState = .init(),
@@ -375,7 +377,8 @@ public final class GraphRuntimeState: Sendable {
         autoPan: AutoPanState = .init(),
         interactivity: InteractivityState = .init(),
         sortedNodeIDs: [String] = [],
-        absolutePositionCache: [String: XYPosition] = [:]
+        absolutePositionCache: [String: XYPosition] = [:],
+        handleAnchorOffset: Double = 8
     ) {
         self.selection = selection
         self.hover = hover
@@ -388,5 +391,6 @@ public final class GraphRuntimeState: Sendable {
         self.sortedNodeIDs = sortedNodeIDs
         self.absolutePositionCache = absolutePositionCache
         self.isAbsolutePositionCacheValid = false
+        self.handleAnchorOffset = handleAnchorOffset
     }
 }
