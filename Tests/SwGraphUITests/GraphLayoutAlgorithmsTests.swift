@@ -137,6 +137,214 @@ import Foundation
         #expect(results["c"] != nil)
     }
 
+    @Test func layoutRankedDefaultOptionsMatchesExistingOutput() {
+        let nodes: [BaseNode<String>] = [
+            BaseNode(id: "a", position: .zero, data: "a", width: 100, height: 40),
+            BaseNode(id: "b", position: .zero, data: "b", width: 100, height: 40),
+            BaseNode(id: "c", position: .zero, data: "c", width: 100, height: 40),
+            BaseNode(id: "d", position: .zero, data: "d", width: 100, height: 40)
+        ]
+
+        let legacy = GraphLayoutAlgorithms.layoutRanked(
+            nodes: nodes,
+            ranks: ["a": 0, "b": 1, "c": 1, "d": 2],
+            order: ["c": 0, "b": 1],
+            direction: .topToBottom,
+            spacing: 50
+        )
+
+        let options = GraphLayoutAlgorithms.layoutRanked(
+            nodes: nodes,
+            ranks: ["a": 0, "b": 1, "c": 1, "d": 2],
+            order: ["c": 0, "b": 1],
+            options: RankedLayoutOptions(direction: .topToBottom, spacing: 50)
+        )
+
+        #expect(legacy == options)
+    }
+
+    @Test func layoutRankedWrapsWideTopToBottomRank() {
+        let nodes = (0..<6).map { index in
+            BaseNode(id: "n\(index)", position: .zero, data: "n\(index)", width: 100, height: 40)
+        }
+
+        let positions = GraphLayoutAlgorithms.layoutRanked(
+            nodes: nodes,
+            ranks: Dictionary(uniqueKeysWithValues: nodes.map { ($0.id, 0) }),
+            options: RankedLayoutOptions(
+                direction: .topToBottom,
+                spacing: 20,
+                maxRankBreadth: 260,
+                wrappedLaneSpacing: 60
+            )
+        )
+
+        let distinctY = Set(nodes.compactMap { positions[$0.id]?.y })
+        #expect(distinctY.count == 3)
+    }
+
+    @Test func layoutRankedWrapsWideLeftToRightRank() {
+        let nodes = (0..<6).map { index in
+            BaseNode(id: "n\(index)", position: .zero, data: "n\(index)", width: 100, height: 40)
+        }
+
+        let positions = GraphLayoutAlgorithms.layoutRanked(
+            nodes: nodes,
+            ranks: Dictionary(uniqueKeysWithValues: nodes.map { ($0.id, 0) }),
+            options: RankedLayoutOptions(
+                direction: .leftToRight,
+                spacing: 20,
+                maxRankBreadth: 120,
+                wrappedLaneSpacing: 60
+            )
+        )
+
+        let distinctX = Set(nodes.compactMap { positions[$0.id]?.x })
+        #expect(distinctX.count == 3)
+    }
+
+    @Test func layoutRankedWrapIsDeterministic() {
+        let nodes = (0..<8).map { index in
+            BaseNode(id: "n\(index)", position: .zero, data: "n\(index)", width: 90, height: 40)
+        }
+        let ranks = Dictionary(uniqueKeysWithValues: nodes.map { ($0.id, 0) })
+        let options = RankedLayoutOptions(
+            direction: .topToBottom,
+            spacing: 20,
+            maxRankBreadth: 220,
+            wrappedLaneSpacing: 40
+        )
+
+        let first = GraphLayoutAlgorithms.layoutRanked(nodes: nodes, ranks: ranks, options: options)
+        let second = GraphLayoutAlgorithms.layoutRanked(nodes: nodes, ranks: ranks, options: options)
+        #expect(first == second)
+    }
+
+    @Test func layoutRankedWrapDoesNotOverlapVariableNodeSizes() {
+        let nodes: [BaseNode<String>] = [
+            BaseNode(id: "a", position: .zero, data: "a", width: 180, height: 50),
+            BaseNode(id: "b", position: .zero, data: "b", width: 120, height: 60),
+            BaseNode(id: "c", position: .zero, data: "c", width: 140, height: 45),
+            BaseNode(id: "d", position: .zero, data: "d", width: 110, height: 80)
+        ]
+
+        let positions = GraphLayoutAlgorithms.layoutRanked(
+            nodes: nodes,
+            ranks: Dictionary(uniqueKeysWithValues: nodes.map { ($0.id, 0) }),
+            options: RankedLayoutOptions(
+                direction: .topToBottom,
+                spacing: 20,
+                maxRankBreadth: 300,
+                wrappedLaneSpacing: 40
+            )
+        )
+
+        let sorted = nodes.compactMap { node -> (String, XYPosition, Double, Double)? in
+            guard let pos = positions[node.id] else { return nil }
+            return (node.id, pos, node.width ?? 0, node.height ?? 0)
+        }.sorted { lhs, rhs in
+            if lhs.1.y != rhs.1.y { return lhs.1.y < rhs.1.y }
+            return lhs.1.x < rhs.1.x
+        }
+
+        for index in 1..<sorted.count {
+            let previous = sorted[index - 1]
+            let current = sorted[index]
+            if previous.1.y == current.1.y {
+                #expect(previous.1.x + previous.2 <= current.1.x)
+            } else {
+                #expect(previous.1.y + previous.3 <= current.1.y)
+            }
+        }
+    }
+
+    @Test func packComponentsPreservesRelativePositions() {
+        let nodes: [BaseNode<String>] = [
+            BaseNode(id: "a", position: .zero, data: "a", width: 100, height: 40),
+            BaseNode(id: "b", position: .zero, data: "b", width: 100, height: 40),
+            BaseNode(id: "c", position: .zero, data: "c", width: 100, height: 40),
+            BaseNode(id: "d", position: .zero, data: "d", width: 100, height: 40)
+        ]
+        let positions: [String: XYPosition] = [
+            "a": XYPosition(x: 0, y: 0),
+            "b": XYPosition(x: 150, y: 0),
+            "c": XYPosition(x: 20, y: 30),
+            "d": XYPosition(x: 170, y: 30)
+        ]
+
+        let packed = GraphLayoutAlgorithms.packComponents(
+            positions: positions,
+            nodes: nodes,
+            component: ["a": 0, "b": 0, "c": 1, "d": 1],
+            direction: .topToBottom,
+            gap: 160
+        )
+
+        #expect((packed["b"]?.x ?? 0) - (packed["a"]?.x ?? 0) == 150)
+        #expect((packed["d"]?.x ?? 0) - (packed["c"]?.x ?? 0) == 150)
+        #expect((packed["d"]?.y ?? 0) - (packed["c"]?.y ?? 0) == 0)
+    }
+
+    @Test func packComponentsSeparatesBoundingBoxesByGap() {
+        let nodes: [BaseNode<String>] = [
+            BaseNode(id: "a", position: .zero, data: "a", width: 100, height: 40),
+            BaseNode(id: "b", position: .zero, data: "b", width: 100, height: 40)
+        ]
+        let positions: [String: XYPosition] = [
+            "a": XYPosition(x: 0, y: 0),
+            "b": XYPosition(x: 0, y: 0)
+        ]
+
+        let packed = GraphLayoutAlgorithms.packComponents(
+            positions: positions,
+            nodes: nodes,
+            component: ["a": 0, "b": 1],
+            direction: .topToBottom,
+            gap: 160
+        )
+
+        let delta = (packed["b"]?.x ?? 0) - (packed["a"]?.x ?? 0)
+        #expect(delta >= 260)
+    }
+
+    @Test func packComponentsHonorsBottomToTopAndRightToLeftDirections() {
+        let nodes: [BaseNode<String>] = [
+            BaseNode(id: "a", position: .zero, data: "a", width: 100, height: 40),
+            BaseNode(id: "b", position: .zero, data: "b", width: 100, height: 40)
+        ]
+        let basePositions = GraphLayoutAlgorithms.layoutRanked(
+            nodes: nodes,
+            ranks: ["a": 0, "b": 1],
+            direction: .bottomToTop,
+            spacing: 50
+        )
+        let packedBottom = GraphLayoutAlgorithms.packComponents(
+            positions: basePositions,
+            nodes: nodes,
+            component: ["a": 0, "b": 1],
+            direction: .bottomToTop,
+            gap: 160
+        )
+        #expect((packedBottom["a"]?.y ?? 0) <= 0)
+        #expect((packedBottom["b"]?.y ?? 0) <= 0)
+
+        let rightToLeftBase = GraphLayoutAlgorithms.layoutRanked(
+            nodes: nodes,
+            ranks: ["a": 0, "b": 1],
+            direction: .rightToLeft,
+            spacing: 50
+        )
+        let packedRight = GraphLayoutAlgorithms.packComponents(
+            positions: rightToLeftBase,
+            nodes: nodes,
+            component: ["a": 0, "b": 1],
+            direction: .rightToLeft,
+            gap: 160
+        )
+        #expect((packedRight["a"]?.x ?? 0) <= 0)
+        #expect((packedRight["b"]?.x ?? 0) <= 0)
+    }
+
     @Test func testTreeLayoutPlacesAllNodesEvenWithCycle() {
         let nodes: [BaseNode<String>] = [
             BaseNode(id: "a", position: .zero, data: "a", width: 100, height: 40),

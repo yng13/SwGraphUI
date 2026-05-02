@@ -279,8 +279,12 @@ let ranked = GraphLayoutAlgorithms.layoutRanked(
         "access-1": 0,
         "access-2": 1,
     ],
-    direction: .leftToRight,
-    spacing: 56
+    options: RankedLayoutOptions(
+        direction: .leftToRight,
+        spacing: 56,
+        maxRankBreadth: 480,
+        wrappedLaneSpacing: 72
+    )
 )
 
 store.applyLayout(
@@ -294,7 +298,38 @@ store.applyLayout(
 
 - the app decides `ranks` and `order`
 - SwGraphUI assigns coordinates and preserves spacing/direction rules
+- optional breadth capping and deterministic lane wrapping are configured through `RankedLayoutOptions`
 - `store.applyLayout(positions:)` applies the result with undo/no-op protection
+
+If your domain also provides semantic component IDs, pack them in a separate step:
+アプリ側が semantic component ID も持っている場合は、component packing を別段で適用できます。
+
+```swift
+let packed = GraphLayoutAlgorithms.packComponents(
+    positions: ranked,
+    nodes: store.nodes,
+    component: [
+        "router-1": 0,
+        "core-1": 0,
+        "access-1": 1,
+        "access-2": 1,
+    ],
+    direction: .leftToRight,
+    gap: 160
+)
+
+store.applyLayout(
+    positions: packed,
+    undoTitle: "Pack Components | コンポーネント配置"
+)
+```
+
+This separation is intentional:
+この分離は意図的です。
+
+- `layoutRanked(...)` handles generic coordinate assignment from external rank/order input
+- `packComponents(...)` handles semantic component spacing when the application has that knowledge
+- application-specific role inference remains outside SwGraphUI
 
 If your application stores node centers instead of top-left origins, use the built-in helpers:
 アプリ側がノード位置を top-left ではなく center 基準で持っている場合は、組み込み helper を使えます。
