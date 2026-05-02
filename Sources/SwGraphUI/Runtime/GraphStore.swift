@@ -711,7 +711,7 @@ public final class GraphStore<NodeData: Sendable>: Sendable {
             draggedNodes: runtimeState.drag.draggedNodes,
             pointer: pointer,
             nodeLookup: lookup,
-            snapGrid: nil
+            snapGrid: runtimeState.snapGrid
         )
         withNodeOrderRecalculationSuspended {
             for (id, pos) in nextPositions {
@@ -940,6 +940,7 @@ public final class GraphStore<NodeData: Sendable>: Sendable {
     public func setPanOnDrag(_ panOnDrag: Bool) { runtimeState.interactivity.panOnDrag = panOnDrag }
     public func setZoomOnScroll(_ enabled: Bool) { runtimeState.interactivity.zoomOnScroll = enabled }
     public func setZoomOnPinch(_ enabled: Bool) { runtimeState.interactivity.zoomOnPinch = enabled }
+    public func setSnapGrid(_ snapGrid: SnapGrid?) { runtimeState.snapGrid = snapGrid }
 
     // MARK: - Undo Support Methods
     

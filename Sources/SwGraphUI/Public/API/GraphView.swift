@@ -219,9 +219,13 @@ public struct GraphView<NodeData: Sendable, NodeContent: View>: View {
         }
         .onAppear {
             store.runtimeState.handleAnchorOffset = configuration.handleStyle.anchorOffset
+            store.setSnapGrid(configuration.snapGrid)
         }
         .onChange(of: configuration.handleStyle) { _, newValue in
             store.runtimeState.handleAnchorOffset = newValue.anchorOffset
+        }
+        .onChange(of: configuration.snapGrid) { _, newValue in
+            store.setSnapGrid(newValue)
         }
         .environment(store)
     }

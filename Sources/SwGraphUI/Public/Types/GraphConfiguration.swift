@@ -12,18 +12,27 @@ public struct GraphConfiguration {
     public var gridColor: Color
     /// Built-in handle size, hit target, and anchor offset settings | 組み込みハンドルのサイズ、ヒット領域、アンカーオフセット設定
     public var handleStyle: GraphHandleStyle
+    /// Optional graph-space snap grid used for manual node dragging | 手動ノードドラッグ時に使う graph-space のスナップグリッド
+    public var snapGrid: SnapGrid?
     
     public init(
         showGrid: Bool = false,
         gridSize: CGFloat = 20,
         backgroundVariant: BackgroundVariant = .dots,
         gridColor: Color = .primary.opacity(0.12),
-        handleStyle: GraphHandleStyle = .default
+        handleStyle: GraphHandleStyle = .default,
+        snapGrid: SnapGrid? = nil
     ) {
         self.showGrid = showGrid
         self.gridSize = gridSize
         self.backgroundVariant = backgroundVariant
         self.gridColor = gridColor
         self.handleStyle = handleStyle
+        self.snapGrid = snapGrid
+    }
+
+    /// Convenience factory for square grid snapping. | 正方グリッド用の簡易スナップ設定。
+    public static func gridSnap(_ size: Double) -> SnapGrid {
+        SnapGrid(width: size, height: size)
     }
 }

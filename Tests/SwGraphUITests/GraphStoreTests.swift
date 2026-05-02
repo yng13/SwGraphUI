@@ -134,6 +134,108 @@ final class GraphStoreTests: XCTestCase {
     }
 
     @MainActor
+    func testDragWithoutSnapGridPreservesExistingBehavior() {
+        let node = BaseNode(id: "1", position: XYPosition(x: 5, y: 5), data: "test")
+        let store = GraphStore(nodes: [node])
+
+        store.startDragging(nodeIDs: ["1"], at: XYPosition(x: 15, y: 15))
+        store.updateDragging(to: XYPosition(x: 32, y: 32))
+
+        XCTAssertEqual(store.nodes[0].position.x, 22)
+        XCTAssertEqual(store.nodes[0].position.y, 22)
+    }
+
+    @MainActor
+    func testDragWithSnapGridSnapsNodePosition() {
+        let node = BaseNode(id: "1", position: XYPosition(x: 5, y: 5), data: "test")
+        let store = GraphStore(nodes: [node])
+        store.setSnapGrid(SnapGrid(width: 20, height: 20))
+
+        store.startDragging(nodeIDs: ["1"], at: XYPosition(x: 15, y: 15))
+        store.updateDragging(to: XYPosition(x: 32, y: 32))
+
+        XCTAssertEqual(store.nodes[0].position.x, 20)
+        XCTAssertEqual(store.nodes[0].position.y, 20)
+    }
+
+    @MainActor
+    func testDragWithSnapGridUsesGraphSpaceUnderZoom() {
+        let node = BaseNode(id: "1", position: XYPosition(x: 5, y: 5), data: "test")
+        let store = GraphStore(nodes: [node])
+        store.setSnapGrid(SnapGrid(width: 20, height: 20))
+        store.setViewport(Viewport(x: 100, y: 100, zoom: 0.35))
+
+        store.startDragging(nodeIDs: ["1"], at: XYPosition(x: 15, y: 15))
+        store.updateDragging(to: XYPosition(x: 32, y: 32))
+
+        XCTAssertEqual(store.nodes[0].position.x, 20)
+        XCTAssertEqual(store.nodes[0].position.y, 20)
+    }
+
+    @MainActor
+    func testDragWithSnapGridMovesMultiSelectionDeterministically() {
+        var node1 = BaseNode(id: "1", position: XYPosition(x: 5, y: 5), data: "a")
+        var node2 = BaseNode(id: "2", position: XYPosition(x: 25, y: 25), data: "b")
+        node1.selected = true
+        node2.selected = true
+        let store = GraphStore(nodes: [node1, node2])
+        store.runtimeState.selection.selectNode(id: "1")
+        store.runtimeState.selection.selectNode(id: "2")
+        store.setSnapGrid(SnapGrid(width: 20, height: 20))
+
+        store.startDragging(nodeIDs: ["1", "2"], at: XYPosition(x: 15, y: 15))
+        store.updateDragging(to: XYPosition(x: 32, y: 32))
+
+        XCTAssertEqual(store.node(id: "1")?.position, XYPosition(x: 20, y: 20))
+        XCTAssertEqual(store.node(id: "2")?.position, XYPosition(x: 40, y: 40))
+    }
+
+    @MainActor
+    func testDragWithSnapGridPreservesUndoRedo() {
+        let undoManager = UndoManager()
+        let node = BaseNode(id: "1", position: XYPosition(x: 5, y: 5), data: "test")
+        let store = GraphStore(nodes: [node], undoManager: undoManager)
+        store.setSnapGrid(SnapGrid(width: 20, height: 20))
+
+        store.startDragging(nodeIDs: ["1"], at: XYPosition(x: 15, y: 15))
+        store.updateDragging(to: XYPosition(x: 32, y: 32))
+        store.stopDragging()
+
+        XCTAssertEqual(store.nodes[0].position, XYPosition(x: 20, y: 20))
+
+        undoManager.undo()
+        XCTAssertEqual(store.nodes[0].position, XYPosition(x: 5, y: 5))
+
+        undoManager.redo()
+        XCTAssertEqual(store.nodes[0].position, XYPosition(x: 20, y: 20))
+    }
+
+    @MainActor
+    func testDragWithSnapGridStillRespectsParentExtent() {
+        let parent = BaseNode(
+            id: "p",
+            position: XYPosition(x: 0, y: 0),
+            data: "parent",
+            measured: Dimensions(width: 100, height: 100)
+        )
+        let child = BaseNode(
+            id: "c",
+            position: XYPosition(x: 10, y: 10),
+            data: "child",
+            parentID: "p",
+            extent: .parent,
+            measured: Dimensions(width: 20, height: 20)
+        )
+        let store = GraphStore(nodes: [parent, child])
+        store.setSnapGrid(SnapGrid(width: 20, height: 20))
+
+        store.startDragging(nodeIDs: ["c"], at: XYPosition(x: 10, y: 10))
+        store.updateDragging(to: XYPosition(x: 98, y: 98))
+
+        XCTAssertEqual(store.node(id: "c")?.position, XYPosition(x: 80, y: 80))
+    }
+
+    @MainActor
     func testResolvedHandlePositionIsStableAcrossViewportZoomLevels() {
         let node = BaseNode(id: "1", position: XYPosition(x: 10, y: 20), data: "test", measured: Dimensions(width: 132, height: 60))
         let store = GraphStore(nodes: [node])

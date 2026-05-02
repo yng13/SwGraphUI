@@ -366,6 +366,8 @@ public final class GraphRuntimeState: Sendable {
     public var isAbsolutePositionCacheValid: Bool = false
     /// Fallback distance between node border and handle center used by estimated handle positions. | 推測ハンドル座標で使う、ノード境界とハンドル中心の距離。
     public var handleAnchorOffset: Double = 8
+    /// Optional graph-space snap grid for manual node dragging. | 手動ノードドラッグ用の graph-space スナップグリッド。
+    public var snapGrid: SnapGrid?
     
     public init(
         selection: SelectionState = .init(),
@@ -378,7 +380,8 @@ public final class GraphRuntimeState: Sendable {
         interactivity: InteractivityState = .init(),
         sortedNodeIDs: [String] = [],
         absolutePositionCache: [String: XYPosition] = [:],
-        handleAnchorOffset: Double = 8
+        handleAnchorOffset: Double = 8,
+        snapGrid: SnapGrid? = nil
     ) {
         self.selection = selection
         self.hover = hover
@@ -392,5 +395,6 @@ public final class GraphRuntimeState: Sendable {
         self.absolutePositionCache = absolutePositionCache
         self.isAbsolutePositionCacheValid = false
         self.handleAnchorOffset = handleAnchorOffset
+        self.snapGrid = snapGrid
     }
 }

@@ -211,12 +211,22 @@ let store = GraphStore<String>(
 
 struct GraphScreen: View {
     var body: some View {
-        GraphView(store: store) { node in
+        GraphView(
+            store: store,
+            configuration: GraphConfiguration(
+                showGrid: true,
+                gridSize: 20,
+                snapGrid: .gridSnap(20)
+            )
+        ) { node in
             DefaultNodeView(node: node, store: store)
         }
     }
 }
 ```
+
+`snapGrid` is optional and applies only to manual node dragging in graph space.  
+`snapGrid` は任意設定で、graph-space における手動ノードドラッグにのみ適用されます。
 
 For a customized node:  
 カスタムノードの場合：
