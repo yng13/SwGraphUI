@@ -73,8 +73,7 @@ public struct EdgeRenderer: View {
         let baseShortDash: CGFloat = 5
         let animatedDefaultDash: [CGFloat] = [10, 5]
         
-        // M36: Keep the "visual interval" and "spark flow speed" constant in physical pixels across all zoom ranges. | M36: 全ズーム域で「見た目の間隔」と「火花の流れる速度」を物理ピクセルで一定に保つ。
-        // Since the Path itself is already converted to screen coordinates (toScreen), no need to multiply the dash array by zoom. | Path 自体が toScreen 済みのため、dash 配列に zoom を掛ける必要はない。
+        // Configured dash patterns represent graph-space style, so scale them with the viewport after path screen conversion.
         
         if isReconnecting {
             return StrokeStyle(
@@ -85,6 +84,7 @@ public struct EdgeRenderer: View {
         }
 
         let configuredDash = dashStyle.cgPattern
+        let scaledConfiguredDash = EdgeDashPatternResolver.scaledDashPattern(configuredDash, zoom: zoom)
         
         if animated {
             let elapsed = date.timeIntervalSinceReferenceDate
@@ -92,19 +92,19 @@ public struct EdgeRenderer: View {
             // Realize a constant speed of 30px per second on the screen | スクリーン上で秒速 30px の一定速度を実現
             let speed: CGFloat = 30
             let phase = CGFloat(-elapsed * speed)
-                .truncatingRemainder(dividingBy: dashCycleLength(configuredDash.isEmpty ? animatedDefaultDash : configuredDash))
+                .truncatingRemainder(dividingBy: dashCycleLength(scaledConfiguredDash.isEmpty ? animatedDefaultDash : scaledConfiguredDash))
             
             return StrokeStyle(
                 lineWidth: scaledWidth,
                 lineCap: .round,
-                dash: configuredDash.isEmpty ? animatedDefaultDash : configuredDash,
+                dash: scaledConfiguredDash.isEmpty ? animatedDefaultDash : scaledConfiguredDash,
                 dashPhase: phase
             )
-        } else if !configuredDash.isEmpty {
+        } else if !scaledConfiguredDash.isEmpty {
             return StrokeStyle(
                 lineWidth: scaledWidth,
                 lineCap: .round,
-                dash: configuredDash
+                dash: scaledConfiguredDash
             )
         } else {
             return StrokeStyle(lineWidth: scaledWidth, lineCap: .round)
@@ -113,6 +113,13 @@ public struct EdgeRenderer: View {
 
     private func dashCycleLength(_ pattern: [CGFloat]) -> CGFloat {
         max(pattern.reduce(0, +), 1)
+    }
+}
+
+enum EdgeDashPatternResolver {
+    static func scaledDashPattern(_ pattern: [CGFloat], zoom: Double) -> [CGFloat] {
+        guard zoom.isFinite, zoom > 0 else { return pattern }
+        return pattern.map { $0 * CGFloat(zoom) }
     }
 }
 
