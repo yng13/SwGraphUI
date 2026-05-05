@@ -140,6 +140,8 @@ Current capabilities include:
   ツリー形式のレイアウト適用
 - save / restore snapshots for nodes, edges, and viewport
   ノード、エッジ、およびビューポートのスナップショット保存 / 復元
+- per-edge stroke style primitives for color, width, and dash patterns
+  エッジごとの色、線幅、破線パターンを指定できる stroke style primitive
 - PNG / PDF / SVG export backends
   PNG / PDF / SVG エクスポートバックエンド
 - undo / redo refinement with symmetry and no-op guard tests
@@ -277,6 +279,7 @@ GraphView(
                 segments: context.graphSegments,
                 strokeColor: context.edge.kind == "custom" ? .orange : context.strokeColor,
                 strokeWidth: context.strokeWidth,
+                dashStyle: context.dashStyle,
                 viewport: context.viewport,
                 containerSize: context.containerSize,
                 animated: context.animated,
@@ -295,6 +298,27 @@ GraphView(
 - `graphSegments`: edge geometry in graph coordinates
 - `screenSegments`: edge geometry already transformed into screen coordinates
 - `screenPath`: ready-to-draw SwiftUI `Path`
+- `dashStyle`: resolved static dash primitive for solid / dashed / dotted / custom edge strokes
+
+For per-edge visual styling, configure `strokeStyle` on `BaseEdge`:
+エッジごとの見た目を変える場合は、`BaseEdge` の `strokeStyle` を設定します：
+
+```swift
+BaseEdge(
+    id: "uplink",
+    source: "router",
+    target: "switch",
+    strokeStyle: EdgeStrokeStyle(
+        color: "#2563EB",
+        width: 3,
+        dash: .dashed
+    )
+)
+```
+
+`strokeStyle` is independent from routing (`kind`) and animation (`animated`). A dashed edge can be static or animated, and selected edges keep their configured color / dash while receiving a width emphasis.
+
+`strokeStyle` は routing (`kind`) や animation (`animated`) とは独立しています。破線エッジは静的にもアニメーション付きにもでき、選択時も設定済みの色 / dash を維持したまま線幅で強調されます。
 
 For external layout engines or application-defined ranks/orders:  
 外部レイアウトエンジンや、アプリ側で決めた rank/order を使う場合：

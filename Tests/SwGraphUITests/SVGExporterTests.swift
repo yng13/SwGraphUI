@@ -243,6 +243,27 @@ struct SVGExporterTests {
     }
 
     @Test
+    func edgeStrokeStyleSerializesToSVG() async throws {
+        let store = makeTwoNodeStore()
+        store.edges = [
+            BaseEdge<String>(
+                id: "styled",
+                source: "n1",
+                target: "n2",
+                kind: "straight",
+                strokeStyle: EdgeStrokeStyle(color: "#2563EB", width: 3.5, dash: .dashed)
+            )
+        ]
+
+        let exporter = SVGExporter(store: store)
+        let svg = try #require(exporter.export(settings: GraphExportSettings(margin: 16, includeBackground: false, isTransparent: true)))
+
+        #expect(svg.contains("stroke=\"#2563EB\""))
+        #expect(svg.contains(#"stroke-width="3.5""#))
+        #expect(svg.contains(#"stroke-dasharray="10 5""#))
+    }
+
+    @Test
     func includeBackgroundAddsDeterministicBackgroundPrimitives() async throws {
         let store = makeTwoNodeStore()
         let exporter = SVGExporter(store: store)

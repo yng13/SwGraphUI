@@ -37,7 +37,15 @@ public struct DefaultEdgeView<NodeData: Sendable>: View {
 
     public var body: some View {
         if let (sourcePos, targetPos, sourceHandlePos, targetHandlePos) = resolvePositions() {
-            let strokeWidth: CGFloat = edge.selected ? 3 : 2
+            let isReconnecting = {
+                if let active = store.runtimeState.connection.active,
+                   case .reconnect(let id, _) = active.mode,
+                   id == edge.id {
+                    return true
+                }
+                return false
+            }()
+            let resolvedStroke = resolveStroke(isReconnecting: isReconnecting)
 
             let baseResult = EdgePathAlgorithms.calculatePath(
                 source: sourceHandlePos,
@@ -52,7 +60,7 @@ public struct DefaultEdgeView<NodeData: Sendable>: View {
                 at: sourceHandlePos,
                 tangentAngle: baseResult.sourceTangentAngle,
                 marker: edge.markerStart,
-                strokeWidth: strokeWidth,
+                strokeWidth: resolvedStroke.width,
                 isSource: true
             )
 
@@ -60,18 +68,9 @@ public struct DefaultEdgeView<NodeData: Sendable>: View {
                 at: targetHandlePos,
                 tangentAngle: baseResult.targetTangentAngle,
                 marker: edge.markerEnd,
-                strokeWidth: strokeWidth,
+                strokeWidth: resolvedStroke.width,
                 isSource: false
             )
-
-            let isReconnecting = {
-                if let active = store.runtimeState.connection.active,
-                   case .reconnect(let id, _) = active.mode,
-                   id == edge.id {
-                    return true
-                }
-                return false
-            }()
 
             let viewport = activeViewport
             let adjustedSegments = DefaultEdgeViewUtils.adjustSegmentsForBackoff(
@@ -86,8 +85,9 @@ public struct DefaultEdgeView<NodeData: Sendable>: View {
                 graphSegments: adjustedSegments,
                 screenSegments: screenSegments,
                 screenPath: path,
-                strokeColor: edge.selected ? (isReconnecting ? Color.blue : Color.primary) : Color.gray,
-                strokeWidth: strokeWidth,
+                strokeColor: resolvedStroke.color,
+                strokeWidth: resolvedStroke.width,
+                dashStyle: resolvedStroke.dash,
                 viewport: viewport,
                 containerSize: containerSize,
                 animated: edge.animated && !isReconnecting,
@@ -127,7 +127,7 @@ public struct DefaultEdgeView<NodeData: Sendable>: View {
                                 sourcePos == .bottom ? .degrees(90) :
                                 sourcePos == .left ? .degrees(180) : .degrees(0)
                             ),
-                            color: edge.selected ? Color.primary : Color.gray,
+                            color: resolvedStroke.color,
                             width: (marker.width ?? 6.0) * viewport.zoom,
                             height: (marker.height ?? 6.0) * viewport.zoom
                         )
@@ -144,7 +144,7 @@ public struct DefaultEdgeView<NodeData: Sendable>: View {
                                 targetPos == .bottom ? .degrees(270) :
                                 targetPos == .left ? .degrees(0) : .degrees(180)
                             ),
-                            color: edge.selected ? Color.primary : Color.gray,
+                            color: resolvedStroke.color,
                             width: (marker.width ?? 6.0) * viewport.zoom,
                             height: (marker.height ?? 6.0) * viewport.zoom
                         )
@@ -167,6 +167,21 @@ public struct DefaultEdgeView<NodeData: Sendable>: View {
         let targetKey = HandleKey(nodeID: edge.target, handleID: edge.targetHandle, type: .target, placement: targetPos)
         
         return (sourcePos, targetPos, store.resolvedHandlePosition(for: sourceKey), store.resolvedHandlePosition(for: targetKey))
+    }
+
+    private func resolveStroke(isReconnecting: Bool) -> (color: Color, width: CGFloat, dash: EdgeStrokeDash) {
+        let configured = edge.strokeStyle
+        let baseWidth = CGFloat(configured?.width ?? 2)
+        let selectedWidth = edge.selected ? max(baseWidth + 1, 3) : baseWidth
+        let color: Color
+        if isReconnecting {
+            color = .blue
+        } else if let token = configured?.color {
+            color = Color(hex: token)
+        } else {
+            color = edge.selected ? .primary : .gray
+        }
+        return (color, selectedWidth, configured?.dash ?? .solid)
     }
 }
 

@@ -6,15 +6,17 @@ public struct EdgeRenderer: View {
     public let segments: [PathSegment]
     public let strokeColor: Color
     public let strokeWidth: CGFloat
+    public let dashStyle: EdgeStrokeDash
     public let viewport: Viewport
     public let containerSize: Dimensions
     public let animated: Bool
     public let isReconnecting: Bool
     
-    public init(segments: [PathSegment], strokeColor: Color, strokeWidth: CGFloat, viewport: Viewport, containerSize: Dimensions, animated: Bool, isReconnecting: Bool) {
+    public init(segments: [PathSegment], strokeColor: Color, strokeWidth: CGFloat, dashStyle: EdgeStrokeDash = .solid, viewport: Viewport, containerSize: Dimensions, animated: Bool, isReconnecting: Bool) {
         self.segments = segments
         self.strokeColor = strokeColor
         self.strokeWidth = strokeWidth
+        self.dashStyle = dashStyle
         self.viewport = viewport
         self.containerSize = containerSize
         self.animated = animated
@@ -69,7 +71,7 @@ public struct EdgeRenderer: View {
         let scaledWidth = strokeWidth * zoom
         
         let baseShortDash: CGFloat = 5
-        let baseLongDash: CGFloat = 10
+        let animatedDefaultDash: [CGFloat] = [10, 5]
         
         // M36: Keep the "visual interval" and "spark flow speed" constant in physical pixels across all zoom ranges. | M36: 全ズーム域で「見た目の間隔」と「火花の流れる速度」を物理ピクセルで一定に保つ。
         // Since the Path itself is already converted to screen coordinates (toScreen), no need to multiply the dash array by zoom. | Path 自体が toScreen 済みのため、dash 配列に zoom を掛ける必要はない。
@@ -81,6 +83,8 @@ public struct EdgeRenderer: View {
                 dash: [baseShortDash, baseShortDash]
             )
         }
+
+        let configuredDash = dashStyle.cgPattern
         
         if animated {
             let elapsed = date.timeIntervalSinceReferenceDate
@@ -88,16 +92,32 @@ public struct EdgeRenderer: View {
             // Realize a constant speed of 30px per second on the screen | スクリーン上で秒速 30px の一定速度を実現
             let speed: CGFloat = 30
             let phase = CGFloat(-elapsed * speed)
-                .truncatingRemainder(dividingBy: baseLongDash + baseShortDash)
+                .truncatingRemainder(dividingBy: dashCycleLength(configuredDash.isEmpty ? animatedDefaultDash : configuredDash))
             
             return StrokeStyle(
                 lineWidth: scaledWidth,
                 lineCap: .round,
-                dash: [baseLongDash, baseShortDash],
+                dash: configuredDash.isEmpty ? animatedDefaultDash : configuredDash,
                 dashPhase: phase
+            )
+        } else if !configuredDash.isEmpty {
+            return StrokeStyle(
+                lineWidth: scaledWidth,
+                lineCap: .round,
+                dash: configuredDash
             )
         } else {
             return StrokeStyle(lineWidth: scaledWidth, lineCap: .round)
         }
+    }
+
+    private func dashCycleLength(_ pattern: [CGFloat]) -> CGFloat {
+        max(pattern.reduce(0, +), 1)
+    }
+}
+
+private extension EdgeStrokeDash {
+    var cgPattern: [CGFloat] {
+        pattern.map { CGFloat($0) }
     }
 }

@@ -173,11 +173,13 @@ public struct SVGExporter<NodeData: Sendable> {
     ) -> String {
         let edge = context.edge
         let edgeID = sanitizedID("edge-\(edge.id)")
-        let strokeColor = "#6B7280"
+        let strokeColor = resolvedEdgeStrokeColor(edge)
+        let strokeWidth = resolvedEdgeStrokeWidth(edge)
+        let dashAttributes = resolvedEdgeDashAttributes(edge)
         let markerAttributes = markerReferenceAttributes(for: edge)
         var lines = [
             #"<g id="\#(edgeID)">"#,
-            #"<path d="\#(escapedAttribute(path.path))" fill="none" stroke="\#(strokeColor)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"\#(markerAttributes)/>"#
+            #"<path d="\#(escapedAttribute(path.path))" fill="none" stroke="\#(strokeColor)" stroke-width="\#(format(strokeWidth))" stroke-linecap="round" stroke-linejoin="round"\#(dashAttributes)\#(markerAttributes)/>"#
         ]
 
         if let label = edge.label, !label.isEmpty {
@@ -204,6 +206,20 @@ public struct SVGExporter<NodeData: Sendable> {
 
     private func resolvedLabelTextColor(_ style: EdgeLabelStyle) -> String {
         sanitizeColor(style.textColor, fallback: "#111827")
+    }
+
+    private func resolvedEdgeStrokeColor(_ edge: BaseEdge<NodeData>) -> String {
+        sanitizeColor(edge.strokeStyle?.color, fallback: "#6B7280")
+    }
+
+    private func resolvedEdgeStrokeWidth(_ edge: BaseEdge<NodeData>) -> Double {
+        edge.strokeStyle?.width ?? 2
+    }
+
+    private func resolvedEdgeDashAttributes(_ edge: BaseEdge<NodeData>) -> String {
+        guard let dash = edge.strokeStyle?.dash, !dash.pattern.isEmpty else { return "" }
+        let pattern = dash.pattern.map(format).joined(separator: " ")
+        return #" stroke-dasharray="\#(escapedAttribute(pattern))""#
     }
 
     private func buildMarkerDefinitions() -> [String] {

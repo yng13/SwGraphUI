@@ -80,6 +80,7 @@ public struct GraphView<NodeData: Sendable, NodeContent: View>: View {
                         segments: context.graphSegments,
                         strokeColor: context.strokeColor,
                         strokeWidth: context.strokeWidth,
+                        dashStyle: context.dashStyle,
                         viewport: context.viewport,
                         containerSize: context.containerSize,
                         animated: context.animated,

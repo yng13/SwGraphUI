@@ -81,6 +81,49 @@ public struct EdgeLabelStyle: Sendable, Equatable, Codable {
     }
 }
 
+public enum EdgeStrokeDash: Sendable, Equatable, Codable {
+    case solid
+    case dashed
+    case dotted
+    case custom([Double])
+
+    public static let `default`: EdgeStrokeDash = .solid
+
+    public var pattern: [Double] {
+        switch self {
+        case .solid:
+            []
+        case .dashed:
+            [10, 5]
+        case .dotted:
+            [1, 5]
+        case .custom(let values):
+            values.filter { $0 > 0 }
+        }
+    }
+}
+
+public struct EdgeStrokeStyle: Sendable, Equatable, Codable {
+    /// CSS-like color token, for example "#2563EB". | CSS 風の色トークン（例: "#2563EB"）。
+    public var color: String?
+    /// Graph-space stroke width. Runtime rendering scales it by viewport zoom. | グラフ座標系の線幅。ランタイム描画時は viewport zoom で拡大されます。
+    public var width: Double?
+    /// Static dash style. Animation is handled separately by `BaseEdge.animated`. | 静的な破線スタイル。アニメーションは `BaseEdge.animated` とは独立して扱われます。
+    public var dash: EdgeStrokeDash
+
+    public static let `default` = EdgeStrokeStyle()
+
+    public init(
+        color: String? = nil,
+        width: Double? = nil,
+        dash: EdgeStrokeDash = .solid
+    ) {
+        self.color = color
+        self.width = width
+        self.dash = dash
+    }
+}
+
 public struct EdgePosition: Sendable, Equatable {
     public var sourceX: Double
     public var sourceY: Double
@@ -126,6 +169,7 @@ public struct BaseEdge<NodeData: Sendable>: Sendable, Identifiable {
     public var curvature: Double?
     public var label: String?
     public var labelStyle: EdgeLabelStyle
+    public var strokeStyle: EdgeStrokeStyle?
     public var reconnectable: ReconnectMode
 
     // MARK: - Library-managed/Interaction state
@@ -157,6 +201,7 @@ public struct BaseEdge<NodeData: Sendable>: Sendable, Identifiable {
         selected: Bool = false,
         label: String? = nil,
         labelStyle: EdgeLabelStyle = .default,
+        strokeStyle: EdgeStrokeStyle? = nil,
         reconnectable: ReconnectMode = .none
     ) {
         self.id = id
@@ -181,6 +226,7 @@ public struct BaseEdge<NodeData: Sendable>: Sendable, Identifiable {
         self.selected = selected
         self.label = label
         self.labelStyle = labelStyle
+        self.strokeStyle = strokeStyle
         self.reconnectable = reconnectable
     }
 
@@ -218,6 +264,7 @@ public struct BaseEdge<NodeData: Sendable>: Sendable, Identifiable {
             selected: false,
             label: nil,
             labelStyle: .default,
+            strokeStyle: nil,
             reconnectable: .none
         )
     }
@@ -228,7 +275,7 @@ extension BaseEdge: Codable where NodeData: Codable {
         case id, source, target, data, kind
         case sourceHandle, targetHandle, sourcePosition, targetPosition
         case animated, markerStart, markerEnd, zIndex, ariaLabel
-        case interactionWidth, curvature, label, labelStyle, reconnectable
+        case interactionWidth, curvature, label, labelStyle, strokeStyle, reconnectable
         case hidden, deletable, selectable
     }
 
@@ -252,6 +299,7 @@ extension BaseEdge: Codable where NodeData: Codable {
         self.curvature = try container.decodeIfPresent(Double.self, forKey: .curvature)
         self.label = try container.decodeIfPresent(String.self, forKey: .label)
         self.labelStyle = try container.decode(EdgeLabelStyle.self, forKey: .labelStyle)
+        self.strokeStyle = try container.decodeIfPresent(EdgeStrokeStyle.self, forKey: .strokeStyle)
         self.reconnectable = try container.decode(ReconnectMode.self, forKey: .reconnectable)
         self.hidden = try container.decode(Bool.self, forKey: .hidden)
         self.deletable = try container.decode(Bool.self, forKey: .deletable)
@@ -281,6 +329,7 @@ extension BaseEdge: Codable where NodeData: Codable {
         try container.encodeIfPresent(curvature, forKey: .curvature)
         try container.encodeIfPresent(label, forKey: .label)
         try container.encode(labelStyle, forKey: .labelStyle)
+        try container.encodeIfPresent(strokeStyle, forKey: .strokeStyle)
         try container.encode(reconnectable, forKey: .reconnectable)
         try container.encode(hidden, forKey: .hidden)
         try container.encode(deletable, forKey: .deletable)
@@ -310,6 +359,7 @@ extension BaseEdge: Equatable where NodeData: Equatable {
         lhs.curvature == rhs.curvature &&
         lhs.label == rhs.label &&
         lhs.labelStyle == rhs.labelStyle &&
+        lhs.strokeStyle == rhs.strokeStyle &&
         lhs.reconnectable == rhs.reconnectable &&
         lhs.hidden == rhs.hidden &&
         lhs.deletable == rhs.deletable &&
@@ -317,4 +367,3 @@ extension BaseEdge: Equatable where NodeData: Equatable {
         lhs.selected == rhs.selected
     }
 }
-

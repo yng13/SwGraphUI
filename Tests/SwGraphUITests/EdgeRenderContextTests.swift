@@ -12,7 +12,7 @@ struct EdgeRenderContextTests {
                 BaseNode(id: "b", position: XYPosition(x: 260, y: 120), data: EmptyPayload(), width: 120, height: 60),
             ],
             edges: [
-                BaseEdge(id: "e1", source: "a", target: "b")
+                BaseEdge(id: "e1", source: "a", target: "b", strokeStyle: EdgeStrokeStyle(color: "#2563EB", width: 4, dash: .dashed))
             ]
         )
 
@@ -44,10 +44,54 @@ struct EdgeRenderContextTests {
             #expect(!context.screenPath.isEmpty)
             #expect(context.screenSegments.count == context.graphSegments.count)
             #expect(context.viewport == .identity)
+            #expect(context.strokeWidth == 4)
+            #expect(context.dashStyle == .dashed)
 
             for (graphSegment, screenSegment) in zip(context.graphSegments, context.screenSegments) {
                 #expect(graphSegment.toScreen(viewport: context.viewport) == screenSegment)
             }
         }
+    }
+
+    @Test
+    func selectedStyledEdgeKeepsDashAndGetsWidthEmphasis() {
+        let store = GraphStore<EmptyPayload>(
+            nodes: [
+                BaseNode(id: "a", position: XYPosition(x: 20, y: 30), data: EmptyPayload(), width: 120, height: 60),
+                BaseNode(id: "b", position: XYPosition(x: 260, y: 120), data: EmptyPayload(), width: 120, height: 60),
+            ],
+            edges: [
+                BaseEdge(
+                    id: "e1",
+                    source: "a",
+                    target: "b",
+                    selected: true,
+                    strokeStyle: EdgeStrokeStyle(color: "#2563EB", width: 4, dash: .dotted)
+                )
+            ]
+        )
+
+        var captured: EdgeRenderContext<EmptyPayload>?
+
+        let view = GraphExportView(
+            store: store,
+            settings: GraphExportSettings(scale: 1.0, margin: 0, includeBackground: false, isTransparent: true),
+            nodeBuilder: { _ in Color.clear.frame(width: 120, height: 60) },
+            edgeBuilder: { context in
+                captured = context
+                return AnyView(context.screenPath.stroke(context.strokeColor, lineWidth: context.strokeWidth))
+            },
+            bounds: Rect(x: 0, y: 0, width: 500, height: 300)
+        )
+
+        let renderer = ImageRenderer(content: view)
+        #if os(macOS)
+        _ = renderer.nsImage
+        #else
+        _ = renderer.uiImage
+        #endif
+
+        #expect(captured?.dashStyle == .dotted)
+        #expect(captured?.strokeWidth == 5)
     }
 }
