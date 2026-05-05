@@ -299,6 +299,7 @@ public struct GraphView<NodeData: Sendable, NodeContent: View>: View {
                 store: store,
                 nodeBuilder: nodeBuilder,
                 edgeBuilder: edgeBuilder,
+                onConnect: onConnect,
                 onReconnect: onReconnect,
                 modifierKeys: modifierKeys,
                 containerSize: store.runtimeState.autoPan.containerSize ?? Dimensions(width: 800, height: 600),
@@ -402,17 +403,20 @@ internal struct GraphLayerStack<NodeData: Sendable, NodeContent: View>: View {
     let store: GraphStore<NodeData>
     let nodeBuilder: (BaseNode<NodeData>) -> NodeContent
     let edgeBuilder: (EdgeRenderContext<NodeData>) -> AnyView
+    let onConnect: ((Connection) -> Void)?
     let onReconnect: ((String, Connection) -> Void)?
     let modifierKeys: ModifierKeysProvider?
     let containerSize: Dimensions
     let nodeWrapper: (BaseNode<NodeData>, AnyView) -> AnyView
     
     @Environment(\.graphRenderingViewport) private var renderingViewport
+    @Environment(\.isGraphExporting) private var isGraphExporting
     
     init(
         store: GraphStore<NodeData>,
         nodeBuilder: @escaping (BaseNode<NodeData>) -> NodeContent,
         edgeBuilder: @escaping (EdgeRenderContext<NodeData>) -> AnyView,
+        onConnect: ((Connection) -> Void)?,
         onReconnect: ((String, Connection) -> Void)?,
         modifierKeys: ModifierKeysProvider?,
         containerSize: Dimensions,
@@ -421,6 +425,7 @@ internal struct GraphLayerStack<NodeData: Sendable, NodeContent: View>: View {
         self.store = store
         self.nodeBuilder = nodeBuilder
         self.edgeBuilder = edgeBuilder
+        self.onConnect = onConnect
         self.onReconnect = onReconnect
         self.modifierKeys = modifierKeys
         self.containerSize = containerSize
@@ -436,6 +441,7 @@ internal struct GraphLayerStack<NodeData: Sendable, NodeContent: View>: View {
             edgeLayer
             previewLayer
             nodeLayer
+            automaticHandleLayer
             selectionBoxLayer
             edgeOverlayLayer
         }
@@ -505,6 +511,43 @@ internal struct GraphLayerStack<NodeData: Sendable, NodeContent: View>: View {
                 nodeWrapper(node, AnyView(content))
             }
         }
+    }
+
+    @ViewBuilder
+    private var automaticHandleLayer: some View {
+        if !isGraphExporting {
+            let viewport = self.activeViewport
+            ForEach(store.nodes) { node in
+                ForEach(node.handles.filter { $0.placementMode == .automaticPeerSide }, id: \.stableID) { handle in
+                    let placement = store.resolvedNodeHandlePlacement(nodeID: node.id, handleID: handle.id, type: handle.type)
+                    let key = HandleKey(nodeID: node.id, handleID: handle.id, type: handle.type, placement: placement)
+                    let screenPosition = store.resolvedHandlePosition(for: key).toScreen(viewport: viewport)
+
+                    HandleView<NodeData>(
+                        nodeID: node.id,
+                        handleID: handle.id,
+                        type: handle.type,
+                        placement: placement,
+                        store: store,
+                        onConnect: onConnect,
+                        onReconnect: onReconnect
+                    )
+                    .position(x: screenPosition.x, y: screenPosition.y)
+                    .zIndex(1)
+                }
+            }
+        }
+    }
+}
+
+private extension NodeHandle {
+    var stableID: String {
+        [
+            id ?? "__default__",
+            type.rawValue,
+            placement.rawValue,
+            placementMode.rawValue
+        ].joined(separator: "|")
     }
 }
 

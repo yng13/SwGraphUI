@@ -43,6 +43,7 @@ internal struct GraphExportView<NodeData: Sendable, NodeContent: View>: View {
                 store: store,
                 nodeBuilder: nodeBuilder,
                 edgeBuilder: edgeBuilder,
+                onConnect: nil,
                 onReconnect: nil,
                 modifierKeys: nil,
                 containerSize: Dimensions(width: bounds.width, height: bounds.height),

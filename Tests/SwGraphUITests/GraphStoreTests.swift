@@ -324,6 +324,92 @@ final class GraphStoreTests: XCTestCase {
         XCTAssertEqual(resolved.source, .top)
         XCTAssertEqual(resolved.target, .left)
     }
+
+    @MainActor
+    func testAutomaticPeerSideHandleChoosesPeerDirection() {
+        let source = BaseNode(
+            id: "s",
+            position: XYPosition(x: 0, y: 200),
+            data: "s",
+            handles: [NodeHandle(id: "out", placement: .right, type: .source, placementMode: .automaticPeerSide)],
+            measured: Dimensions(width: 100, height: 60)
+        )
+        let target = BaseNode(id: "t", position: XYPosition(x: 20, y: 0), data: "t", measured: Dimensions(width: 100, height: 60))
+        let edge = BaseEdge<String>(id: "e", source: "s", target: "t", sourceHandle: "out")
+        let store = GraphStore(nodes: [source, target], edges: [edge])
+
+        let resolved = store.resolvedEdgePositions(for: edge)
+        XCTAssertEqual(resolved.source, .top)
+        XCTAssertEqual(resolved.target, .bottom)
+    }
+
+    @MainActor
+    func testAutomaticNodeHandlePlacementUsesConnectedPeerDirection() {
+        let source = BaseNode(
+            id: "s",
+            position: XYPosition(x: 0, y: 200),
+            data: "s",
+            handles: [NodeHandle(id: "out", placement: .right, type: .source, placementMode: .automaticPeerSide)],
+            measured: Dimensions(width: 100, height: 60)
+        )
+        let target = BaseNode(id: "t", position: XYPosition(x: 20, y: 0), data: "t", measured: Dimensions(width: 100, height: 60))
+        let edge = BaseEdge<String>(id: "e", source: "s", target: "t", sourceHandle: "out")
+        let store = GraphStore(nodes: [source, target], edges: [edge])
+
+        let placement = store.resolvedNodeHandlePlacement(nodeID: "s", handleID: "out", type: .source)
+
+        XCTAssertEqual(placement, .top)
+    }
+
+    @MainActor
+    func testAutomaticBoundsHandlesDistributeOnSameSide() {
+        let source = BaseNode(
+            id: "s",
+            position: .zero,
+            data: "s",
+            handles: [
+                NodeHandle(id: "a", placement: .right, type: .source, placementMode: .automaticPeerSide),
+                NodeHandle(id: "b", placement: .right, type: .source, placementMode: .automaticPeerSide)
+            ],
+            measured: Dimensions(width: 100, height: 60)
+        )
+        let target = BaseNode(id: "t", position: XYPosition(x: 300, y: 0), data: "t", measured: Dimensions(width: 100, height: 60))
+        let edges = [
+            BaseEdge<String>(id: "e1", source: "s", target: "t", sourceHandle: "a"),
+            BaseEdge<String>(id: "e2", source: "s", target: "t", sourceHandle: "b")
+        ]
+        let store = GraphStore(nodes: [source, target], edges: edges)
+
+        let a = store.resolvedHandlePosition(for: HandleKey(nodeID: "s", handleID: "a", type: .source, placement: .right))
+        let b = store.resolvedHandlePosition(for: HandleKey(nodeID: "s", handleID: "b", type: .source, placement: .right))
+
+        XCTAssertEqual(a.x, 100, accuracy: 0.0001)
+        XCTAssertEqual(b.x, 100, accuracy: 0.0001)
+        XCTAssertNotEqual(a.y, b.y, accuracy: 0.0001)
+        XCTAssertGreaterThan(a.y, 16)
+        XCTAssertLessThan(b.y, 44)
+    }
+
+    @MainActor
+    func testAutomaticBoundsHandleIgnoresMeasuredManualHandlePosition() {
+        let source = BaseNode(
+            id: "s",
+            position: .zero,
+            data: "s",
+            handles: [NodeHandle(id: "out", placement: .right, type: .source, placementMode: .automaticPeerSide)],
+            measured: Dimensions(width: 100, height: 60)
+        )
+        let target = BaseNode(id: "t", position: XYPosition(x: 300, y: 0), data: "t", measured: Dimensions(width: 100, height: 60))
+        let edge = BaseEdge<String>(id: "e", source: "s", target: "t", sourceHandle: "out")
+        let store = GraphStore(nodes: [source, target], edges: [edge])
+        let key = HandleKey(nodeID: "s", handleID: "out", type: .source, placement: .right)
+
+        store.updateHandlePosition(key: key, absolutePosition: XYPosition(x: 999, y: 999))
+        let resolved = store.resolvedHandlePosition(for: key)
+
+        XCTAssertEqual(resolved.x, 100, accuracy: 0.0001)
+        XCTAssertEqual(resolved.y, 30, accuracy: 0.0001)
+    }
     
     @MainActor
     func testMoveSelectedNodes() {

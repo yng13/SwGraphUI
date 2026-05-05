@@ -346,6 +346,35 @@ Endpoint labels are positioned from the same resolved handle points used by edge
 
 endpoint label は、エッジパスと同じ resolved handle point から配置されます。中央の `label` とは独立して動作し、再接続アンカーより背面に表示されます。
 
+For per-port or multi-interface diagrams, handles can request bounds-based placement:
+ポートや複数インターフェイスを持つ図では、handle に境界ベース配置を指定できます：
+
+```swift
+BaseNode(
+    id: "router",
+    position: XYPosition(x: 0, y: 0),
+    data: RouterData(...),
+    handles: [
+        NodeHandle(
+            id: "te1",
+            placement: .right,
+            type: .source,
+            placementMode: .automaticPeerSide
+        ),
+        NodeHandle(
+            id: "te2",
+            placement: .right,
+            type: .source,
+            placementMode: .automaticPeerSide
+        )
+    ]
+)
+```
+
+`automaticPeerSide` keeps the handle on the node bounds, resolves the effective side from the connected peer node, and distributes multiple handles on the same side deterministically. Existing custom `HandleView` placement remains available by keeping the default `.explicit` mode.
+
+`automaticPeerSide` は handle をノード境界上に置き、接続先ノード方向から有効な辺を解決し、同じ辺の複数 handle を決定論的に分散します。従来のカスタム `HandleView` 配置は、デフォルトの `.explicit` のまま利用できます。
+
 For external layout engines or application-defined ranks/orders:  
 外部レイアウトエンジンや、アプリ側で決めた rank/order を使う場合：
 

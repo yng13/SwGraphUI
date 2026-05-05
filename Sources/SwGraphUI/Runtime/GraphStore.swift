@@ -1,6 +1,12 @@
 import SwiftUI
 import Observation
 
+private struct AutomaticHandleGroupKey: Hashable {
+    let nodeID: String
+    let type: HandleType
+    let placement: Position
+}
+
 /// Central class responsible for graph state management. | グラフの状態管理を担う中心的なクラス。
 /// Manages nodes, edges, viewport, selection status, etc., and provides reactive updates to the UI. | ノード、エッジ、ビューポート、選択状態などを一括管理し、UIへのリアクティブな更新を提供します。
 @Observable
@@ -10,13 +16,18 @@ public final class GraphStore<NodeData: Sendable>: Sendable {
     public var nodes: [BaseNode<NodeData>] = [] {
         didSet {
             isNodeLookupCacheValid = false
+            automaticHandleIDsCache.removeAll()
             if !suspendAutomaticOrderRecalculation {
                 recalculateSortedNodeIDs()
             }
             runtimeState.isAbsolutePositionCacheValid = false
         }
     }
-    public var edges: [BaseEdge<NodeData>] = []
+    public var edges: [BaseEdge<NodeData>] = [] {
+        didSet {
+            automaticHandleIDsCache.removeAll()
+        }
+    }
     
     // MARK: - Runtime State
     public var runtimeState: GraphRuntimeState
@@ -28,6 +39,7 @@ public final class GraphStore<NodeData: Sendable>: Sendable {
     // MARK: - nodeLookup Cache
     @ObservationIgnored private var _cachedNodeLookup: [String: BaseNode<NodeData>] = [:]
     @ObservationIgnored private var isNodeLookupCacheValid = false
+    @ObservationIgnored private var automaticHandleIDsCache: [AutomaticHandleGroupKey: Set<String>] = [:]
     
     // MARK: - Undo/Redo State
     public var undoManager: UndoManager?
@@ -97,6 +109,10 @@ public final class GraphStore<NodeData: Sendable>: Sendable {
     
     /// Retrieves the resolved coordinates of a handle (prioritizes measured values, falls back to estimation). | ハンドルの解決済み座標を取得します（実測値を優先し、なければ推測を使用）。
     public func resolvedHandlePosition(for key: HandleKey) -> XYPosition {
+        if let automaticPosition = resolvedBoundsHandlePosition(for: key) {
+            return automaticPosition
+        }
+
         // 1. Highest priority if measured value exists | 1. 実測値があれば最優先
         if let measured = measuredHandlePosition(for: key) {
             return measured
@@ -111,6 +127,133 @@ public final class GraphStore<NodeData: Sendable>: Sendable {
             placement: key.placement,
             handleOffset: runtimeState.handleAnchorOffset
         )
+    }
+
+    private func resolvedBoundsHandlePosition(for key: HandleKey) -> XYPosition? {
+        guard let node = node(id: key.nodeID),
+              let handle = matchedHandle(for: key),
+              handle.placementMode == .automaticPeerSide else {
+            return nil
+        }
+
+        let sameSideHandles = automaticHandles(
+            on: node,
+            type: key.type,
+            placement: key.placement
+        )
+        guard let index = sameSideHandles.firstIndex(where: { $0.id == key.handleID }) else {
+            return nil
+        }
+
+        let origin = absolutePosition(for: node.id)
+        let dimensions = resolvedNodeDimensions(for: node)
+        return HandlePlacementAlgorithms.borderPosition(
+            bounds: Rect(origin: origin, size: dimensions),
+            placement: key.placement,
+            index: index,
+            count: sameSideHandles.count
+        )
+    }
+
+    private func matchedHandle(for key: HandleKey) -> NodeHandle? {
+        guard let node = node(id: key.nodeID) else { return nil }
+        return node.handles.first { handle in
+            handle.id == key.handleID && handle.type == key.type
+        }
+    }
+
+    private func automaticHandles(
+        on node: BaseNode<NodeData>,
+        type: HandleType,
+        placement: Position
+    ) -> [NodeHandle] {
+        let handleIDsOnSide = automaticHandleIDs(on: node.id, type: type, placement: placement)
+        let handles = node.handles
+            .filter { handle in
+                handle.type == type &&
+                handle.placementMode == .automaticPeerSide &&
+                handle.id.map { handleIDsOnSide.contains($0) } ?? false
+            }
+            .sorted { lhs, rhs in
+                (lhs.id ?? "") < (rhs.id ?? "")
+            }
+        if !handles.isEmpty {
+            return handles
+        }
+
+        return node.handles
+            .filter { $0.type == type && $0.placementMode == .automaticPeerSide }
+            .sorted { lhs, rhs in
+                (lhs.id ?? "") < (rhs.id ?? "")
+            }
+    }
+
+    private func automaticHandleIDs(on nodeID: String, type: HandleType, placement: Position) -> Set<String> {
+        let cacheKey = AutomaticHandleGroupKey(nodeID: nodeID, type: type, placement: placement)
+        if let cached = automaticHandleIDsCache[cacheKey] {
+            return cached
+        }
+
+        var ids = Set<String>()
+        for edge in edges {
+            if type == .source,
+               edge.source == nodeID,
+               let handleID = edge.sourceHandle,
+               isAutomaticHandle(nodeID: nodeID, handleID: handleID, type: type),
+               resolvedEdgePlacement(nodeID: nodeID, handleID: handleID, handleType: type, explicit: edge.sourcePosition, peerNodeID: edge.target) == placement {
+                ids.insert(handleID)
+            }
+            if type == .target,
+               edge.target == nodeID,
+               let handleID = edge.targetHandle,
+               isAutomaticHandle(nodeID: nodeID, handleID: handleID, type: type),
+               resolvedEdgePlacement(nodeID: nodeID, handleID: handleID, handleType: type, explicit: edge.targetPosition, peerNodeID: edge.source) == placement {
+                ids.insert(handleID)
+            }
+        }
+        automaticHandleIDsCache[cacheKey] = ids
+        return ids
+    }
+
+    private func isAutomaticHandle(nodeID: String, handleID: String, type: HandleType) -> Bool {
+        guard let node = node(id: nodeID) else { return false }
+        return node.handles.contains { handle in
+            handle.id == handleID &&
+            handle.type == type &&
+            handle.placementMode == .automaticPeerSide
+        }
+    }
+
+    func resolvedNodeHandlePlacement(nodeID: String, handleID: String?, type: HandleType) -> Position {
+        guard let node = node(id: nodeID),
+              let handle = node.handles.first(where: { $0.id == handleID && $0.type == type }) else {
+            return type == .source ? (node(id: nodeID)?.sourcePosition ?? .right) : (node(id: nodeID)?.targetPosition ?? .left)
+        }
+
+        guard handle.placementMode == .automaticPeerSide else {
+            return handle.placement
+        }
+
+        let matchingEdges = edges
+            .filter { edge in
+                switch type {
+                case .source:
+                    edge.source == nodeID && edge.sourceHandle == handleID
+                case .target:
+                    edge.target == nodeID && edge.targetHandle == handleID
+                }
+            }
+            .sorted { $0.id < $1.id }
+
+        guard let edge = matchingEdges.first else {
+            return handle.placement
+        }
+
+        let peerID = type == .source ? edge.target : edge.source
+        guard let peer = self.node(id: peerID) else {
+            return handle.placement
+        }
+        return automaticEdgePlacement(from: node, to: peer)
     }
 
     /// Resolves the effective source/target placements for an edge.
@@ -147,6 +290,11 @@ public final class GraphStore<NodeData: Sendable>: Sendable {
         if let node = node(id: nodeID) {
             if let handleID,
                let matched = node.handles.first(where: { $0.id == handleID && $0.type == handleType }) {
+                if matched.placementMode == .automaticPeerSide,
+                   let currentNode = self.node(id: nodeID),
+                   let peer = self.node(id: peerNodeID) {
+                    return automaticEdgePlacement(from: currentNode, to: peer)
+                }
                 return matched.placement
             }
 
@@ -787,17 +935,26 @@ public final class GraphStore<NodeData: Sendable>: Sendable {
         var candidates: [ConnectionInteractionManager.HandleCandidate] = []
         
         for node in nodes {
-            let handleTargets: [(id: String?, type: HandleType, placement: Position, connectable: Bool)]
+            let handleTargets: [(id: String?, type: HandleType, placement: Position, connectable: Bool, placementMode: NodeHandlePlacementMode)]
             if !node.handles.isEmpty {
-                handleTargets = node.handles.map { ($0.id, $0.type, $0.placement, $0.isConnectable) }
+                handleTargets = node.handles.map { ($0.id, $0.type, $0.placement, $0.isConnectable, $0.placementMode) }
             } else {
                 handleTargets = [
-                    (nil, .source, node.sourcePosition ?? .right, true),
-                    (nil, .target, node.targetPosition ?? .left, true)
+                    (nil, .source, node.sourcePosition ?? .right, true, .explicit),
+                    (nil, .target, node.targetPosition ?? .left, true, .explicit)
                 ]
             }
             for target in handleTargets {
-                let key = HandleKey(nodeID: node.id, handleID: target.id, type: target.type, placement: target.placement)
+                let placement: Position
+                if target.placementMode == .automaticPeerSide,
+                   let fromNodeID,
+                   fromNodeID != node.id,
+                   let fromNode = self.node(id: fromNodeID) {
+                    placement = automaticEdgePlacement(from: node, to: fromNode)
+                } else {
+                    placement = target.placement
+                }
+                let key = HandleKey(nodeID: node.id, handleID: target.id, type: target.type, placement: placement)
                 let pos = resolvedHandlePosition(for: key)
                 candidates.append(.init(
                     key: key,

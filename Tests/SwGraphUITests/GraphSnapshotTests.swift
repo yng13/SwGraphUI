@@ -8,7 +8,13 @@ struct GraphSnapshotTests {
         let store = GraphStore<EmptyPayload>()
         
         let nodes = [
-            BaseNode(id: "n1", position: XYPosition(x: 10, y: 20), data: EmptyPayload(), resizable: false),
+            BaseNode(
+                id: "n1",
+                position: XYPosition(x: 10, y: 20),
+                data: EmptyPayload(),
+                handles: [NodeHandle(id: "out", placement: .right, type: .source, placementMode: .automaticPeerSide)],
+                resizable: false
+            ),
             BaseNode(id: "n2", position: XYPosition(x: 100, y: 200), data: EmptyPayload(), parentID: "n1")
         ]
         let edges = [
@@ -52,6 +58,7 @@ struct GraphSnapshotTests {
         
         // Check if configuration is preserved | configuration が保たれているか
         #expect(newStore.nodes[0].resizable == false)
+        #expect(newStore.nodes[0].handles[0].placementMode == .automaticPeerSide)
         #expect(newStore.nodes[1].parentID == "n1")
         
         // Check if edge attributes are preserved | エッジの属性が保たれているか
