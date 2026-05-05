@@ -58,8 +58,9 @@ public enum GeometryAlgorithms {
     }
 
     public static func getNodePositionWithOrigin<Data: Sendable>(node: BaseNode<Data>, nodeOrigin: NodeOrigin = .init(x: 0, y: 0)) -> XYPosition {
-        let width = node.width ?? node.measured?.width ?? node.initialWidth ?? 0
-        let height = node.height ?? node.measured?.height ?? node.initialHeight ?? 0
+        let dimensions = GraphAlgorithms.nodeDimensions(for: node)
+        let width = dimensions.width
+        let height = dimensions.height
         let origin = node.origin ?? nodeOrigin
 
         return XYPosition(
@@ -75,11 +76,12 @@ public enum GeometryAlgorithms {
 
         let rects = nodes.map { node in
             let pos = getNodePositionWithOrigin(node: node, nodeOrigin: nodeOrigin)
+            let dimensions = GraphAlgorithms.nodeDimensions(for: node)
             return Rect(
                 x: pos.x,
                 y: pos.y,
-                width: node.width ?? node.measured?.width ?? node.initialWidth ?? 0,
-                height: node.height ?? node.measured?.height ?? node.initialHeight ?? 0
+                width: dimensions.width,
+                height: dimensions.height
             )
         }
 
@@ -180,5 +182,4 @@ public enum GeometryAlgorithms {
         return Rect(x: minX, y: minY, width: maxX - minX, height: maxY - minY)
     }
 }
-
 

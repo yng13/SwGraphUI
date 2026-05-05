@@ -30,8 +30,9 @@ public struct MiniMapView<Data: Sendable>: View {
             // Bounds of the entire graph | グラフ全体の Bounds
             let nodeRects = store.nodes.map { node in
                 let absPos = store.absolutePosition(for: node.id)
-                let width = node.width ?? node.measured?.width ?? node.initialWidth ?? 100
-                let height = node.height ?? node.measured?.height ?? node.initialHeight ?? 50
+                let dimensions = resolvedMiniMapDimensions(for: node)
+                let width = dimensions.width
+                let height = dimensions.height
                 let origin = node.origin ?? .init(x: 0, y: 0)
                 
                 return Rect(
@@ -72,8 +73,9 @@ public struct MiniMapView<Data: Sendable>: View {
                 // Nodes (rectangles as background) | ノード（背景としての矩形）
                 ForEach(store.nodes) { node in
                     let absPos = store.absolutePosition(for: node.id)
-                    let width = node.width ?? node.measured?.width ?? node.initialWidth ?? 100
-                    let height = node.height ?? node.measured?.height ?? node.initialHeight ?? 50
+                    let dimensions = resolvedMiniMapDimensions(for: node)
+                    let width = dimensions.width
+                    let height = dimensions.height
                     let origin = node.origin ?? .init(x: 0, y: 0)
                     
                     let nodeRect = Rect(
@@ -119,6 +121,14 @@ public struct MiniMapView<Data: Sendable>: View {
         .overlay(
             RoundedRectangle(cornerRadius: 12)
                 .stroke(Color.primary.opacity(0.1), lineWidth: 1)
+        )
+    }
+
+    private func resolvedMiniMapDimensions(for node: BaseNode<Data>) -> Dimensions {
+        let dimensions = GraphAlgorithms.nodeDimensions(for: node)
+        return Dimensions(
+            width: dimensions.width > 0 ? dimensions.width : 100,
+            height: dimensions.height > 0 ? dimensions.height : 50
         )
     }
 }

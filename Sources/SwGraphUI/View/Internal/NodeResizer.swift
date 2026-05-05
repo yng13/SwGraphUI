@@ -24,6 +24,7 @@ public struct NodeResizer<NodeData: Sendable>: View {
         // Hidden during export (isGraphExporting == true) | エクスポート時（isGraphExporting == true）は非表示
         if node.selected && isVisible && node.resizable && !isGraphExporting {
             let scale = max(CGFloat(zoomLevel), 0.0001)
+            let dimensions = GraphAlgorithms.nodeDimensions(for: node)
             ZStack {
                 // Guide border | ガイド枠線
                 // lineWidth ensures visibility similar to SelectionBox (1.0 to 2.5 pt) | lineWidth も SelectionBox と同様に視認性を確保 (1.0 to 2.5 pt)
@@ -44,8 +45,8 @@ public struct NodeResizer<NodeData: Sendable>: View {
             }
             // Explicitly finalize the size of the resizer frame so it isn't affected by parent layout | 親側のレイアウトに左右されないよう、明示的にリサイザー枠のサイズを確定させる
             .frame(
-                width: (node.width ?? node.measured?.width ?? 0) * scale,
-                height: (node.height ?? node.measured?.height ?? 0) * scale
+                width: dimensions.width * scale,
+                height: dimensions.height * scale
             )
         }
     }
@@ -117,11 +118,12 @@ private struct ResizeControlView<NodeData: Sendable>: View {
         
         if startBounds == nil {
             store.startResizing(id: node.id)
+            let dimensions = GraphAlgorithms.nodeDimensions(for: node)
             startBounds = ResizeResult(
                 x: node.position.x,
                 y: node.position.y,
-                width: node.width ?? node.measured?.width ?? 0,
-                height: node.height ?? node.measured?.height ?? 0
+                width: dimensions.width,
+                height: dimensions.height
             )
         }
         

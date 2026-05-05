@@ -140,8 +140,8 @@ Current capabilities include:
   ツリー形式のレイアウト適用
 - save / restore snapshots for nodes, edges, and viewport
   ノード、エッジ、およびビューポートのスナップショット保存 / 復元
-- PNG / PDF export backends
-  PNG / PDF エクスポートバックエンド
+- PNG / PDF / SVG export backends
+  PNG / PDF / SVG エクスポートバックエンド
 - undo / redo refinement with symmetry and no-op guard tests
   対称性および no-op ガードテストを伴う Undo / Redo の洗練
 - accessibility baseline for nodes, edges, controls, and minimap
@@ -241,6 +241,29 @@ GraphView(store: store) { node in
     }
 }
 ```
+
+### Custom Node Sizing | カスタムノードのサイズ指定
+
+SwGraphUI resolves node geometry in this order:
+`measured -> width/height -> initialWidth/initialHeight -> fallback`.
+
+SwGraphUI のノード寸法は以下の優先順位で解決されます：
+`measured -> width/height -> initialWidth/initialHeight -> fallback`。
+
+- Use `initialWidth` / `initialHeight` as the best estimate before SwiftUI measurement is available.  
+  SwiftUI の実測前にレイアウト用の見積もりが必要な場合は `initialWidth` / `initialHeight` を使ってください。
+- Omit `width` / `height` when rendered content should become authoritative after measurement.  
+  実測後のコンテンツサイズを正としたい場合は `width` / `height` を省略してください。
+- Use `width` / `height` for explicit app-controlled sizes or user-resized nodes.  
+  アプリ側で固定したいサイズや、ユーザーリサイズ後のサイズには `width` / `height` を使ってください。
+- For fixed-size custom views, make the rendered SwiftUI node honor the same dimensions so measured geometry stays aligned.  
+  固定サイズのカスタム View では、SwiftUI 側の描画も同じ寸法を使うことで measured geometry との整合を保ってください。
+- Use `origin` when your app stores positions by center or another anchor instead of top-left.  
+  center など top-left 以外のアンカーで座標を扱う場合は `origin` を使ってください。
+
+Dense graph UIs can still choose fixed dimensions for visual stability. Rich content nodes can start with `initialWidth` / `initialHeight` and let `measured` drive edge anchors, minimap rectangles, bounds, fit view, and export after the first measurement pass.
+
+高密度なグラフ UI では、視覚的な安定性のために固定寸法を選んでも問題ありません。リッチなカスタムノードでは `initialWidth` / `initialHeight` を初期見積もりにし、最初の測定後は `measured` によってエッジアンカー、ミニマップ矩形、bounds、fit view、export が整合するようにできます。
 
 For a customized edge body:  
 カスタムエッジ本体の場合：

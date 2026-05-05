@@ -53,6 +53,36 @@ import Testing
     #expect(incomers.map(\.id) == ["c"])
 }
 
+@Test func nodeDimensionsPreferMeasuredOverExplicitEstimate() async throws {
+    let node = GraphNode(
+        id: "rich-node",
+        position: .zero,
+        data: EmptyPayload(),
+        width: 100,
+        height: 40,
+        initialWidth: 80,
+        initialHeight: 30,
+        measured: Dimensions(width: 180, height: 72)
+    )
+
+    #expect(GraphAlgorithms.nodeDimensions(for: node) == Dimensions(width: 180, height: 72))
+}
+
+@Test func geometryBoundsPreferMeasuredDimensions() async throws {
+    let node = GraphNode(
+        id: "rich-node",
+        position: XYPosition(x: 10, y: 20),
+        data: EmptyPayload(),
+        width: 100,
+        height: 40,
+        measured: Dimensions(width: 180, height: 72)
+    )
+
+    let bounds = GeometryAlgorithms.getBounds(nodes: [node])
+
+    #expect(bounds == Rect(x: 10, y: 20, width: 180, height: 72))
+}
+
 @Test func bezierPathProducesNonEmptyPath() async throws {
     let result = EdgePathAlgorithms.bezierPath(
         sourceX: 0,
