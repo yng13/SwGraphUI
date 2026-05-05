@@ -14,6 +14,11 @@ internal struct GraphExportView<NodeData: Sendable, NodeContent: View>: View {
     var body: some View {
         let contentSize = CGSize(width: bounds.width + settings.margin * 2,
                                height: bounds.height + settings.margin * 2)
+        let exportViewport = Viewport(
+            x: -bounds.x + settings.margin,
+            y: -bounds.y + settings.margin,
+            zoom: 1.0
+        )
         
         ZStack(alignment: .topLeading) {
             // Background color (if not transparent) | 背景色（透明でない場合）
@@ -27,11 +32,6 @@ internal struct GraphExportView<NodeData: Sendable, NodeContent: View>: View {
             
             // Background grid (if requested) | 背景グリッド（要求された場合）
             if settings.includeBackground {
-                let exportViewport = Viewport(
-                    x: -bounds.x + settings.margin,
-                    y: -bounds.y + settings.margin,
-                    zoom: 1.0
-                )
                 BackgroundView(
                     viewport: exportViewport,
                     variant: settings.backgroundVariant
@@ -46,18 +46,16 @@ internal struct GraphExportView<NodeData: Sendable, NodeContent: View>: View {
                 onConnect: nil,
                 onReconnect: nil,
                 modifierKeys: nil,
-                containerSize: Dimensions(width: bounds.width, height: bounds.height),
+                containerSize: Dimensions(width: contentSize.width, height: contentSize.height),
                 nodeWrapper: { _, content in
                     // No gestures needed during export. Return as is. | エクスポート時はジェスチャ不要。そのまま返す。
                     content
                 }
             )
-            // Offset to align with the top-left of the calculated Bounds | 算出した Bounds の左上に合わせるためのオフセット
-            .offset(x: -bounds.x + settings.margin, y: -bounds.y + settings.margin)
         }
         .frame(width: contentSize.width, height: contentSize.height)
         .environment(\.isGraphExporting, true)
-        .environment(\.graphRenderingViewport, Viewport.identity)
+        .environment(\.graphRenderingViewport, exportViewport)
         .environment(\.graphZoomLevel, 1.0)
     }
 }
