@@ -120,7 +120,8 @@ internal struct GraphExportSupport<NodeData: Sendable> {
         let fontSize = resolvedExportFontSize(for: style)
         let horizontalPadding = style.bgPadding * 2
         let verticalPadding = style.bgPadding * 0.8
-        let naturalWidth = max(Double(label.count) * fontSize * 0.58 + horizontalPadding, fontSize * 2.4)
+        let displayLabel = constrainedLabelText(for: label, style: style, maxWidth: maxWidth)
+        let naturalWidth = max(Double(displayLabel.count) * fontSize * 0.58 + horizontalPadding, fontSize * 2.4)
         let estimatedWidth = maxWidth.map { min(naturalWidth, $0) } ?? naturalWidth
         let estimatedHeight = fontSize * 1.4 + verticalPadding
 
@@ -130,6 +131,25 @@ internal struct GraphExportSupport<NodeData: Sendable> {
             width: estimatedWidth,
             height: estimatedHeight
         )
+    }
+
+    func constrainedLabelText(for label: String, style: EdgeLabelStyle, maxWidth: Double?) -> String {
+        guard let maxWidth else { return label }
+
+        let fontSize = resolvedExportFontSize(for: style)
+        let textWidth = max(maxWidth - style.bgPadding * 2, fontSize * 1.2)
+        let maxCharacters = Int(floor(textWidth / (fontSize * 0.58)))
+        guard maxCharacters > 0, label.count > maxCharacters else { return label }
+
+        let marker = "..."
+        guard maxCharacters > marker.count + 1 else {
+            return String(label.prefix(maxCharacters))
+        }
+
+        let visibleCharacters = maxCharacters - marker.count
+        let leadingCount = Int(ceil(Double(visibleCharacters) / 2.0))
+        let trailingCount = max(visibleCharacters - leadingCount, 0)
+        return String(label.prefix(leadingCount)) + marker + String(label.suffix(trailingCount))
     }
 
     func resolvedExportFontSize(for style: EdgeLabelStyle) -> Double {

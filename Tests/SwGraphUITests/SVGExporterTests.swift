@@ -280,7 +280,9 @@ struct SVGExporterTests {
         let exporter = SVGExporter(store: store)
         let svg = try #require(exporter.export(settings: GraphExportSettings(margin: 16, includeBackground: false, isTransparent: true)))
 
-        #expect(svg.contains("Gi0/1 &amp; &quot;uplink&quot;"))
+        #expect(svg.contains("Gi0/..."))
+        #expect(svg.contains("&quot;"))
+        #expect(!svg.contains("Gi0/1 &amp; &quot;uplink&quot;"))
         #expect(svg.contains("Te1/1"))
     }
 

@@ -232,8 +232,9 @@ public struct SVGExporter<NodeData: Sendable> {
                 #"<rect x="\#(format(rect.x))" y="\#(format(rect.y))" width="\#(format(rect.width))" height="\#(format(rect.height))" rx="\#(format(style.bgBorderRadius))" ry="\#(format(style.bgBorderRadius))" fill="\#(resolvedLabelBackgroundColor(style))" stroke="none"/>"#
             )
         }
+        let text = support.constrainedLabelText(for: label.text, style: style, maxWidth: label.maxWidth)
         lines.append(
-            #"<text x="\#(format(center.x))" y="\#(format(center.y + fontSize * 0.35))" text-anchor="middle" font-family="-apple-system, BlinkMacSystemFont, sans-serif" font-size="\#(format(fontSize))" fill="\#(resolvedLabelTextColor(style))">\#(escapedText(label.text))</text>"#
+            #"<text x="\#(format(center.x))" y="\#(format(center.y + fontSize * 0.35))" text-anchor="middle" font-family="-apple-system, BlinkMacSystemFont, sans-serif" font-size="\#(format(fontSize))" fill="\#(resolvedLabelTextColor(style))">\#(escapedText(text))</text>"#
         )
         return lines.joined(separator: "\n")
     }
