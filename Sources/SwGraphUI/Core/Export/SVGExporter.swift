@@ -117,7 +117,9 @@ public struct SVGExporter<NodeData: Sendable> {
                 target: target,
                 sourceNodeID: edge.source,
                 targetNodeID: edge.target,
-                assignment: store.edgeLaneAssignment(for: edge)
+                assignment: store.edgeLaneAssignment(for: edge),
+                sourcePosition: resolved.source,
+                targetPosition: resolved.target
             )
 
             let labelPoint = XYPosition(

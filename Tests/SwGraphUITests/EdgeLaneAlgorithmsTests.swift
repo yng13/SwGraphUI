@@ -69,4 +69,38 @@ struct EdgeLaneAlgorithmsTests {
 
         #expect(forward == reversed)
     }
+
+    @Test
+    func stepParallelLaneKeepsEndpointLeadsOrthogonal() {
+        let source = XYPosition(x: 0, y: 0)
+        let target = XYPosition(x: 120, y: 120)
+        let base = EdgePathAlgorithms.stepPath(
+            sourceX: source.x,
+            sourceY: source.y,
+            sourcePosition: .bottom,
+            targetX: target.x,
+            targetY: target.y,
+            targetPosition: .top
+        )
+
+        let adjusted = EdgeLaneAlgorithms.applyLane(
+            to: base,
+            source: source,
+            target: target,
+            sourceNodeID: "a",
+            targetNodeID: "b",
+            assignment: EdgeLaneAssignment(index: 1, count: 2, spacing: 18),
+            sourcePosition: .bottom,
+            targetPosition: .top
+        )
+
+        let firstLine = adjusted.segments.dropFirst().first(where: { segment in
+            if case .line = segment { return true }
+            return false
+        })
+        let penultimatePoint = adjusted.segments.dropLast().last?.target
+
+        #expect(firstLine?.target.x == source.x)
+        #expect(penultimatePoint?.x == target.x)
+    }
 }

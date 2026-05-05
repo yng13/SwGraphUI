@@ -50,7 +50,9 @@ public enum EdgeLaneAlgorithms {
         target: XYPosition,
         sourceNodeID: String,
         targetNodeID: String,
-        assignment: EdgeLaneAssignment
+        assignment: EdgeLaneAssignment,
+        sourcePosition: Position? = nil,
+        targetPosition: Position? = nil
     ) -> EdgePathResult {
         guard !assignment.isCentered else { return result }
         let offset = offsetVector(
@@ -62,7 +64,14 @@ public enum EdgeLaneAlgorithms {
         )
         guard offset.x.isFinite, offset.y.isFinite else { return result }
 
-        let adjustedSegments = laneSegments(result.segments, source: source, target: target, offset: offset)
+        let adjustedSegments = laneSegments(
+            result.segments,
+            source: source,
+            target: target,
+            offset: offset,
+            sourcePosition: sourcePosition,
+            targetPosition: targetPosition
+        )
         let sourceTangent = sourceTangentAngle(in: adjustedSegments) ?? result.sourceTangentAngle
         let targetTangent = targetTangentAngle(in: adjustedSegments) ?? result.targetTangentAngle
 
@@ -106,7 +115,9 @@ public enum EdgeLaneAlgorithms {
         _ segments: [PathSegment],
         source: XYPosition,
         target: XYPosition,
-        offset: XYPosition
+        offset: XYPosition,
+        sourcePosition: Position?,
+        targetPosition: Position?
     ) -> [PathSegment] {
         guard segments.count >= 2 else { return segments }
 
@@ -124,7 +135,7 @@ public enum EdgeLaneAlgorithms {
         }
 
         let lastIndex = segments.count - 1
-        return segments.enumerated().map { index, segment in
+        let shiftedSegments: [PathSegment] = segments.enumerated().map { index, segment in
             switch segment {
             case .move(let to):
                 return index == 0 ? .move(to: to) : .move(to: shifted(to, by: offset))
@@ -143,10 +154,59 @@ public enum EdgeLaneAlgorithms {
                 )
             }
         }
+
+        return orthogonalizedEndpointSegments(
+            shiftedSegments,
+            source: source,
+            target: target,
+            sourcePosition: sourcePosition,
+            targetPosition: targetPosition
+        )
     }
 
     private static func shifted(_ point: XYPosition, by offset: XYPosition) -> XYPosition {
         XYPosition(x: point.x + offset.x, y: point.y + offset.y)
+    }
+
+    private static func orthogonalizedEndpointSegments(
+        _ segments: [PathSegment],
+        source: XYPosition,
+        target: XYPosition,
+        sourcePosition: Position?,
+        targetPosition: Position?
+    ) -> [PathSegment] {
+        guard segments.count >= 3 else { return segments }
+        var result = segments
+
+        if let sourcePosition,
+           let firstLineIndex = result.indices.dropFirst().first(where: { result[$0].isLine }) {
+            let firstPoint = result[firstLineIndex].target
+            let lead = orthogonalLead(from: source, toward: firstPoint, placement: sourcePosition)
+            if !lead.isApproximatelyEqual(to: source), !lead.isApproximatelyEqual(to: firstPoint) {
+                result.insert(.line(to: lead), at: firstLineIndex)
+            }
+        }
+
+        if let targetPosition,
+           let lastLineIndex = result.indices.reversed().first(where: { result[$0].isLine && result[$0].target.isApproximatelyEqual(to: target) }),
+           lastLineIndex > result.startIndex {
+            let previousPoint = result[result.index(before: lastLineIndex)].target
+            let lead = orthogonalLead(from: target, toward: previousPoint, placement: targetPosition)
+            if !lead.isApproximatelyEqual(to: target), !lead.isApproximatelyEqual(to: previousPoint) {
+                result.insert(.line(to: lead), at: lastLineIndex)
+            }
+        }
+
+        return result
+    }
+
+    private static func orthogonalLead(from endpoint: XYPosition, toward point: XYPosition, placement: Position) -> XYPosition {
+        switch placement {
+        case .top, .bottom:
+            return XYPosition(x: endpoint.x, y: point.y)
+        case .left, .right:
+            return XYPosition(x: point.x, y: endpoint.y)
+        }
     }
 
     private static func sourceTangentAngle(in segments: [PathSegment]) -> Double? {
@@ -185,5 +245,20 @@ public enum EdgeLaneAlgorithms {
         case .bezier(_, _, let control2):
             return atan2(target.y - control2.y, target.x - control2.x)
         }
+    }
+}
+
+private extension PathSegment {
+    var isLine: Bool {
+        if case .line = self {
+            return true
+        }
+        return false
+    }
+}
+
+private extension XYPosition {
+    func isApproximatelyEqual(to other: XYPosition) -> Bool {
+        abs(x - other.x) < 0.000_001 && abs(y - other.y) < 0.000_001
     }
 }

@@ -391,7 +391,9 @@ public final class GraphStore<NodeData: Sendable>: Sendable {
             target: target,
             sourceNodeID: edge.source,
             targetNodeID: edge.target,
-            assignment: edgeLaneAssignment(for: edge)
+            assignment: edgeLaneAssignment(for: edge),
+            sourcePosition: sourcePosition,
+            targetPosition: targetPosition
         )
     }
 
