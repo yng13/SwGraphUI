@@ -287,6 +287,23 @@ struct SVGExporterTests {
     }
 
     @Test
+    func parallelEdgesExportDistinctLanePaths() async throws {
+        let store = makeTwoNodeStore()
+        store.edges = [
+            BaseEdge<String>(id: "a", source: "n1", target: "n2", kind: "straight"),
+            BaseEdge<String>(id: "b", source: "n1", target: "n2", kind: "straight")
+        ]
+
+        let exporter = SVGExporter(store: store)
+        let svg = try #require(exporter.export(settings: GraphExportSettings(margin: 16, includeBackground: false, isTransparent: true)))
+        let paths = allMatches(in: svg, pattern: #"<path d="([^"]+)""#)
+
+        #expect(paths.count == 2)
+        #expect(Set(paths).count == 2)
+        #expect(paths.contains { $0.contains("Q") })
+    }
+
+    @Test
     func includeBackgroundAddsDeterministicBackgroundPrimitives() async throws {
         let store = makeTwoNodeStore()
         let exporter = SVGExporter(store: store)
@@ -332,5 +349,17 @@ struct SVGExporterTests {
             return nil
         }
         return String(string[swiftRange])
+    }
+
+    private func allMatches(in string: String, pattern: String) -> [String] {
+        guard let regex = try? NSRegularExpression(pattern: pattern) else { return [] }
+        let range = NSRange(location: 0, length: string.utf16.count)
+        return regex.matches(in: string, range: range).compactMap { match in
+            guard match.numberOfRanges > 1,
+                  let swiftRange = Range(match.range(at: 1), in: string) else {
+                return nil
+            }
+            return String(string[swiftRange])
+        }
     }
 }

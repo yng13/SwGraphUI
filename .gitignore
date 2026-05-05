@@ -8,5 +8,6 @@ DerivedData/
 .netrc
 .reference/
 InternalDocs/
+/docs/
 
 AGENTS.md

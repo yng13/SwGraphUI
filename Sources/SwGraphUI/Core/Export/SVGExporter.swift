@@ -103,13 +103,21 @@ public struct SVGExporter<NodeData: Sendable> {
 
             let source = translate(store.resolvedHandlePosition(for: sourceKey), by: translation)
             let target = translate(store.resolvedHandlePosition(for: targetKey), by: translation)
-            let path = EdgePathAlgorithms.calculatePath(
+            let basePath = EdgePathAlgorithms.calculatePath(
                 source: source,
                 target: target,
                 sourcePosition: resolved.source,
                 targetPosition: resolved.target,
                 kind: edge.kind,
                 curvature: edge.curvature ?? 0.25
+            )
+            let path = EdgeLaneAlgorithms.applyLane(
+                to: basePath,
+                source: source,
+                target: target,
+                sourceNodeID: edge.source,
+                targetNodeID: edge.target,
+                assignment: store.edgeLaneAssignment(for: edge)
             )
 
             let labelPoint = XYPosition(
@@ -177,6 +185,7 @@ public struct SVGExporter<NodeData: Sendable> {
         let strokeWidth = resolvedEdgeStrokeWidth(edge)
         let dashAttributes = resolvedEdgeDashAttributes(edge)
         let markerAttributes = markerReferenceAttributes(for: edge)
+        let laneOffset = store.edgeLaneOffsetVector(for: edge, source: context.sourcePoint, target: context.targetPoint)
         var lines = [
             #"<g id="\#(edgeID)">"#,
             #"<path d="\#(escapedAttribute(path.path))" fill="none" stroke="\#(strokeColor)" stroke-width="\#(format(strokeWidth))" stroke-linecap="round" stroke-linejoin="round"\#(dashAttributes)\#(markerAttributes)/>"#
@@ -198,7 +207,7 @@ public struct SVGExporter<NodeData: Sendable> {
 
         if let label = edge.sourceEndpointLabel, support.shouldExport(label, edge: edge) {
             let point = EdgeEndpointLabelAlgorithms.graphPosition(
-                handlePoint: context.sourcePoint,
+                handlePoint: context.sourcePoint + laneOffset,
                 placement: context.sourcePosition,
                 offset: label.offset ?? EdgeEndpointLabelAlgorithms.defaultOffset
             )
@@ -207,7 +216,7 @@ public struct SVGExporter<NodeData: Sendable> {
 
         if let label = edge.targetEndpointLabel, support.shouldExport(label, edge: edge) {
             let point = EdgeEndpointLabelAlgorithms.graphPosition(
-                handlePoint: context.targetPoint,
+                handlePoint: context.targetPoint + laneOffset,
                 placement: context.targetPosition,
                 offset: label.offset ?? EdgeEndpointLabelAlgorithms.defaultOffset
             )

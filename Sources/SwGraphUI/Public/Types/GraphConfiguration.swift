@@ -14,6 +14,10 @@ public struct GraphConfiguration {
     public var handleStyle: GraphHandleStyle
     /// Optional graph-space snap grid used for manual node dragging | 手動ノードドラッグ時に使う graph-space のスナップグリッド
     public var snapGrid: SnapGrid?
+    /// Whether parallel edges between the same node pair should be offset into deterministic lanes.
+    public var parallelEdgeLanesEnabled: Bool
+    /// Graph-space spacing between adjacent parallel edge lanes.
+    public var parallelEdgeLaneSpacing: Double
     
     public init(
         showGrid: Bool = false,
@@ -21,7 +25,9 @@ public struct GraphConfiguration {
         backgroundVariant: BackgroundVariant = .dots,
         gridColor: Color = .primary.opacity(0.12),
         handleStyle: GraphHandleStyle = .default,
-        snapGrid: SnapGrid? = nil
+        snapGrid: SnapGrid? = nil,
+        parallelEdgeLanesEnabled: Bool = true,
+        parallelEdgeLaneSpacing: Double = EdgeLaneAlgorithms.defaultSpacing
     ) {
         self.showGrid = showGrid
         self.gridSize = gridSize
@@ -29,6 +35,8 @@ public struct GraphConfiguration {
         self.gridColor = gridColor
         self.handleStyle = handleStyle
         self.snapGrid = snapGrid
+        self.parallelEdgeLanesEnabled = parallelEdgeLanesEnabled
+        self.parallelEdgeLaneSpacing = parallelEdgeLaneSpacing
     }
 
     /// Convenience factory for square grid snapping. | 正方グリッド用の簡易スナップ設定。

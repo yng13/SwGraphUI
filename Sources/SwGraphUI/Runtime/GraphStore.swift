@@ -40,6 +40,8 @@ public final class GraphStore<NodeData: Sendable>: Sendable {
     @ObservationIgnored private var _cachedNodeLookup: [String: BaseNode<NodeData>] = [:]
     @ObservationIgnored private var isNodeLookupCacheValid = false
     @ObservationIgnored private var automaticHandleIDsCache: [AutomaticHandleGroupKey: Set<String>] = [:]
+    public var parallelEdgeLanesEnabled = true
+    public var parallelEdgeLaneSpacing = EdgeLaneAlgorithms.defaultSpacing
     
     // MARK: - Undo/Redo State
     public var undoManager: UndoManager?
@@ -340,6 +342,56 @@ public final class GraphStore<NodeData: Sendable>: Sendable {
         Dimensions(
             width: node.measured?.width ?? node.width ?? node.initialWidth ?? 100,
             height: node.measured?.height ?? node.height ?? node.initialHeight ?? 50
+        )
+    }
+
+    public func edgeLaneAssignment(for edge: BaseEdge<NodeData>) -> EdgeLaneAssignment {
+        guard parallelEdgeLanesEnabled else {
+            return EdgeLaneAssignment(spacing: parallelEdgeLaneSpacing)
+        }
+        return EdgeLaneAlgorithms.assignment(
+            for: edge,
+            in: edges,
+            spacing: parallelEdgeLaneSpacing
+        )
+    }
+
+    public func edgeLaneOffsetVector(
+        for edge: BaseEdge<NodeData>,
+        source: XYPosition,
+        target: XYPosition
+    ) -> XYPosition {
+        EdgeLaneAlgorithms.offsetVector(
+            source: source,
+            target: target,
+            sourceNodeID: edge.source,
+            targetNodeID: edge.target,
+            assignment: edgeLaneAssignment(for: edge)
+        )
+    }
+
+    public func laneAdjustedPath(
+        for edge: BaseEdge<NodeData>,
+        source: XYPosition,
+        target: XYPosition,
+        sourcePosition: Position,
+        targetPosition: Position
+    ) -> EdgePathResult {
+        let base = EdgePathAlgorithms.calculatePath(
+            source: source,
+            target: target,
+            sourcePosition: sourcePosition,
+            targetPosition: targetPosition,
+            kind: edge.kind,
+            curvature: edge.curvature ?? 0.25
+        )
+        return EdgeLaneAlgorithms.applyLane(
+            to: base,
+            source: source,
+            target: target,
+            sourceNodeID: edge.source,
+            targetNodeID: edge.target,
+            assignment: edgeLaneAssignment(for: edge)
         )
     }
 

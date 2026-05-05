@@ -47,13 +47,12 @@ public struct DefaultEdgeView<NodeData: Sendable>: View {
             }()
             let resolvedStroke = resolveStroke(isReconnecting: isReconnecting)
 
-            let baseResult = EdgePathAlgorithms.calculatePath(
+            let baseResult = store.laneAdjustedPath(
+                for: edge,
                 source: sourceHandlePos,
                 target: targetHandlePos,
                 sourcePosition: sourcePos,
-                targetPosition: targetPos,
-                kind: edge.kind,
-                curvature: edge.curvature ?? 0.25
+                targetPosition: targetPos
             )
 
             let shortenedSource = DefaultEdgeViewUtils.shortenedPosition(
@@ -228,17 +227,17 @@ public struct DefaultEdgeOverlayView<NodeData: Sendable>: View {
             let sourceHandlePos = store.resolvedHandlePosition(for: sourceKey)
             let targetHandlePos = store.resolvedHandlePosition(for: targetKey)
             
-            let baseResult = EdgePathAlgorithms.calculatePath(
+            let baseResult = store.laneAdjustedPath(
+                for: edge,
                 source: sourceHandlePos,
                 target: targetHandlePos,
                 sourcePosition: sourcePos,
-                targetPosition: targetPos,
-                kind: edge.kind,
-                curvature: edge.curvature ?? 0.25
+                targetPosition: targetPos
             )
 
             let viewport = renderingViewport ?? store.runtimeState.viewport.viewport
             let screenLabelPos = XYPosition(x: baseResult.labelX, y: baseResult.labelY).toScreen(viewport: viewport)
+            let laneOffset = store.edgeLaneOffsetVector(for: edge, source: sourceHandlePos, target: targetHandlePos)
 
             ZStack {
                 // 1. Label display | 1. ラベル表示
@@ -247,8 +246,8 @@ public struct DefaultEdgeOverlayView<NodeData: Sendable>: View {
                         .position(x: screenLabelPos.x, y: screenLabelPos.y)
                 }
 
-                endpointLabelView(edge.sourceEndpointLabel, handlePoint: sourceHandlePos, placement: sourcePos, viewport: viewport)
-                endpointLabelView(edge.targetEndpointLabel, handlePoint: targetHandlePos, placement: targetPos, viewport: viewport)
+                endpointLabelView(edge.sourceEndpointLabel, handlePoint: sourceHandlePos + laneOffset, placement: sourcePos, viewport: viewport)
+                endpointLabelView(edge.targetEndpointLabel, handlePoint: targetHandlePos + laneOffset, placement: targetPos, viewport: viewport)
 
                 // 2. Reconnection handle (brought to the front of the label) | 2. 再接続ハンドル（ラベルより前面へ）
                 // Not displayed during export (onReconnect == nil) | エクスポート時（onReconnect == nil）は表示しない

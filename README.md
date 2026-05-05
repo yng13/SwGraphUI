@@ -126,6 +126,8 @@ Current capabilities include:
   規定の背景スタイルを持つエッジラベル
 - source / target endpoint labels for edge-side metadata
   エッジ始点 / 終点側のメタデータ表示用 endpoint label
+- deterministic parallel edge lanes for multi-link node pairs
+  複数リンクを持つノードペア向けの決定論的な parallel edge lane
 - custom node views and custom edge bodies
   カスタムノードビューおよびカスタムエッジ本体
 - node toolbar style composition in examples
@@ -374,6 +376,22 @@ BaseNode(
 `automaticPeerSide` keeps the handle on the node bounds, resolves the effective side from the connected peer node, and distributes multiple handles on the same side deterministically. Existing custom `HandleView` placement remains available by keeping the default `.explicit` mode.
 
 `automaticPeerSide` は handle をノード境界上に置き、接続先ノード方向から有効な辺を解決し、同じ辺の複数 handle を決定論的に分散します。従来のカスタム `HandleView` 配置は、デフォルトの `.explicit` のまま利用できます。
+
+Parallel edges between the same unordered node pair are assigned deterministic lanes by edge id. Single edges are unchanged; two or more edges receive symmetric graph-space offsets while keeping their source and target anchors on the resolved handles.
+
+同じノードペア間の複数エッジは、edge id に基づいて決定論的な lane に配置されます。単一エッジは従来どおりで、複数エッジのみ graph-space 上で対称にオフセットされます。source / target のアンカーは resolved handle 上に維持されます。
+
+```swift
+let graph = GraphView(
+    store: store,
+    configuration: GraphConfiguration(
+        parallelEdgeLanesEnabled: true,
+        parallelEdgeLaneSpacing: 18
+    )
+) { node in
+    DefaultNodeView(node: node, store: store)
+}
+```
 
 For external layout engines or application-defined ranks/orders:  
 外部レイアウトエンジンや、アプリ側で決めた rank/order を使う場合：

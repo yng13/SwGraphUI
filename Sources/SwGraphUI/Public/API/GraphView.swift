@@ -220,10 +220,18 @@ public struct GraphView<NodeData: Sendable, NodeContent: View>: View {
         }
         .onAppear {
             store.runtimeState.handleAnchorOffset = configuration.handleStyle.anchorOffset
+            store.parallelEdgeLanesEnabled = configuration.parallelEdgeLanesEnabled
+            store.parallelEdgeLaneSpacing = configuration.parallelEdgeLaneSpacing
             store.setSnapGrid(configuration.snapGrid)
         }
         .onChange(of: configuration.handleStyle) { _, newValue in
             store.runtimeState.handleAnchorOffset = newValue.anchorOffset
+        }
+        .onChange(of: configuration.parallelEdgeLanesEnabled) { _, newValue in
+            store.parallelEdgeLanesEnabled = newValue
+        }
+        .onChange(of: configuration.parallelEdgeLaneSpacing) { _, newValue in
+            store.parallelEdgeLaneSpacing = newValue
         }
         .onChange(of: configuration.snapGrid) { _, newValue in
             store.setSnapGrid(newValue)

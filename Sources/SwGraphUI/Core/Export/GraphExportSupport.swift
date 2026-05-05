@@ -27,14 +27,14 @@ internal struct GraphExportSupport<NodeData: Sendable> {
             bounds = union(bounds, pointRect(at: sPos))
             bounds = union(bounds, pointRect(at: tPos))
 
-            let path = EdgePathAlgorithms.calculatePath(
+            let path = store.laneAdjustedPath(
+                for: edge,
                 source: sPos,
                 target: tPos,
                 sourcePosition: sourcePos,
-                targetPosition: targetPos,
-                kind: edge.kind,
-                curvature: edge.curvature ?? 0.25
+                targetPosition: targetPos
             )
+            let laneOffset = store.edgeLaneOffsetVector(for: edge, source: sPos, target: tPos)
 
             // Include all protrusions of curved edges (control points) into bounds | 曲線エッジの張り出し（制御点）もすべて Bounds に含める
             for segment in path.segments {
@@ -59,7 +59,7 @@ internal struct GraphExportSupport<NodeData: Sendable> {
 
             if let label = edge.sourceEndpointLabel, shouldExport(label, edge: edge) {
                 let point = EdgeEndpointLabelAlgorithms.graphPosition(
-                    handlePoint: sPos,
+                    handlePoint: sPos + laneOffset,
                     placement: sourcePos,
                     offset: label.offset ?? EdgeEndpointLabelAlgorithms.defaultOffset
                 )
@@ -68,7 +68,7 @@ internal struct GraphExportSupport<NodeData: Sendable> {
 
             if let label = edge.targetEndpointLabel, shouldExport(label, edge: edge) {
                 let point = EdgeEndpointLabelAlgorithms.graphPosition(
-                    handlePoint: tPos,
+                    handlePoint: tPos + laneOffset,
                     placement: targetPos,
                     offset: label.offset ?? EdgeEndpointLabelAlgorithms.defaultOffset
                 )
