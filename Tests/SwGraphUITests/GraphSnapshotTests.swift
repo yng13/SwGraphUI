@@ -17,7 +17,9 @@ struct GraphSnapshotTests {
                 source: "n1",
                 target: "n2",
                 markerEnd: EdgeMarker(type: .arrowClosed, color: "#ff0000"),
-                label: "Edge Label"
+                label: "Edge Label",
+                sourceEndpointLabel: EdgeEndpointLabel(text: "Gi0/1", maxWidth: 80),
+                targetEndpointLabel: EdgeEndpointLabel(text: "Te1/1", presentation: .plain, visibility: .whenZoomedIn)
             )
         ]
         
@@ -56,6 +58,11 @@ struct GraphSnapshotTests {
         #expect(newStore.edges[0].markerEnd?.type == .arrowClosed)
         #expect(newStore.edges[0].markerEnd?.color == "#ff0000")
         #expect(newStore.edges[0].label == "Edge Label")
+        #expect(newStore.edges[0].sourceEndpointLabel?.text == "Gi0/1")
+        #expect(newStore.edges[0].sourceEndpointLabel?.maxWidth == 80)
+        #expect(newStore.edges[0].targetEndpointLabel?.text == "Te1/1")
+        #expect(newStore.edges[0].targetEndpointLabel?.presentation == .plain)
+        #expect(newStore.edges[0].targetEndpointLabel?.visibility == .whenZoomedIn)
         
         // Check if selection state is cleared (guaranteed by both batch replacement and clearing on apply) | 選択状態がクリアされているか (一括置換 + apply 時のクリア両方で保証)
         #expect(newStore.nodes[0].selected == false)

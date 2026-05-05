@@ -933,6 +933,10 @@ public final class GraphStore<NodeData: Sendable>: Sendable {
         runtimeState.hover.hoveredNodeID = id
     }
 
+    public func setHoveredEdge(_ id: String?) {
+        runtimeState.hover.hoveredEdgeID = id
+    }
+
     // --- Interactivity ---
     public func setNodesDraggable(_ draggable: Bool) { runtimeState.interactivity.nodesDraggable = draggable }
     public func setNodesConnectable(_ connectable: Bool) { runtimeState.interactivity.nodesConnectable = connectable }
@@ -1004,6 +1008,7 @@ public final class GraphStore<NodeData: Sendable>: Sendable {
         stopDragging()
         runtimeState.connection.end()
         setHoveredNode(nil)
+        setHoveredEdge(nil)
         runtimeState.marquee = nil
         runtimeState.handleMeasurements.positions.removeAll()
         recalculateSortedNodeIDs()

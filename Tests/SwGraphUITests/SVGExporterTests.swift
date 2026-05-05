@@ -264,6 +264,27 @@ struct SVGExporterTests {
     }
 
     @Test
+    func endpointLabelsSerializeToSVG() async throws {
+        let store = makeTwoNodeStore()
+        store.edges = [
+            BaseEdge<String>(
+                id: "endpoint-labels",
+                source: "n1",
+                target: "n2",
+                kind: "straight",
+                sourceEndpointLabel: EdgeEndpointLabel(text: #"Gi0/1 & "uplink""#, maxWidth: 80),
+                targetEndpointLabel: EdgeEndpointLabel(text: "Te1/1", presentation: .plain)
+            )
+        ]
+
+        let exporter = SVGExporter(store: store)
+        let svg = try #require(exporter.export(settings: GraphExportSettings(margin: 16, includeBackground: false, isTransparent: true)))
+
+        #expect(svg.contains("Gi0/1 &amp; &quot;uplink&quot;"))
+        #expect(svg.contains("Te1/1"))
+    }
+
+    @Test
     func includeBackgroundAddsDeterministicBackgroundPrimitives() async throws {
         let store = makeTwoNodeStore()
         let exporter = SVGExporter(store: store)

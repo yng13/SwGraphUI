@@ -57,6 +57,24 @@ internal struct GraphExportSupport<NodeData: Sendable> {
                 bounds = union(bounds, labelRect(for: label, style: edge.labelStyle, center: XYPosition(x: path.labelX, y: path.labelY)))
             }
 
+            if let label = edge.sourceEndpointLabel, shouldExport(label, edge: edge) {
+                let point = EdgeEndpointLabelAlgorithms.graphPosition(
+                    handlePoint: sPos,
+                    placement: sourcePos,
+                    offset: label.offset ?? EdgeEndpointLabelAlgorithms.defaultOffset
+                )
+                bounds = union(bounds, labelRect(for: label.text, style: resolvedEndpointLabelStyle(label), center: point, maxWidth: label.maxWidth))
+            }
+
+            if let label = edge.targetEndpointLabel, shouldExport(label, edge: edge) {
+                let point = EdgeEndpointLabelAlgorithms.graphPosition(
+                    handlePoint: tPos,
+                    placement: targetPos,
+                    offset: label.offset ?? EdgeEndpointLabelAlgorithms.defaultOffset
+                )
+                bounds = union(bounds, labelRect(for: label.text, style: resolvedEndpointLabelStyle(label), center: point, maxWidth: label.maxWidth))
+            }
+
             if let marker = edge.markerStart {
                 bounds = union(bounds, markerRect(at: sPos, marker: marker))
             }
@@ -95,10 +113,15 @@ internal struct GraphExportSupport<NodeData: Sendable> {
     }
 
     func labelRect(for label: String, style: EdgeLabelStyle, center: XYPosition) -> Rect {
+        labelRect(for: label, style: style, center: center, maxWidth: nil)
+    }
+
+    func labelRect(for label: String, style: EdgeLabelStyle, center: XYPosition, maxWidth: Double?) -> Rect {
         let fontSize = resolvedExportFontSize(for: style)
         let horizontalPadding = style.bgPadding * 2
         let verticalPadding = style.bgPadding * 0.8
-        let estimatedWidth = max(Double(label.count) * fontSize * 0.58 + horizontalPadding, fontSize * 2.4)
+        let naturalWidth = max(Double(label.count) * fontSize * 0.58 + horizontalPadding, fontSize * 2.4)
+        let estimatedWidth = maxWidth.map { min(naturalWidth, $0) } ?? naturalWidth
         let estimatedHeight = fontSize * 1.4 + verticalPadding
 
         return Rect(
@@ -122,6 +145,36 @@ internal struct GraphExportSupport<NodeData: Sendable> {
         case "callout": return 16
         case "body": return 17
         default: return 11
+        }
+    }
+
+    func resolvedEndpointLabelStyle(_ label: EdgeEndpointLabel) -> EdgeLabelStyle {
+        var style = label.style
+        switch label.presentation {
+        case .chip:
+            style.showBg = true
+        case .plain:
+            style.showBg = false
+        case .subtle:
+            style.showBg = true
+            if style.bgStyle == nil {
+                style.bgStyle = "#F6F8FA"
+            }
+            if style.textColor == nil {
+                style.textColor = "#57606A"
+            }
+        }
+        return style
+    }
+
+    func shouldExport(_ label: EdgeEndpointLabel, edge: BaseEdge<NodeData>) -> Bool {
+        switch label.visibility {
+        case .always, .whenZoomedIn:
+            true
+        case .whenSelected:
+            edge.selected
+        case .whenHovered:
+            false
         }
     }
 

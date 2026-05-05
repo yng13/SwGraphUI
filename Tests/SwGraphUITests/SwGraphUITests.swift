@@ -83,6 +83,16 @@ import Testing
     #expect(bounds == Rect(x: 10, y: 20, width: 180, height: 72))
 }
 
+@Test func endpointLabelPositionMovesOutwardFromHandlePlacement() async throws {
+    let handle = XYPosition(x: 100, y: 100)
+    let offset = 12.0
+
+    #expect(EdgeEndpointLabelAlgorithms.graphPosition(handlePoint: handle, placement: .top, offset: offset) == XYPosition(x: 100, y: 88))
+    #expect(EdgeEndpointLabelAlgorithms.graphPosition(handlePoint: handle, placement: .right, offset: offset) == XYPosition(x: 112, y: 100))
+    #expect(EdgeEndpointLabelAlgorithms.graphPosition(handlePoint: handle, placement: .bottom, offset: offset) == XYPosition(x: 100, y: 112))
+    #expect(EdgeEndpointLabelAlgorithms.graphPosition(handlePoint: handle, placement: .left, offset: offset) == XYPosition(x: 88, y: 100))
+}
+
 @Test func bezierPathProducesNonEmptyPath() async throws {
     let result = EdgePathAlgorithms.bezierPath(
         sourceX: 0,
@@ -118,6 +128,7 @@ import Testing
     state.selection.selectNode(id: "n1")
     state.selection.selectEdge(id: "e1")
     state.hover.hoveredNodeID = "n1"
+    state.hover.hoveredEdgeID = "e1"
     let n1 = GraphNode(id: "n1", position: .zero, data: EmptyPayload())
     state.drag.startDrag(nodes: [n1], nodeLookup: ["n1": n1], pointer: .zero)
     state.drag.updateDrag(to: .init(x: 5, y: 5))
@@ -127,6 +138,7 @@ import Testing
     #expect(state.selection.selectedNodeIDs == ["n1"])
     #expect(state.selection.selectedEdgeIDs == ["e1"])
     #expect(state.hover.hoveredNodeID == "n1")
+    #expect(state.hover.hoveredEdgeID == "e1")
     #expect(state.drag.isDragging)
     #expect(state.connection.isConnecting)
     #expect(state.viewport.viewport == Viewport(x: 10, y: -5, zoom: 2))

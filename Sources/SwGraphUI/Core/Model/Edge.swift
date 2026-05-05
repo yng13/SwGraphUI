@@ -81,6 +81,46 @@ public struct EdgeLabelStyle: Sendable, Equatable, Codable {
     }
 }
 
+public enum EdgeEndpointLabelPresentation: String, Sendable, CaseIterable, Codable {
+    case chip
+    case plain
+    case subtle
+}
+
+public enum EdgeEndpointLabelVisibility: String, Sendable, CaseIterable, Codable {
+    case always
+    case whenSelected
+    case whenHovered
+    case whenZoomedIn
+}
+
+public struct EdgeEndpointLabel: Sendable, Equatable, Codable {
+    public var text: String
+    public var style: EdgeLabelStyle
+    public var presentation: EdgeEndpointLabelPresentation
+    /// Distance from the resolved handle in graph-space units. | 解決済み handle からの graph-space 距離。
+    public var offset: Double?
+    /// Maximum label width in graph-space units. | ラベル最大幅（graph-space 単位）。
+    public var maxWidth: Double?
+    public var visibility: EdgeEndpointLabelVisibility
+
+    public init(
+        text: String,
+        style: EdgeLabelStyle = .default,
+        presentation: EdgeEndpointLabelPresentation = .chip,
+        offset: Double? = nil,
+        maxWidth: Double? = nil,
+        visibility: EdgeEndpointLabelVisibility = .always
+    ) {
+        self.text = text
+        self.style = style
+        self.presentation = presentation
+        self.offset = offset
+        self.maxWidth = maxWidth
+        self.visibility = visibility
+    }
+}
+
 public enum EdgeStrokeDash: Sendable, Equatable, Codable {
     case solid
     case dashed
@@ -169,6 +209,8 @@ public struct BaseEdge<NodeData: Sendable>: Sendable, Identifiable {
     public var curvature: Double?
     public var label: String?
     public var labelStyle: EdgeLabelStyle
+    public var sourceEndpointLabel: EdgeEndpointLabel?
+    public var targetEndpointLabel: EdgeEndpointLabel?
     public var strokeStyle: EdgeStrokeStyle?
     public var reconnectable: ReconnectMode
 
@@ -201,6 +243,8 @@ public struct BaseEdge<NodeData: Sendable>: Sendable, Identifiable {
         selected: Bool = false,
         label: String? = nil,
         labelStyle: EdgeLabelStyle = .default,
+        sourceEndpointLabel: EdgeEndpointLabel? = nil,
+        targetEndpointLabel: EdgeEndpointLabel? = nil,
         strokeStyle: EdgeStrokeStyle? = nil,
         reconnectable: ReconnectMode = .none
     ) {
@@ -226,6 +270,8 @@ public struct BaseEdge<NodeData: Sendable>: Sendable, Identifiable {
         self.selected = selected
         self.label = label
         self.labelStyle = labelStyle
+        self.sourceEndpointLabel = sourceEndpointLabel
+        self.targetEndpointLabel = targetEndpointLabel
         self.strokeStyle = strokeStyle
         self.reconnectable = reconnectable
     }
@@ -264,6 +310,8 @@ public struct BaseEdge<NodeData: Sendable>: Sendable, Identifiable {
             selected: false,
             label: nil,
             labelStyle: .default,
+            sourceEndpointLabel: nil,
+            targetEndpointLabel: nil,
             strokeStyle: nil,
             reconnectable: .none
         )
@@ -275,7 +323,8 @@ extension BaseEdge: Codable where NodeData: Codable {
         case id, source, target, data, kind
         case sourceHandle, targetHandle, sourcePosition, targetPosition
         case animated, markerStart, markerEnd, zIndex, ariaLabel
-        case interactionWidth, curvature, label, labelStyle, strokeStyle, reconnectable
+        case interactionWidth, curvature, label, labelStyle
+        case sourceEndpointLabel, targetEndpointLabel, strokeStyle, reconnectable
         case hidden, deletable, selectable
     }
 
@@ -299,6 +348,8 @@ extension BaseEdge: Codable where NodeData: Codable {
         self.curvature = try container.decodeIfPresent(Double.self, forKey: .curvature)
         self.label = try container.decodeIfPresent(String.self, forKey: .label)
         self.labelStyle = try container.decode(EdgeLabelStyle.self, forKey: .labelStyle)
+        self.sourceEndpointLabel = try container.decodeIfPresent(EdgeEndpointLabel.self, forKey: .sourceEndpointLabel)
+        self.targetEndpointLabel = try container.decodeIfPresent(EdgeEndpointLabel.self, forKey: .targetEndpointLabel)
         self.strokeStyle = try container.decodeIfPresent(EdgeStrokeStyle.self, forKey: .strokeStyle)
         self.reconnectable = try container.decode(ReconnectMode.self, forKey: .reconnectable)
         self.hidden = try container.decode(Bool.self, forKey: .hidden)
@@ -329,6 +380,8 @@ extension BaseEdge: Codable where NodeData: Codable {
         try container.encodeIfPresent(curvature, forKey: .curvature)
         try container.encodeIfPresent(label, forKey: .label)
         try container.encode(labelStyle, forKey: .labelStyle)
+        try container.encodeIfPresent(sourceEndpointLabel, forKey: .sourceEndpointLabel)
+        try container.encodeIfPresent(targetEndpointLabel, forKey: .targetEndpointLabel)
         try container.encodeIfPresent(strokeStyle, forKey: .strokeStyle)
         try container.encode(reconnectable, forKey: .reconnectable)
         try container.encode(hidden, forKey: .hidden)
@@ -359,6 +412,8 @@ extension BaseEdge: Equatable where NodeData: Equatable {
         lhs.curvature == rhs.curvature &&
         lhs.label == rhs.label &&
         lhs.labelStyle == rhs.labelStyle &&
+        lhs.sourceEndpointLabel == rhs.sourceEndpointLabel &&
+        lhs.targetEndpointLabel == rhs.targetEndpointLabel &&
         lhs.strokeStyle == rhs.strokeStyle &&
         lhs.reconnectable == rhs.reconnectable &&
         lhs.hidden == rhs.hidden &&

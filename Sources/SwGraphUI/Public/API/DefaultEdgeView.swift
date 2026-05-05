@@ -98,13 +98,21 @@ public struct DefaultEdgeView<NodeData: Sendable>: View {
             let targetNode = store.node(id: edge.target)
             let sourceLabel = sourceNode?.ariaLabel ?? sourceNode?.label ?? edge.source
             let targetLabel = targetNode?.ariaLabel ?? targetNode?.label ?? edge.target
-            let edgeLabel = edge.ariaLabel ?? edge.label ?? "Connection from \(sourceLabel) to \(targetLabel) | \(sourceLabel) から \(targetLabel) への接続"
+            let endpointSummary = endpointAccessibilitySummary()
+            let edgeLabel = edge.ariaLabel ?? edge.label ?? "Connection from \(sourceLabel) to \(targetLabel)\(endpointSummary) | \(sourceLabel) から \(targetLabel) への接続\(endpointSummary)"
 
             ZStack {
                     // 1. Hit area (thick path judgment) | 1. ヒットエリア（太いパス判定）
                     path
                         .stroke(Color.black.opacity(0.0001), lineWidth: 20)
                         .contentShape(path.stroke(lineWidth: 20))
+                        .onHover { inside in
+                            if inside {
+                                store.setHoveredEdge(edge.id)
+                            } else if store.runtimeState.hover.hoveredEdgeID == edge.id {
+                                store.setHoveredEdge(nil)
+                            }
+                        }
                         .onTapGesture {
                             if modifierKeys.isShiftPressed {
                                 store.toggleEdgeSelection(edge.id)
@@ -183,6 +191,14 @@ public struct DefaultEdgeView<NodeData: Sendable>: View {
         }
         return (color, selectedWidth, configured?.dash ?? .solid)
     }
+
+    private func endpointAccessibilitySummary() -> String {
+        let values = [edge.sourceEndpointLabel?.text, edge.targetEndpointLabel?.text]
+            .compactMap { $0 }
+            .filter { !$0.isEmpty }
+        guard !values.isEmpty else { return "" }
+        return " (\(values.joined(separator: " to ")))"
+    }
 }
 
 /// Displays the edge overlay (labels, reconnection handles). | エッジのオーバーレイ（ラベル、再接続ハンドル）を表示。
@@ -231,6 +247,9 @@ public struct DefaultEdgeOverlayView<NodeData: Sendable>: View {
                         .position(x: screenLabelPos.x, y: screenLabelPos.y)
                 }
 
+                endpointLabelView(edge.sourceEndpointLabel, handlePoint: sourceHandlePos, placement: sourcePos, viewport: viewport)
+                endpointLabelView(edge.targetEndpointLabel, handlePoint: targetHandlePos, placement: targetPos, viewport: viewport)
+
                 // 2. Reconnection handle (brought to the front of the label) | 2. 再接続ハンドル（ラベルより前面へ）
                 // Not displayed during export (onReconnect == nil) | エクスポート時（onReconnect == nil）は表示しない
                 if edge.selected, onReconnect != nil {
@@ -266,6 +285,68 @@ public struct DefaultEdgeOverlayView<NodeData: Sendable>: View {
         } else {
             EmptyView()
         }
+    }
+
+    @ViewBuilder
+    private func endpointLabelView(
+        _ label: EdgeEndpointLabel?,
+        handlePoint: XYPosition,
+        placement: Position,
+        viewport: Viewport
+    ) -> some View {
+        if let label, shouldShow(label, viewport: viewport) {
+            let screenPosition = EdgeEndpointLabelAlgorithms.screenPosition(
+                handlePoint: handlePoint,
+                placement: placement,
+                viewport: viewport,
+                offset: label.offset ?? EdgeEndpointLabelAlgorithms.defaultOffset
+            )
+            EdgeLabelView(
+                label: label.text,
+                style: resolvedEndpointStyle(label),
+                maxWidth: label.maxWidth
+            )
+            .opacity(endpointOpacity(label))
+            .position(x: screenPosition.x, y: screenPosition.y)
+            .allowsHitTesting(false)
+            .accessibilityHidden(true)
+        }
+    }
+
+    private func shouldShow(_ label: EdgeEndpointLabel, viewport: Viewport) -> Bool {
+        switch label.visibility {
+        case .always:
+            true
+        case .whenSelected:
+            edge.selected
+        case .whenHovered:
+            edge.id == store.runtimeState.hover.hoveredEdgeID
+        case .whenZoomedIn:
+            viewport.zoom >= 1.0
+        }
+    }
+
+    private func resolvedEndpointStyle(_ label: EdgeEndpointLabel) -> EdgeLabelStyle {
+        var style = label.style
+        switch label.presentation {
+        case .chip:
+            style.showBg = true
+        case .plain:
+            style.showBg = false
+        case .subtle:
+            style.showBg = true
+            if style.bgStyle == nil {
+                style.bgStyle = "#F6F8FA"
+            }
+            if style.textColor == nil {
+                style.textColor = "#57606A"
+            }
+        }
+        return style
+    }
+
+    private func endpointOpacity(_ label: EdgeEndpointLabel) -> Double {
+        label.presentation == .subtle ? 0.82 : 1.0
     }
 }
 

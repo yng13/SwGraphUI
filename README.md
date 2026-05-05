@@ -124,6 +124,8 @@ Current capabilities include:
   単一選択、複数選択、および矩形選択
 - edge labels with styled backgrounds
   規定の背景スタイルを持つエッジラベル
+- source / target endpoint labels for edge-side metadata
+  エッジ始点 / 終点側のメタデータ表示用 endpoint label
 - custom node views and custom edge bodies
   カスタムノードビューおよびカスタムエッジ本体
 - node toolbar style composition in examples
@@ -319,6 +321,30 @@ BaseEdge(
 `strokeStyle` is independent from routing (`kind`) and animation (`animated`). A dashed edge can be static or animated, and selected edges keep their configured color / dash while receiving a width emphasis.
 
 `strokeStyle` は routing (`kind`) や animation (`animated`) とは独立しています。破線エッジは静的にもアニメーション付きにもでき、選択時も設定済みの色 / dash を維持したまま線幅で強調されます。
+
+For source / target side metadata, configure endpoint labels:
+始点 / 終点側のメタデータを表示する場合は endpoint label を設定します：
+
+```swift
+BaseEdge(
+    id: "uplink",
+    source: "router",
+    target: "switch",
+    sourceEndpointLabel: EdgeEndpointLabel(
+        text: "TenGigabitEthernet2/0/1",
+        maxWidth: 160
+    ),
+    targetEndpointLabel: EdgeEndpointLabel(
+        text: "TenGigabitEthernet1/1/1",
+        presentation: .subtle,
+        visibility: .whenZoomedIn
+    )
+)
+```
+
+Endpoint labels are positioned from the same resolved handle points used by edge paths. They preserve midpoint `label` behavior and remain below reconnect anchors.
+
+endpoint label は、エッジパスと同じ resolved handle point から配置されます。中央の `label` とは独立して動作し、再接続アンカーより背面に表示されます。
 
 For external layout engines or application-defined ranks/orders:  
 外部レイアウトエンジンや、アプリ側で決めた rank/order を使う場合：

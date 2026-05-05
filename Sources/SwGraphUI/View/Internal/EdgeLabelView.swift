@@ -5,11 +5,15 @@ import SwiftUI
 struct EdgeLabelView: View {
     let label: String
     let style: EdgeLabelStyle
+    var maxWidth: Double? = nil
     
     var body: some View {
         Text(label)
             .font(resolvedFont)
             .foregroundColor(resolvedTextColor)
+            .lineLimit(maxWidth == nil ? nil : 1)
+            .truncationMode(.middle)
+            .frame(maxWidth: resolvedMaxWidth)
             .padding(.horizontal, style.bgPadding * zoomLevel)
             .padding(.vertical, (style.bgPadding * 0.4) * zoomLevel)
             .background(backgroundView)
@@ -40,6 +44,10 @@ struct EdgeLabelView: View {
     
     @Environment(\.isGraphExporting) private var isGraphExporting
     @Environment(\.graphZoomLevel) private var zoomLevel
+
+    private var resolvedMaxWidth: CGFloat? {
+        maxWidth.map { CGFloat($0) * zoomLevel }
+    }
     
     @ViewBuilder
     private var backgroundView: some View {

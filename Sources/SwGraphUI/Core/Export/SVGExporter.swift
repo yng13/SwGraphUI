@@ -196,7 +196,45 @@ public struct SVGExporter<NodeData: Sendable> {
             )
         }
 
+        if let label = edge.sourceEndpointLabel, support.shouldExport(label, edge: edge) {
+            let point = EdgeEndpointLabelAlgorithms.graphPosition(
+                handlePoint: context.sourcePoint,
+                placement: context.sourcePosition,
+                offset: label.offset ?? EdgeEndpointLabelAlgorithms.defaultOffset
+            )
+            lines.append(renderEndpointLabel(label, center: point, support: support))
+        }
+
+        if let label = edge.targetEndpointLabel, support.shouldExport(label, edge: edge) {
+            let point = EdgeEndpointLabelAlgorithms.graphPosition(
+                handlePoint: context.targetPoint,
+                placement: context.targetPosition,
+                offset: label.offset ?? EdgeEndpointLabelAlgorithms.defaultOffset
+            )
+            lines.append(renderEndpointLabel(label, center: point, support: support))
+        }
+
         lines.append("</g>")
+        return lines.joined(separator: "\n")
+    }
+
+    private func renderEndpointLabel(
+        _ label: EdgeEndpointLabel,
+        center: XYPosition,
+        support: GraphExportSupport<NodeData>
+    ) -> String {
+        let style = support.resolvedEndpointLabelStyle(label)
+        let fontSize = support.resolvedExportFontSize(for: style)
+        var lines: [String] = []
+        if style.showBg {
+            let rect = support.labelRect(for: label.text, style: style, center: center, maxWidth: label.maxWidth)
+            lines.append(
+                #"<rect x="\#(format(rect.x))" y="\#(format(rect.y))" width="\#(format(rect.width))" height="\#(format(rect.height))" rx="\#(format(style.bgBorderRadius))" ry="\#(format(style.bgBorderRadius))" fill="\#(resolvedLabelBackgroundColor(style))" stroke="none"/>"#
+            )
+        }
+        lines.append(
+            #"<text x="\#(format(center.x))" y="\#(format(center.y + fontSize * 0.35))" text-anchor="middle" font-family="-apple-system, BlinkMacSystemFont, sans-serif" font-size="\#(format(fontSize))" fill="\#(resolvedLabelTextColor(style))">\#(escapedText(label.text))</text>"#
+        )
         return lines.joined(separator: "\n")
     }
 
