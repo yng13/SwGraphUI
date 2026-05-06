@@ -28,8 +28,9 @@ public enum EdgeLaneAlgorithms {
         in edges: [BaseEdge<NodeData>],
         spacing: Double = defaultSpacing
     ) -> EdgeLaneAssignment {
+        let edgeKey = parallelLaneKey(for: edge)
         let peers = edges
-            .filter { !$0.hidden && unorderedPairKey($0.source, $0.target) == unorderedPairKey(edge.source, edge.target) }
+            .filter { !$0.hidden && parallelLaneKey(for: $0) == edgeKey }
             .sorted { $0.id < $1.id }
 
         guard peers.count > 1,
@@ -107,8 +108,14 @@ public enum EdgeLaneAlgorithms {
         return XYPosition(x: normal.x * offset, y: normal.y * offset)
     }
 
-    private static func unorderedPairKey(_ first: String, _ second: String) -> String {
-        first <= second ? "\(first)\u{1F}#\(second)" : "\(second)\u{1F}#\(first)"
+    private static func parallelLaneKey<NodeData: Sendable>(for edge: BaseEdge<NodeData>) -> String {
+        let source = endpointKey(nodeID: edge.source, handleID: edge.sourceHandle)
+        let target = endpointKey(nodeID: edge.target, handleID: edge.targetHandle)
+        return source <= target ? "\(source)\u{1F}#\(target)" : "\(target)\u{1F}#\(source)"
+    }
+
+    private static func endpointKey(nodeID: String, handleID: String?) -> String {
+        "\(nodeID)\u{1E}#\(handleID ?? "")"
     }
 
     private static func laneSegments(
