@@ -93,6 +93,55 @@ import Testing
     #expect(EdgeEndpointLabelAlgorithms.graphPosition(handlePoint: handle, placement: .left, offset: offset) == XYPosition(x: 88, y: 100))
 }
 
+@Test func endpointLabelPositionStaggersCollisionLanesOutward() async throws {
+    let handle = XYPosition(x: 100, y: 100)
+
+    #expect(
+        EdgeEndpointLabelAlgorithms.graphPosition(
+            handlePoint: handle,
+            placement: .bottom,
+            offset: 12,
+            collisionLane: 2,
+            crossAxisExtent: 14,
+            laneGap: 4
+        ) == XYPosition(x: 100, y: 148)
+    )
+    #expect(
+        EdgeEndpointLabelAlgorithms.graphPosition(
+            handlePoint: handle,
+            placement: .left,
+            offset: 12,
+            collisionLane: 1,
+            crossAxisExtent: 44,
+            laneGap: 4
+        ) == XYPosition(x: 40, y: 100)
+    )
+}
+
+@Test func endpointLabelCollisionLaneStacksOverlappingSideLabels() async throws {
+    let candidates = [
+        EdgeEndpointLabelAlgorithms.CollisionCandidate(id: "a", center: XYPosition(x: 100, y: 200), extent: 60),
+        EdgeEndpointLabelAlgorithms.CollisionCandidate(id: "b", center: XYPosition(x: 130, y: 200), extent: 60),
+        EdgeEndpointLabelAlgorithms.CollisionCandidate(id: "c", center: XYPosition(x: 190, y: 200), extent: 44)
+    ]
+
+    #expect(EdgeEndpointLabelAlgorithms.collisionLane(id: "a", placement: .bottom, candidates: candidates) == 0)
+    #expect(EdgeEndpointLabelAlgorithms.collisionLane(id: "b", placement: .bottom, candidates: candidates) == 1)
+    #expect(EdgeEndpointLabelAlgorithms.collisionLane(id: "c", placement: .bottom, candidates: candidates) == 0)
+}
+
+@Test func endpointLabelCollisionLaneUsesVerticalAxisForLeftRightLabels() async throws {
+    let candidates = [
+        EdgeEndpointLabelAlgorithms.CollisionCandidate(id: "a", center: XYPosition(x: 200, y: 100), extent: 18),
+        EdgeEndpointLabelAlgorithms.CollisionCandidate(id: "b", center: XYPosition(x: 200, y: 110), extent: 18),
+        EdgeEndpointLabelAlgorithms.CollisionCandidate(id: "c", center: XYPosition(x: 200, y: 140), extent: 18)
+    ]
+
+    #expect(EdgeEndpointLabelAlgorithms.collisionLane(id: "a", placement: .right, candidates: candidates) == 0)
+    #expect(EdgeEndpointLabelAlgorithms.collisionLane(id: "b", placement: .right, candidates: candidates) == 1)
+    #expect(EdgeEndpointLabelAlgorithms.collisionLane(id: "c", placement: .right, candidates: candidates) == 0)
+}
+
 @Test func bezierPathProducesNonEmptyPath() async throws {
     let result = EdgePathAlgorithms.bezierPath(
         sourceX: 0,
