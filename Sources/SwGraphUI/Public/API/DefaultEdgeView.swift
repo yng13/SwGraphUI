@@ -319,10 +319,11 @@ public struct DefaultEdgeOverlayView<NodeData: Sendable>: View {
                 maxWidth: label.maxWidth
             )
             .help(label.tooltip ?? "")
+            .contentShape(Rectangle())
             .opacity(endpointOpacity(label))
             .position(x: screenPosition.x, y: screenPosition.y)
             .allowsHitTesting(label.tooltip != nil)
-            .accessibilityHidden(true)
+            .accessibilityHidden(label.tooltip == nil)
         }
     }
 
