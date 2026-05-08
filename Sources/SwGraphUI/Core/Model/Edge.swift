@@ -98,6 +98,8 @@ public struct EdgeEndpointLabel: Sendable, Equatable, Codable {
     public var text: String
     public var style: EdgeLabelStyle
     public var presentation: EdgeEndpointLabelPresentation
+    /// Optional tooltip/help text for the visible endpoint label. | 表示ラベルの任意 tooltip/help テキスト。
+    public var tooltip: String?
     /// Distance from the resolved handle in graph-space units. | 解決済み handle からの graph-space 距離。
     public var offset: Double?
     /// Maximum label width in graph-space units. | ラベル最大幅（graph-space 単位）。
@@ -108,6 +110,7 @@ public struct EdgeEndpointLabel: Sendable, Equatable, Codable {
         text: String,
         style: EdgeLabelStyle = .default,
         presentation: EdgeEndpointLabelPresentation = .chip,
+        tooltip: String? = nil,
         offset: Double? = nil,
         maxWidth: Double? = nil,
         visibility: EdgeEndpointLabelVisibility = .always
@@ -115,6 +118,7 @@ public struct EdgeEndpointLabel: Sendable, Equatable, Codable {
         self.text = text
         self.style = style
         self.presentation = presentation
+        self.tooltip = tooltip
         self.offset = offset
         self.maxWidth = maxWidth
         self.visibility = visibility

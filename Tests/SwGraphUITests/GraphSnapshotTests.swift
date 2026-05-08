@@ -24,7 +24,7 @@ struct GraphSnapshotTests {
                 target: "n2",
                 markerEnd: EdgeMarker(type: .arrowClosed, color: "#ff0000"),
                 label: "Edge Label",
-                sourceEndpointLabel: EdgeEndpointLabel(text: "Gi0/1", maxWidth: 80),
+                sourceEndpointLabel: EdgeEndpointLabel(text: "Gi0/1", tooltip: "GigabitEthernet0/1", maxWidth: 80),
                 targetEndpointLabel: EdgeEndpointLabel(text: "Te1/1", presentation: .plain, visibility: .whenZoomedIn)
             )
         ]
@@ -66,6 +66,7 @@ struct GraphSnapshotTests {
         #expect(newStore.edges[0].markerEnd?.color == "#ff0000")
         #expect(newStore.edges[0].label == "Edge Label")
         #expect(newStore.edges[0].sourceEndpointLabel?.text == "Gi0/1")
+        #expect(newStore.edges[0].sourceEndpointLabel?.tooltip == "GigabitEthernet0/1")
         #expect(newStore.edges[0].sourceEndpointLabel?.maxWidth == 80)
         #expect(newStore.edges[0].targetEndpointLabel?.text == "Te1/1")
         #expect(newStore.edges[0].targetEndpointLabel?.presentation == .plain)
