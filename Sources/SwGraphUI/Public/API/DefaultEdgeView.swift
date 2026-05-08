@@ -207,6 +207,7 @@ public struct DefaultEdgeOverlayView<NodeData: Sendable>: View {
     let store: GraphStore<NodeData>
     var onReconnect: ((String, Connection) -> Void)? = nil
     let containerSize: Dimensions
+    @State private var hoveredEndpointLabelID: String?
     
     public init(edge: BaseEdge<NodeData>, store: GraphStore<NodeData>, onReconnect: ((String, Connection) -> Void)? = nil, containerSize: Dimensions) {
         self.edge = edge
@@ -313,18 +314,49 @@ public struct DefaultEdgeOverlayView<NodeData: Sendable>: View {
                 collisionLane: collisionLane,
                 crossAxisExtent: metrics.crossAxisExtent
             )
-            EdgeLabelView(
-                label: label.text,
-                style: style,
-                maxWidth: label.maxWidth
-            )
+            let labelID = endpointLabelCandidateID(edgeID: edge.id, role: role)
+            ZStack {
+                EdgeLabelView(
+                    label: label.text,
+                    style: style,
+                    maxWidth: label.maxWidth
+                )
+                .contentShape(Rectangle())
+                .onHover { inside in
+                    guard label.tooltip != nil else { return }
+                    hoveredEndpointLabelID = inside ? labelID : nil
+                }
+
+                if hoveredEndpointLabelID == labelID, let tooltip = label.tooltip {
+                    endpointTooltipView(tooltip)
+                        .offset(y: -24)
+                        .allowsHitTesting(false)
+                        .transition(.opacity)
+                        .zIndex(20)
+                }
+            }
             .help(label.tooltip ?? "")
-            .contentShape(Rectangle())
             .opacity(endpointOpacity(label))
             .position(x: screenPosition.x, y: screenPosition.y)
             .allowsHitTesting(label.tooltip != nil)
             .accessibilityHidden(label.tooltip == nil)
+            .zIndex(10)
         }
+    }
+
+    private func endpointTooltipView(_ tooltip: String) -> some View {
+        Text(tooltip)
+            .font(.system(size: 11, weight: .medium))
+            .foregroundStyle(.white)
+            .lineLimit(1)
+            .truncationMode(.middle)
+            .padding(.horizontal, 7)
+            .padding(.vertical, 4)
+            .background(
+                RoundedRectangle(cornerRadius: 5)
+                    .fill(Color.black.opacity(0.82))
+            )
+            .shadow(color: .black.opacity(0.18), radius: 2, y: 1)
     }
 
     private enum EndpointLabelRole: String {
