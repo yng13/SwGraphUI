@@ -150,8 +150,8 @@ Current capabilities include:
   PNG / PDF / SVG エクスポートバックエンド
 - undo / redo refinement with symmetry and no-op guard tests
   対称性および no-op ガードテストを伴う Undo / Redo の洗練
-- accessibility baseline for nodes, edges, controls, and minimap
-  ノード、エッジ、コントロール、およびミニマップのアクセシビリティ基盤
+- basic accessibility labels and roles for nodes, edges, controls, and minimap
+  ノード、エッジ、コントロール、およびミニマップの基本的なアクセシビリティラベル / ロール
 
 Platform support:  
 プラットフォームサポート：
@@ -334,6 +334,7 @@ BaseEdge(
     target: "switch",
     sourceEndpointLabel: EdgeEndpointLabel(
         text: "TenGigabitEthernet2/0/1",
+        tooltip: "Uplink to switch",
         maxWidth: 160
     ),
     targetEndpointLabel: EdgeEndpointLabel(
@@ -344,9 +345,9 @@ BaseEdge(
 )
 ```
 
-Endpoint labels are positioned from the same resolved handle points used by edge paths. They preserve midpoint `label` behavior and remain below reconnect anchors.
+Endpoint labels are positioned from the same resolved handle points used by edge paths. They preserve midpoint `label` behavior, support optional hover tooltips, avoid common same-side collisions, and remain below reconnect anchors.
 
-endpoint label は、エッジパスと同じ resolved handle point から配置されます。中央の `label` とは独立して動作し、再接続アンカーより背面に表示されます。
+endpoint label は、エッジパスと同じ resolved handle point から配置されます。中央の `label` とは独立して動作し、任意の hover tooltip と同一辺での一般的な衝突回避に対応し、再接続アンカーより背面に表示されます。
 
 For per-port or multi-interface diagrams, handles can request bounds-based placement:
 ポートや複数インターフェイスを持つ図では、handle に境界ベース配置を指定できます：
@@ -377,9 +378,9 @@ BaseNode(
 
 `automaticPeerSide` は handle をノード境界上に置き、接続先ノード方向から有効な辺を解決し、同じ辺の複数 handle を決定論的に分散します。従来のカスタム `HandleView` 配置は、デフォルトの `.explicit` のまま利用できます。
 
-Parallel edges between the same unordered node pair are assigned deterministic lanes by edge id. Single edges are unchanged; two or more edges receive symmetric graph-space offsets while keeping their source and target anchors on the resolved handles.
+Parallel edges between the same unordered node pair and matching handle pair are assigned deterministic lanes by edge id. Single edges are unchanged; two or more matching edges receive symmetric graph-space offsets while keeping their source and target anchors on the resolved handles. Step and smooth-step lanes preserve orthogonal lead-ins near node endpoints.
 
-同じノードペア間の複数エッジは、edge id に基づいて決定論的な lane に配置されます。単一エッジは従来どおりで、複数エッジのみ graph-space 上で対称にオフセットされます。source / target のアンカーは resolved handle 上に維持されます。
+同じノードペアかつ同じ handle ペア間の複数エッジは、edge id に基づいて決定論的な lane に配置されます。単一エッジは従来どおりで、該当する複数エッジのみ graph-space 上で対称にオフセットされます。source / target のアンカーは resolved handle 上に維持され、step / smooth-step の endpoint 近傍では直交 lead-in を保ちます。
 
 ```swift
 let graph = GraphView(
@@ -534,6 +535,8 @@ Current recommendation:
   最も完全な検証フローのために、macOS で Example アプリを使用してください。
 - use iOS mainly to validate the core canvas, drag, connect, zoom, and rendering behavior  
   iOS は主にコアキャンバス、ドラッグ、接続、ズーム、およびレンダリングの挙動を検証するために使用してください。
+- full VoiceOver / Accessibility Inspector navigation verification is deferred beyond the 1.0 baseline  
+  VoiceOver / Accessibility Inspector によるフルナビゲーション検証は、1.0 baseline 以降に defer しています。
 
 ## Status | ステータス
 
