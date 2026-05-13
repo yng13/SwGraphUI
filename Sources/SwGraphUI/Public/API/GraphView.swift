@@ -487,11 +487,27 @@ internal struct GraphLayerStack<NodeData: Sendable, NodeContent: View>: View {
     @ViewBuilder
     private var edgeOverlayLayer: some View {
         let parts = partitionedOverlayEdges
+        let endpointLabelCollisionCache = EdgeEndpointLabelCollisionCache.build(
+            store: store,
+            viewport: activeViewport
+        )
         ForEach(parts.unselected) { edge in
-            DefaultEdgeOverlayView(edge: edge, store: store, onReconnect: onReconnect, containerSize: containerSize)
+            DefaultEdgeOverlayView(
+                edge: edge,
+                store: store,
+                onReconnect: onReconnect,
+                containerSize: containerSize,
+                endpointLabelCollisionCache: endpointLabelCollisionCache
+            )
         }
         ForEach(parts.selected) { edge in
-            DefaultEdgeOverlayView(edge: edge, store: store, onReconnect: onReconnect, containerSize: containerSize)
+            DefaultEdgeOverlayView(
+                edge: edge,
+                store: store,
+                onReconnect: onReconnect,
+                containerSize: containerSize,
+                endpointLabelCollisionCache: endpointLabelCollisionCache
+            )
         }
     }
 

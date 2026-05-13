@@ -207,6 +207,7 @@ public struct DefaultEdgeOverlayView<NodeData: Sendable>: View {
     let store: GraphStore<NodeData>
     var onReconnect: ((String, Connection) -> Void)? = nil
     let containerSize: Dimensions
+    let endpointLabelCollisionCache: EdgeEndpointLabelCollisionCache?
     @State private var hoveredEndpointLabelID: String?
     
     public init(edge: BaseEdge<NodeData>, store: GraphStore<NodeData>, onReconnect: ((String, Connection) -> Void)? = nil, containerSize: Dimensions) {
@@ -214,6 +215,15 @@ public struct DefaultEdgeOverlayView<NodeData: Sendable>: View {
         self.store = store
         self.onReconnect = onReconnect
         self.containerSize = containerSize
+        self.endpointLabelCollisionCache = nil
+    }
+
+    init(edge: BaseEdge<NodeData>, store: GraphStore<NodeData>, onReconnect: ((String, Connection) -> Void)? = nil, containerSize: Dimensions, endpointLabelCollisionCache: EdgeEndpointLabelCollisionCache) {
+        self.edge = edge
+        self.store = store
+        self.onReconnect = onReconnect
+        self.containerSize = containerSize
+        self.endpointLabelCollisionCache = endpointLabelCollisionCache
     }
     
     @Environment(\.graphRenderingViewport) private var renderingViewport
@@ -359,27 +369,14 @@ public struct DefaultEdgeOverlayView<NodeData: Sendable>: View {
             .shadow(color: .black.opacity(0.18), radius: 2, y: 1)
     }
 
-    private enum EndpointLabelRole: String {
-        case source
-        case target
-    }
-
-    private struct EndpointLabelMetrics {
-        let tangentExtent: Double
-        let crossAxisExtent: Double
-    }
-
     private func shouldShow(_ label: EdgeEndpointLabel, edge candidateEdge: BaseEdge<NodeData>, viewport: Viewport) -> Bool {
-        switch label.visibility {
-        case .always:
-            true
-        case .whenSelected:
-            candidateEdge.selected
-        case .whenHovered:
-            candidateEdge.id == store.runtimeState.hover.hoveredEdgeID
-        case .whenZoomedIn:
-            viewport.zoom >= 1.0
-        }
+        EdgeEndpointLabelCollisionSupport.shouldShow(
+            label,
+            edgeID: candidateEdge.id,
+            edgeSelected: candidateEdge.selected,
+            hoveredEdgeID: store.runtimeState.hover.hoveredEdgeID,
+            viewport: viewport
+        )
     }
 
     private func endpointLabelCollisionLane(
@@ -416,7 +413,15 @@ public struct DefaultEdgeOverlayView<NodeData: Sendable>: View {
         placement: Position,
         viewport: Viewport
     ) -> [EdgeEndpointLabelAlgorithms.CollisionCandidate] {
-        store.edges.flatMap { candidateEdge in
+        if let endpointLabelCollisionCache {
+            return endpointLabelCollisionCache.candidates(nodeID: nodeID, placement: placement)
+        }
+
+        return store.edges.flatMap { candidateEdge -> [EdgeEndpointLabelAlgorithms.CollisionCandidate] in
+            guard candidateEdge.source == nodeID || candidateEdge.target == nodeID else {
+                return []
+            }
+
             var candidates: [EdgeEndpointLabelAlgorithms.CollisionCandidate] = []
             let resolved = store.resolvedEdgePositions(for: candidateEdge)
             let sourceKey = HandleKey(
@@ -468,10 +473,148 @@ public struct DefaultEdgeOverlayView<NodeData: Sendable>: View {
     }
 
     private func endpointLabelCandidateID(edgeID: String, role: EndpointLabelRole) -> String {
-        "\(edgeID)|\(role.rawValue)"
+        EdgeEndpointLabelCollisionSupport.candidateID(edgeID: edgeID, role: role)
     }
 
     private func endpointLabelMetrics(
+        _ label: EdgeEndpointLabel,
+        style: EdgeLabelStyle,
+        placement: Position
+    ) -> EndpointLabelMetrics {
+        EdgeEndpointLabelCollisionSupport.metrics(label, style: style, placement: placement)
+    }
+
+    private func resolvedEndpointStyle(_ label: EdgeEndpointLabel) -> EdgeLabelStyle {
+        EdgeEndpointLabelCollisionSupport.resolvedStyle(label)
+    }
+
+    private func endpointOpacity(_ label: EdgeEndpointLabel) -> Double {
+        label.presentation == .subtle ? 0.82 : 1.0
+    }
+}
+
+fileprivate enum EndpointLabelRole: String {
+    case source
+    case target
+}
+
+fileprivate struct EndpointLabelMetrics {
+    let tangentExtent: Double
+    let crossAxisExtent: Double
+}
+
+internal struct EdgeEndpointLabelCollisionCache {
+    private struct Key: Hashable {
+        let nodeID: String
+        let placement: Position
+    }
+
+    private var candidatesByKey: [Key: [EdgeEndpointLabelAlgorithms.CollisionCandidate]]
+
+    private init(candidatesByKey: [Key: [EdgeEndpointLabelAlgorithms.CollisionCandidate]]) {
+        self.candidatesByKey = candidatesByKey
+    }
+
+    func candidates(nodeID: String, placement: Position) -> [EdgeEndpointLabelAlgorithms.CollisionCandidate] {
+        candidatesByKey[Key(nodeID: nodeID, placement: placement)] ?? []
+    }
+
+    @MainActor
+    static func build<NodeData: Sendable>(
+        store: GraphStore<NodeData>,
+        viewport: Viewport
+    ) -> EdgeEndpointLabelCollisionCache {
+        var candidatesByKey: [Key: [EdgeEndpointLabelAlgorithms.CollisionCandidate]] = [:]
+        let hoveredEdgeID = store.runtimeState.hover.hoveredEdgeID
+
+        for edge in store.edges {
+            let resolved = store.resolvedEdgePositions(for: edge)
+            let sourceKey = HandleKey(
+                nodeID: edge.source,
+                handleID: edge.sourceHandle,
+                type: .source,
+                placement: resolved.source
+            )
+            let targetKey = HandleKey(
+                nodeID: edge.target,
+                handleID: edge.targetHandle,
+                type: .target,
+                placement: resolved.target
+            )
+            let sourceHandlePoint = store.resolvedHandlePosition(for: sourceKey)
+            let targetHandlePoint = store.resolvedHandlePosition(for: targetKey)
+            let laneOffset = store.edgeLaneOffsetVector(
+                for: edge,
+                source: sourceHandlePoint,
+                target: targetHandlePoint
+            )
+
+            if let label = edge.sourceEndpointLabel,
+               EdgeEndpointLabelCollisionSupport.shouldShow(
+                label,
+                edgeID: edge.id,
+                edgeSelected: edge.selected,
+                hoveredEdgeID: hoveredEdgeID,
+                viewport: viewport
+               ) {
+                let style = EdgeEndpointLabelCollisionSupport.resolvedStyle(label)
+                candidatesByKey[Key(nodeID: edge.source, placement: resolved.source), default: []].append(
+                    EdgeEndpointLabelAlgorithms.CollisionCandidate(
+                        id: EdgeEndpointLabelCollisionSupport.candidateID(edgeID: edge.id, role: .source),
+                        center: sourceHandlePoint + laneOffset,
+                        extent: EdgeEndpointLabelCollisionSupport.metrics(label, style: style, placement: resolved.source).tangentExtent
+                    )
+                )
+            }
+
+            if let label = edge.targetEndpointLabel,
+               EdgeEndpointLabelCollisionSupport.shouldShow(
+                label,
+                edgeID: edge.id,
+                edgeSelected: edge.selected,
+                hoveredEdgeID: hoveredEdgeID,
+                viewport: viewport
+               ) {
+                let style = EdgeEndpointLabelCollisionSupport.resolvedStyle(label)
+                candidatesByKey[Key(nodeID: edge.target, placement: resolved.target), default: []].append(
+                    EdgeEndpointLabelAlgorithms.CollisionCandidate(
+                        id: EdgeEndpointLabelCollisionSupport.candidateID(edgeID: edge.id, role: .target),
+                        center: targetHandlePoint + laneOffset,
+                        extent: EdgeEndpointLabelCollisionSupport.metrics(label, style: style, placement: resolved.target).tangentExtent
+                    )
+                )
+            }
+        }
+
+        return EdgeEndpointLabelCollisionCache(candidatesByKey: candidatesByKey)
+    }
+}
+
+fileprivate enum EdgeEndpointLabelCollisionSupport {
+    static func candidateID(edgeID: String, role: EndpointLabelRole) -> String {
+        "\(edgeID)|\(role.rawValue)"
+    }
+
+    static func shouldShow(
+        _ label: EdgeEndpointLabel,
+        edgeID: String,
+        edgeSelected: Bool,
+        hoveredEdgeID: String?,
+        viewport: Viewport
+    ) -> Bool {
+        switch label.visibility {
+        case .always:
+            true
+        case .whenSelected:
+            edgeSelected
+        case .whenHovered:
+            edgeID == hoveredEdgeID
+        case .whenZoomedIn:
+            viewport.zoom >= 1.0
+        }
+    }
+
+    static func metrics(
         _ label: EdgeEndpointLabel,
         style: EdgeLabelStyle,
         placement: Position
@@ -490,7 +633,7 @@ public struct DefaultEdgeOverlayView<NodeData: Sendable>: View {
         }
     }
 
-    private func resolvedEndpointStyle(_ label: EdgeEndpointLabel) -> EdgeLabelStyle {
+    static func resolvedStyle(_ label: EdgeEndpointLabel) -> EdgeLabelStyle {
         var style = label.style
         switch label.presentation {
         case .chip:
@@ -507,10 +650,6 @@ public struct DefaultEdgeOverlayView<NodeData: Sendable>: View {
             }
         }
         return style
-    }
-
-    private func endpointOpacity(_ label: EdgeEndpointLabel) -> Double {
-        label.presentation == .subtle ? 0.82 : 1.0
     }
 }
 
