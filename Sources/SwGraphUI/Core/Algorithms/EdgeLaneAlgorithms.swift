@@ -45,6 +45,40 @@ public enum EdgeLaneAlgorithms {
         )
     }
 
+    public static func assignments<NodeData: Sendable>(
+        for edges: [BaseEdge<NodeData>],
+        spacing: Double = defaultSpacing
+    ) -> [String: EdgeLaneAssignment] {
+        var groups: [String: [BaseEdge<NodeData>]] = [:]
+        for edge in edges where !edge.hidden {
+            groups[parallelLaneKey(for: edge), default: []].append(edge)
+        }
+
+        var assignments: [String: EdgeLaneAssignment] = [:]
+        assignments.reserveCapacity(edges.count)
+
+        for (_, peers) in groups {
+            let sortedPeers = peers.sorted { $0.id < $1.id }
+            let count = sortedPeers.count
+            for (ordinal, edge) in sortedPeers.enumerated() {
+                assignments[edge.id] = count > 1
+                    ? EdgeLaneAssignment(
+                        index: Double(ordinal) - Double(count - 1) / 2.0,
+                        count: count,
+                        spacing: spacing
+                    )
+                    : EdgeLaneAssignment(index: 0, count: 1, spacing: spacing)
+            }
+        }
+
+        for edge in edges where assignments[edge.id] == nil {
+            let visiblePeerCount = groups[parallelLaneKey(for: edge)]?.count ?? 0
+            assignments[edge.id] = EdgeLaneAssignment(index: 0, count: max(visiblePeerCount, 1), spacing: spacing)
+        }
+
+        return assignments
+    }
+
     public static func applyLane(
         to result: EdgePathResult,
         source: XYPosition,

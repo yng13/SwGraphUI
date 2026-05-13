@@ -26,6 +26,7 @@ public final class GraphStore<NodeData: Sendable>: Sendable {
     public var edges: [BaseEdge<NodeData>] = [] {
         didSet {
             automaticHandleIDsCache.removeAll()
+            edgeLaneAssignmentCache.removeAll()
         }
     }
     
@@ -40,8 +41,21 @@ public final class GraphStore<NodeData: Sendable>: Sendable {
     @ObservationIgnored private var _cachedNodeLookup: [String: BaseNode<NodeData>] = [:]
     @ObservationIgnored private var isNodeLookupCacheValid = false
     @ObservationIgnored private var automaticHandleIDsCache: [AutomaticHandleGroupKey: Set<String>] = [:]
-    public var parallelEdgeLanesEnabled = true
-    public var parallelEdgeLaneSpacing = EdgeLaneAlgorithms.defaultSpacing
+    @ObservationIgnored private var edgeLaneAssignmentCache: [String: EdgeLaneAssignment] = [:]
+    public var parallelEdgeLanesEnabled = true {
+        didSet {
+            if oldValue != parallelEdgeLanesEnabled {
+                edgeLaneAssignmentCache.removeAll()
+            }
+        }
+    }
+    public var parallelEdgeLaneSpacing = EdgeLaneAlgorithms.defaultSpacing {
+        didSet {
+            if oldValue != parallelEdgeLaneSpacing {
+                edgeLaneAssignmentCache.removeAll()
+            }
+        }
+    }
     
     // MARK: - Undo/Redo State
     public var undoManager: UndoManager?
@@ -349,7 +363,13 @@ public final class GraphStore<NodeData: Sendable>: Sendable {
         guard parallelEdgeLanesEnabled else {
             return EdgeLaneAssignment(spacing: parallelEdgeLaneSpacing)
         }
-        return EdgeLaneAlgorithms.assignment(
+        if edgeLaneAssignmentCache.isEmpty {
+            edgeLaneAssignmentCache = EdgeLaneAlgorithms.assignments(
+                for: edges,
+                spacing: parallelEdgeLaneSpacing
+            )
+        }
+        return edgeLaneAssignmentCache[edge.id] ?? EdgeLaneAlgorithms.assignment(
             for: edge,
             in: edges,
             spacing: parallelEdgeLaneSpacing
@@ -399,7 +419,7 @@ public final class GraphStore<NodeData: Sendable>: Sendable {
 
     // MARK: - Node Operations
     public func node(id: String) -> BaseNode<NodeData>? {
-        nodes.first { $0.id == id }
+        nodeLookup[id]
     }
 
     public func updateNodePosition(id: String, position: XYPosition) {

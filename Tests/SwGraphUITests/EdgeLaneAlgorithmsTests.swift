@@ -31,6 +31,23 @@ struct EdgeLaneAlgorithmsTests {
     }
 
     @Test
+    func batchedAssignmentsMatchPerEdgeAssignments() {
+        let edges = [
+            BaseEdge<String>(id: "b", source: "a", target: "z"),
+            BaseEdge<String>(id: "a", source: "z", target: "a"),
+            BaseEdge<String>(id: "c", source: "a", target: "z"),
+            BaseEdge<String>(id: "single", source: "x", target: "y"),
+            BaseEdge<String>(id: "hidden", source: "a", target: "z", hidden: true)
+        ]
+
+        let assignments = EdgeLaneAlgorithms.assignments(for: edges)
+
+        for edge in edges {
+            #expect(assignments[edge.id] == EdgeLaneAlgorithms.assignment(for: edge, in: edges))
+        }
+    }
+
+    @Test
     func distinctEndpointHandlesDoNotShareParallelLanes() {
         let edges = [
             BaseEdge<String>(id: "a", source: "core", target: "left", sourceHandle: "te1", targetHandle: "te1"),
