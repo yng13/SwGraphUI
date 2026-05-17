@@ -264,6 +264,28 @@ struct SVGExporterTests {
     }
 
     @Test
+    func doubleEdgeStrokeStyleSerializesToSVG() async throws {
+        let store = makeTwoNodeStore()
+        store.edges = [
+            BaseEdge<String>(
+                id: "double",
+                source: "n1",
+                target: "n2",
+                kind: "straight",
+                strokeStyle: EdgeStrokeStyle(color: "#2563EB", width: 4, shape: .double)
+            )
+        ]
+
+        let exporter = SVGExporter(store: store)
+        let svg = try #require(exporter.export(settings: GraphExportSettings(margin: 16, includeBackground: false, isTransparent: true)))
+
+        #expect(svg.contains(#"id="edge-double""#))
+        #expect(svg.components(separatedBy: #"<path d=""#).count - 1 == 2)
+        #expect(svg.contains("transform=\"translate("))
+        #expect(svg.contains(#"stroke-width="2.88""#))
+    }
+
+    @Test
     func endpointLabelsSerializeToSVG() async throws {
         let store = makeTwoNodeStore()
         store.edges = [

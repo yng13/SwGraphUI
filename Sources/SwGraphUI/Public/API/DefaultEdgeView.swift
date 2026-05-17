@@ -87,6 +87,7 @@ public struct DefaultEdgeView<NodeData: Sendable>: View {
                 strokeColor: resolvedStroke.color,
                 strokeWidth: resolvedStroke.width,
                 dashStyle: resolvedStroke.dash,
+                strokeShape: resolvedStroke.shape,
                 viewport: viewport,
                 containerSize: containerSize,
                 animated: edge.animated && !isReconnecting,
@@ -176,7 +177,7 @@ public struct DefaultEdgeView<NodeData: Sendable>: View {
         return (sourcePos, targetPos, store.resolvedHandlePosition(for: sourceKey), store.resolvedHandlePosition(for: targetKey))
     }
 
-    private func resolveStroke(isReconnecting: Bool) -> (color: Color, width: CGFloat, dash: EdgeStrokeDash) {
+    private func resolveStroke(isReconnecting: Bool) -> (color: Color, width: CGFloat, dash: EdgeStrokeDash, shape: EdgeStrokeShape) {
         let configured = edge.strokeStyle
         let baseWidth = CGFloat(configured?.width ?? 2)
         let selectedWidth = edge.selected ? max(baseWidth + 1, 3) : baseWidth
@@ -188,7 +189,7 @@ public struct DefaultEdgeView<NodeData: Sendable>: View {
         } else {
             color = edge.selected ? .primary : .gray
         }
-        return (color, selectedWidth, configured?.dash ?? .solid)
+        return (color, selectedWidth, configured?.dash ?? .solid, configured?.shape ?? .single)
     }
 
     private func endpointAccessibilitySummary() -> String {

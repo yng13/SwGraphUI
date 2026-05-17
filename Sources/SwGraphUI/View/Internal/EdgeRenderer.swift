@@ -7,16 +7,28 @@ public struct EdgeRenderer: View {
     public let strokeColor: Color
     public let strokeWidth: CGFloat
     public let dashStyle: EdgeStrokeDash
+    public let strokeShape: EdgeStrokeShape
     public let viewport: Viewport
     public let containerSize: Dimensions
     public let animated: Bool
     public let isReconnecting: Bool
     
-    public init(segments: [PathSegment], strokeColor: Color, strokeWidth: CGFloat, dashStyle: EdgeStrokeDash = .solid, viewport: Viewport, containerSize: Dimensions, animated: Bool, isReconnecting: Bool) {
+    public init(
+        segments: [PathSegment],
+        strokeColor: Color,
+        strokeWidth: CGFloat,
+        dashStyle: EdgeStrokeDash = .solid,
+        strokeShape: EdgeStrokeShape = .single,
+        viewport: Viewport,
+        containerSize: Dimensions,
+        animated: Bool,
+        isReconnecting: Bool
+    ) {
         self.segments = segments
         self.strokeColor = strokeColor
         self.strokeWidth = strokeWidth
         self.dashStyle = dashStyle
+        self.strokeShape = strokeShape
         self.viewport = viewport
         self.containerSize = containerSize
         self.animated = animated
@@ -27,10 +39,10 @@ public struct EdgeRenderer: View {
         if !isCulled {
             if animated && !isReconnecting {
                 TimelineView(.animation) { context in
-                    buildPath().stroke(strokeColor, style: strokeStyle(at: context.date))
+                    renderedPathGroup(at: context.date)
                 }
             } else {
-                buildPath().stroke(strokeColor, style: strokeStyle(at: .now))
+                renderedPathGroup(at: .now)
             }
         }
     }
@@ -50,25 +62,75 @@ public struct EdgeRenderer: View {
         return maxX < -100 || minX > containerSize.width + 100 || maxY < -100 || minY > containerSize.height + 100
     }
 
-    private func buildPath() -> Path {
+    @ViewBuilder
+    private func renderedPathGroup(at date: Date) -> some View {
+        if strokeShape == .double && !isReconnecting {
+            ForEach(doubleLineOffsets.indices, id: \.self) { index in
+                buildPath(offset: doubleLineOffsets[index])
+                    .stroke(strokeColor, style: strokeStyle(at: date, lineWidth: doubleLineWidth))
+            }
+        } else {
+            buildPath()
+                .stroke(strokeColor, style: strokeStyle(at: date))
+        }
+    }
+
+    private func buildPath(offset: CGSize = .zero) -> Path {
         Path { path in
             for segment in segments {
                 let s = segment.toScreen(viewport: viewport)
                 switch s {
-                case .move(let to): path.move(to: CGPoint(x: to.x, y: to.y))
-                case .line(let to): path.addLine(to: CGPoint(x: to.x, y: to.y))
+                case .move(let to): path.move(to: shiftedPoint(to, offset: offset))
+                case .line(let to): path.addLine(to: shiftedPoint(to, offset: offset))
                 case .bezier(let to, let c1, let c2):
-                    path.addCurve(to: CGPoint(x: to.x, y: to.y), control1: CGPoint(x: c1.x, y: c1.y), control2: CGPoint(x: c2.x, y: c2.y))
+                    path.addCurve(
+                        to: shiftedPoint(to, offset: offset),
+                        control1: shiftedPoint(c1, offset: offset),
+                        control2: shiftedPoint(c2, offset: offset)
+                    )
                 case .quadratic(let to, let c):
-                    path.addQuadCurve(to: CGPoint(x: to.x, y: to.y), control: CGPoint(x: c.x, y: c.y))
+                    path.addQuadCurve(
+                        to: shiftedPoint(to, offset: offset),
+                        control: shiftedPoint(c, offset: offset)
+                    )
                 }
             }
         }
     }
+
+    private func shiftedPoint(_ point: XYPosition, offset: CGSize) -> CGPoint {
+        CGPoint(x: point.x + offset.width, y: point.y + offset.height)
+    }
     
-    private func strokeStyle(at date: Date) -> StrokeStyle {
+    private var doubleLineWidth: CGFloat {
+        max(strokeWidth * CGFloat(viewport.zoom) * 0.72, 1)
+    }
+
+    private var doubleLineOffsets: [CGSize] {
+        guard let first = firstScreenPoint, let last = lastScreenPoint else { return [.zero, .zero] }
+        let dx = last.x - first.x
+        let dy = last.y - first.y
+        let length = max(sqrt(dx * dx + dy * dy), 0.001)
+        let normalX = -dy / length
+        let normalY = dx / length
+        let centerOffset = max(strokeWidth * CGFloat(viewport.zoom) + 2, 4) / 2
+        return [
+            CGSize(width: normalX * centerOffset, height: normalY * centerOffset),
+            CGSize(width: -normalX * centerOffset, height: -normalY * centerOffset)
+        ]
+    }
+
+    private var firstScreenPoint: CGPoint? {
+        segments.first?.target.toScreen(viewport: viewport).cgPoint
+    }
+
+    private var lastScreenPoint: CGPoint? {
+        segments.last?.target.toScreen(viewport: viewport).cgPoint
+    }
+
+    private func strokeStyle(at date: Date, lineWidth: CGFloat? = nil) -> StrokeStyle {
         let zoom = viewport.zoom
-        let scaledWidth = strokeWidth * zoom
+        let scaledWidth: CGFloat = lineWidth ?? (strokeWidth * CGFloat(zoom))
         
         let baseShortDash: CGFloat = 5
         let animatedDefaultDash: [CGFloat] = [10, 5]
@@ -113,6 +175,12 @@ public struct EdgeRenderer: View {
 
     private func dashCycleLength(_ pattern: [CGFloat]) -> CGFloat {
         max(pattern.reduce(0, +), 1)
+    }
+}
+
+private extension XYPosition {
+    var cgPoint: CGPoint {
+        CGPoint(x: x, y: y)
     }
 }
 

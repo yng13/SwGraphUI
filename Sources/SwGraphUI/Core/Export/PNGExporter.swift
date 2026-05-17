@@ -48,6 +48,7 @@ public struct PNGExporter<NodeData: Sendable> {
                         strokeColor: context.strokeColor,
                         strokeWidth: context.strokeWidth,
                         dashStyle: context.dashStyle,
+                        strokeShape: context.strokeShape,
                         viewport: context.viewport,
                         containerSize: context.containerSize,
                         animated: context.animated,

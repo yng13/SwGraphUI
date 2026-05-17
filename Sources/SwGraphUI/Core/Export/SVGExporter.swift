@@ -188,10 +188,15 @@ public struct SVGExporter<NodeData: Sendable> {
         let dashAttributes = resolvedEdgeDashAttributes(edge)
         let markerAttributes = markerReferenceAttributes(for: edge)
         let laneOffset = store.edgeLaneOffsetVector(for: edge, source: context.sourcePoint, target: context.targetPoint)
-        var lines = [
-            #"<g id="\#(edgeID)">"#,
-            #"<path d="\#(escapedAttribute(path.path))" fill="none" stroke="\#(strokeColor)" stroke-width="\#(format(strokeWidth))" stroke-linecap="round" stroke-linejoin="round"\#(dashAttributes)\#(markerAttributes)/>"#
-        ]
+        var lines = [#"<g id="\#(edgeID)">"#]
+        lines.append(contentsOf: renderEdgePathElements(
+            path: path,
+            edge: edge,
+            strokeColor: strokeColor,
+            strokeWidth: strokeWidth,
+            dashAttributes: dashAttributes,
+            markerAttributes: markerAttributes
+        ))
 
         if let label = edge.label, !label.isEmpty {
             let fontSize = support.resolvedExportFontSize(for: edge.labelStyle)
@@ -227,6 +232,39 @@ public struct SVGExporter<NodeData: Sendable> {
 
         lines.append("</g>")
         return lines.joined(separator: "\n")
+    }
+
+    private func renderEdgePathElements(
+        path: EdgePathResult,
+        edge: BaseEdge<NodeData>,
+        strokeColor: String,
+        strokeWidth: Double,
+        dashAttributes: String,
+        markerAttributes: String
+    ) -> [String] {
+        let escapedPath = escapedAttribute(path.path)
+        guard edge.strokeStyle?.shape == .double,
+              let offset = doubleLineOffset(for: path, strokeWidth: strokeWidth) else {
+            return [
+                #"<path d="\#(escapedPath)" fill="none" stroke="\#(strokeColor)" stroke-width="\#(format(strokeWidth))" stroke-linecap="round" stroke-linejoin="round"\#(dashAttributes)\#(markerAttributes)/>"#
+            ]
+        }
+
+        let lineWidth = max(strokeWidth * 0.72, 1)
+        return [
+            #"<path d="\#(escapedPath)" transform="translate(\#(format(offset.x)) \#(format(offset.y)))" fill="none" stroke="\#(strokeColor)" stroke-width="\#(format(lineWidth))" stroke-linecap="round" stroke-linejoin="round"\#(dashAttributes)/>"#,
+            #"<path d="\#(escapedPath)" transform="translate(\#(format(-offset.x)) \#(format(-offset.y)))" fill="none" stroke="\#(strokeColor)" stroke-width="\#(format(lineWidth))" stroke-linecap="round" stroke-linejoin="round"\#(dashAttributes)/>"#
+        ]
+    }
+
+    private func doubleLineOffset(for path: EdgePathResult, strokeWidth: Double) -> XYPosition? {
+        guard let first = path.segments.first?.target,
+              let last = path.segments.last?.target else { return nil }
+        let dx = last.x - first.x
+        let dy = last.y - first.y
+        let length = max(sqrt(dx * dx + dy * dy), 0.001)
+        let centerOffset = max(strokeWidth + 2, 4) / 2
+        return XYPosition(x: (-dy / length) * centerOffset, y: (dx / length) * centerOffset)
     }
 
     private func renderEndpointLabel(

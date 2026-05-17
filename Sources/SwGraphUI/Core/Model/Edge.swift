@@ -147,6 +147,13 @@ public enum EdgeStrokeDash: Sendable, Equatable, Codable {
     }
 }
 
+public enum EdgeStrokeShape: String, Sendable, Equatable, Codable {
+    case single
+    case double
+
+    public static let `default`: EdgeStrokeShape = .single
+}
+
 public struct EdgeStrokeStyle: Sendable, Equatable, Codable {
     /// CSS-like color token, for example "#2563EB". | CSS 風の色トークン（例: "#2563EB"）。
     public var color: String?
@@ -154,17 +161,45 @@ public struct EdgeStrokeStyle: Sendable, Equatable, Codable {
     public var width: Double?
     /// Static dash style. Animation is handled separately by `BaseEdge.animated`. | 静的な破線スタイル。アニメーションは `BaseEdge.animated` とは独立して扱われます。
     public var dash: EdgeStrokeDash
+    /// Stroke geometry style. `double` renders two parallel strokes along the same edge path. | 線の形状。`double` は同一エッジパスに沿って平行な 2 本線を描画します。
+    public var shape: EdgeStrokeShape
 
     public static let `default` = EdgeStrokeStyle()
 
     public init(
         color: String? = nil,
         width: Double? = nil,
-        dash: EdgeStrokeDash = .solid
+        dash: EdgeStrokeDash = .solid,
+        shape: EdgeStrokeShape = .single
     ) {
         self.color = color
         self.width = width
         self.dash = dash
+        self.shape = shape
+    }
+
+    private enum CodingKeys: String, CodingKey {
+        case color, width, dash, shape
+    }
+
+    public init(from decoder: Decoder) throws {
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+        color = try container.decodeIfPresent(String.self, forKey: .color)
+        width = try container.decodeIfPresent(Double.self, forKey: .width)
+        dash = try container.decodeIfPresent(EdgeStrokeDash.self, forKey: .dash) ?? .solid
+        shape = try container.decodeIfPresent(EdgeStrokeShape.self, forKey: .shape) ?? .single
+    }
+
+    public func encode(to encoder: Encoder) throws {
+        var container = encoder.container(keyedBy: CodingKeys.self)
+        try container.encodeIfPresent(color, forKey: .color)
+        try container.encodeIfPresent(width, forKey: .width)
+        if dash != .solid {
+            try container.encode(dash, forKey: .dash)
+        }
+        if shape != .single {
+            try container.encode(shape, forKey: .shape)
+        }
     }
 }
 

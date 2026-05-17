@@ -11,6 +11,7 @@ public struct EdgeRenderContext<NodeData: Sendable> {
     public let strokeColor: Color
     public let strokeWidth: CGFloat
     public let dashStyle: EdgeStrokeDash
+    public let strokeShape: EdgeStrokeShape
     public let viewport: Viewport
     public let containerSize: Dimensions
     public let animated: Bool
@@ -24,6 +25,7 @@ public struct EdgeRenderContext<NodeData: Sendable> {
         strokeColor: Color,
         strokeWidth: CGFloat,
         dashStyle: EdgeStrokeDash = .solid,
+        strokeShape: EdgeStrokeShape = .single,
         viewport: Viewport,
         containerSize: Dimensions,
         animated: Bool,
@@ -36,6 +38,7 @@ public struct EdgeRenderContext<NodeData: Sendable> {
         self.strokeColor = strokeColor
         self.strokeWidth = strokeWidth
         self.dashStyle = dashStyle
+        self.strokeShape = strokeShape
         self.viewport = viewport
         self.containerSize = containerSize
         self.animated = animated
