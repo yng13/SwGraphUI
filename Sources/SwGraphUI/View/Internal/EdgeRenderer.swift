@@ -113,7 +113,7 @@ public struct EdgeRenderer: View {
         let length = max(sqrt(dx * dx + dy * dy), 0.001)
         let normalX = -dy / length
         let normalY = dx / length
-        let centerOffset = max(strokeWidth * CGFloat(viewport.zoom) * 1.2 + 2.5, 5)
+        let centerOffset = max(strokeWidth * CGFloat(viewport.zoom) + 2, 4) / 2
         return [
             CGSize(width: normalX * centerOffset, height: normalY * centerOffset),
             CGSize(width: -normalX * centerOffset, height: -normalY * centerOffset)
