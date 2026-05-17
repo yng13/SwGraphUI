@@ -18,6 +18,10 @@ public struct GraphConfiguration {
     public var parallelEdgeLanesEnabled: Bool
     /// Graph-space spacing between adjacent parallel edge lanes.
     public var parallelEdgeLaneSpacing: Double
+    /// Whether interactive rendering should skip nodes / edge overlays outside the current viewport.
+    public var viewportCullingEnabled: Bool
+    /// Screen-space margin around the viewport kept alive while culling, to avoid pop-in while panning.
+    public var viewportCullingMargin: Double
     
     public init(
         showGrid: Bool = false,
@@ -27,7 +31,9 @@ public struct GraphConfiguration {
         handleStyle: GraphHandleStyle = .default,
         snapGrid: SnapGrid? = nil,
         parallelEdgeLanesEnabled: Bool = true,
-        parallelEdgeLaneSpacing: Double = EdgeLaneAlgorithms.defaultSpacing
+        parallelEdgeLaneSpacing: Double = EdgeLaneAlgorithms.defaultSpacing,
+        viewportCullingEnabled: Bool = true,
+        viewportCullingMargin: Double = 240
     ) {
         self.showGrid = showGrid
         self.gridSize = gridSize
@@ -37,6 +43,8 @@ public struct GraphConfiguration {
         self.snapGrid = snapGrid
         self.parallelEdgeLanesEnabled = parallelEdgeLanesEnabled
         self.parallelEdgeLaneSpacing = parallelEdgeLaneSpacing
+        self.viewportCullingEnabled = viewportCullingEnabled
+        self.viewportCullingMargin = viewportCullingMargin
     }
 
     /// Convenience factory for square grid snapping. | 正方グリッド用の簡易スナップ設定。

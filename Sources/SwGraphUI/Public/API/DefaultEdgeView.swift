@@ -523,12 +523,13 @@ internal struct EdgeEndpointLabelCollisionCache {
     @MainActor
     static func build<NodeData: Sendable>(
         store: GraphStore<NodeData>,
+        edges: [BaseEdge<NodeData>]? = nil,
         viewport: Viewport
     ) -> EdgeEndpointLabelCollisionCache {
         var candidatesByKey: [Key: [EdgeEndpointLabelAlgorithms.CollisionCandidate]] = [:]
         let hoveredEdgeID = store.runtimeState.hover.hoveredEdgeID
 
-        for edge in store.edges {
+        for edge in edges ?? store.edges {
             let resolved = store.resolvedEdgePositions(for: edge)
             let sourceKey = HandleKey(
                 nodeID: edge.source,

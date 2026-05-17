@@ -312,6 +312,8 @@ public struct GraphView<NodeData: Sendable, NodeContent: View>: View {
                 onReconnect: onReconnect,
                 modifierKeys: modifierKeys,
                 containerSize: store.runtimeState.autoPan.containerSize ?? Dimensions(width: 800, height: 600),
+                viewportCullingEnabled: configuration.viewportCullingEnabled,
+                viewportCullingMargin: configuration.viewportCullingMargin,
                 nodeWrapper: { node, content in
                     AnyView(NodeGestureWrapper(node: node, store: self.store, onEvent: self.onEvent, modifierKeys: self.modifierKeys, content: content))
                 }
@@ -416,6 +418,8 @@ internal struct GraphLayerStack<NodeData: Sendable, NodeContent: View>: View {
     let onReconnect: ((String, Connection) -> Void)?
     let modifierKeys: ModifierKeysProvider?
     let containerSize: Dimensions
+    let viewportCullingEnabled: Bool
+    let viewportCullingMargin: Double
     let nodeWrapper: (BaseNode<NodeData>, AnyView) -> AnyView
     
     @Environment(\.graphRenderingViewport) private var renderingViewport
@@ -429,6 +433,8 @@ internal struct GraphLayerStack<NodeData: Sendable, NodeContent: View>: View {
         onReconnect: ((String, Connection) -> Void)?,
         modifierKeys: ModifierKeysProvider?,
         containerSize: Dimensions,
+        viewportCullingEnabled: Bool,
+        viewportCullingMargin: Double,
         nodeWrapper: @escaping (BaseNode<NodeData>, AnyView) -> AnyView
     ) {
         self.store = store
@@ -438,11 +444,54 @@ internal struct GraphLayerStack<NodeData: Sendable, NodeContent: View>: View {
         self.onReconnect = onReconnect
         self.modifierKeys = modifierKeys
         self.containerSize = containerSize
+        self.viewportCullingEnabled = viewportCullingEnabled
+        self.viewportCullingMargin = viewportCullingMargin
         self.nodeWrapper = nodeWrapper
     }
 
     private var activeViewport: Viewport {
         renderingViewport ?? store.runtimeState.viewport.viewport
+    }
+
+    private var shouldCullViewport: Bool {
+        viewportCullingEnabled && !isGraphExporting
+    }
+
+    private var visibleNodeIDs: [String] {
+        let sortedIDs = store.runtimeState.sortedNodeIDs
+        guard shouldCullViewport else { return sortedIDs }
+
+        let lookup = store.nodeLookup
+        return sortedIDs.filter { id in
+            guard let node = lookup[id] else { return false }
+            if node.selected { return true }
+            return GraphViewportCulling.isNodeVisible(
+                node,
+                absolutePosition: store.absolutePosition(for: node.id),
+                viewport: activeViewport,
+                containerSize: containerSize,
+                screenMargin: viewportCullingMargin
+            )
+        }
+    }
+
+    private var visibleEdges: [BaseEdge<NodeData>] {
+        guard shouldCullViewport else { return store.edges }
+
+        return store.edges.filter { edge in
+            if edge.selected { return true }
+            guard let source = resolvedHandlePoint(for: edge, role: .source),
+                  let target = resolvedHandlePoint(for: edge, role: .target) else {
+                return false
+            }
+            return GraphViewportCulling.isEdgeVisible(
+                source: source,
+                target: target,
+                viewport: activeViewport,
+                containerSize: containerSize,
+                screenMargin: viewportCullingMargin
+            )
+        }
     }
 
     var body: some View {
@@ -463,7 +512,7 @@ internal struct GraphLayerStack<NodeData: Sendable, NodeContent: View>: View {
     
     @ViewBuilder
     private var edgeLayer: some View {
-        ForEach(store.edges) { edge in
+        ForEach(visibleEdges) { edge in
             DefaultEdgeView(
                 edge: edge,
                 store: store,
@@ -479,7 +528,7 @@ internal struct GraphLayerStack<NodeData: Sendable, NodeContent: View>: View {
     private var partitionedOverlayEdges: (unselected: [BaseEdge<NodeData>], selected: [BaseEdge<NodeData>]) {
         var unselected: [BaseEdge<NodeData>] = []
         var selected: [BaseEdge<NodeData>] = []
-        for edge in store.edges {
+        for edge in visibleEdges {
             if edge.selected { selected.append(edge) } else { unselected.append(edge) }
         }
         return (unselected, selected)
@@ -490,6 +539,7 @@ internal struct GraphLayerStack<NodeData: Sendable, NodeContent: View>: View {
         let parts = partitionedOverlayEdges
         let endpointLabelCollisionCache = EdgeEndpointLabelCollisionCache.build(
             store: store,
+            edges: parts.unselected + parts.selected,
             viewport: activeViewport
         )
         ForEach(parts.unselected) { edge in
@@ -522,9 +572,8 @@ internal struct GraphLayerStack<NodeData: Sendable, NodeContent: View>: View {
     @ViewBuilder
     private var nodeLayer: some View {
         let lookup = store.nodeLookup
-        let sortedIDs = self.store.runtimeState.sortedNodeIDs
         
-        ForEach(sortedIDs, id: \.self) { id in
+        ForEach(visibleNodeIDs, id: \.self) { id in
             if let node = lookup[id] {
                 let absolutePos = self.store.absolutePosition(for: node.id)
                 let viewport = self.activeViewport
@@ -542,7 +591,9 @@ internal struct GraphLayerStack<NodeData: Sendable, NodeContent: View>: View {
     private var automaticHandleLayer: some View {
         if !isGraphExporting {
             let viewport = self.activeViewport
-            ForEach(store.nodes) { node in
+            let lookup = store.nodeLookup
+            ForEach(visibleNodeIDs, id: \.self) { nodeID in
+                if let node = lookup[nodeID] {
                 ForEach(node.handles.filter { $0.placementMode == .automaticPeerSide }, id: \.stableID) { handle in
                     let placement = store.resolvedNodeHandlePlacement(nodeID: node.id, handleID: handle.id, type: handle.type)
                     let key = HandleKey(nodeID: node.id, handleID: handle.id, type: handle.type, placement: placement)
@@ -560,7 +611,26 @@ internal struct GraphLayerStack<NodeData: Sendable, NodeContent: View>: View {
                     .position(x: screenPosition.x, y: screenPosition.y)
                     .zIndex(1)
                 }
+                }
             }
+        }
+    }
+
+    private enum VisibleEdgeEndpointRole {
+        case source
+        case target
+    }
+
+    private func resolvedHandlePoint(for edge: BaseEdge<NodeData>, role: VisibleEdgeEndpointRole) -> XYPosition? {
+        guard store.node(id: edge.source) != nil, store.node(id: edge.target) != nil else { return nil }
+        let resolved = store.resolvedEdgePositions(for: edge)
+        switch role {
+        case .source:
+            let key = HandleKey(nodeID: edge.source, handleID: edge.sourceHandle, type: .source, placement: resolved.source)
+            return store.resolvedHandlePosition(for: key)
+        case .target:
+            let key = HandleKey(nodeID: edge.target, handleID: edge.targetHandle, type: .target, placement: resolved.target)
+            return store.resolvedHandlePosition(for: key)
         }
     }
 }

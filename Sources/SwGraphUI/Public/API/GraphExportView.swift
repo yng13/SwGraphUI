@@ -47,6 +47,8 @@ internal struct GraphExportView<NodeData: Sendable, NodeContent: View>: View {
                 onReconnect: nil,
                 modifierKeys: nil,
                 containerSize: Dimensions(width: contentSize.width, height: contentSize.height),
+                viewportCullingEnabled: false,
+                viewportCullingMargin: 0,
                 nodeWrapper: { _, content in
                     // No gestures needed during export. Return as is. | エクスポート時はジェスチャ不要。そのまま返す。
                     content
