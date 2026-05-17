@@ -263,7 +263,7 @@ public struct SVGExporter<NodeData: Sendable> {
         let dx = last.x - first.x
         let dy = last.y - first.y
         let length = max(sqrt(dx * dx + dy * dy), 0.001)
-        let centerOffset = max(strokeWidth + 2, 4) / 2
+        let centerOffset = max(strokeWidth * 1.2 + 2.5, 5)
         return XYPosition(x: (-dy / length) * centerOffset, y: (dx / length) * centerOffset)
     }
 
