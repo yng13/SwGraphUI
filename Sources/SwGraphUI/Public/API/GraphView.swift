@@ -341,40 +341,48 @@ internal struct NodeGestureWrapper<NodeData: Sendable>: View {
     @State private var interactionMode: NodeInteractionMode = .undecided
 
     var body: some View {
-        content
-            .gesture(
-                DragGesture(minimumDistance: 0, coordinateSpace: .named("viewport_container"))
-                    .onChanged { value in
-                        if interactionMode == .undecided {
-                            // Lock the selection intent (toggle or replace) based on Shift state at start | 開始時に Shift の状態を見て選択意図（トグルか置換か）を固定
-                            selectionIntent = (modifierKeys?.isShiftPressed == true) ? .toggle : .replace
-                            
-                            // Transition to drag mode if the translation distance exceeds a threshold | 移動距離が閾値を超えたらドラッグモードへ移行
-                            let translation = sqrt(pow(value.translation.width, 2) + pow(value.translation.height, 2))
-                            if translation > 4 {
-                                interactionMode = .drag
-                                startDragging(at: value.location)
-                            }
-                        } else if interactionMode == .drag {
-                            updateDragging(to: value.location)
-                        }
+        if store.runtimeState.interactivity.nodesDraggable || store.runtimeState.interactivity.elementsSelectable {
+            content
+                .contentShape(Rectangle())
+                .highPriorityGesture(nodeGesture)
+        } else {
+            content
+        }
+    }
+
+    private var nodeGesture: some Gesture {
+        DragGesture(minimumDistance: 0, coordinateSpace: .named("viewport_container"))
+            .onChanged { value in
+                if interactionMode == .undecided {
+                    // Lock the selection intent (toggle or replace) based on Shift state at start | 開始時に Shift の状態を見て選択意図（トグルか置換か）を固定
+                    selectionIntent = (modifierKeys?.isShiftPressed == true) ? .toggle : .replace
+
+                    // Transition to drag mode if the translation distance exceeds a threshold | 移動距離が閾値を超えたらドラッグモードへ移行
+                    let translation = sqrt(pow(value.translation.width, 2) + pow(value.translation.height, 2))
+                    if translation > 4 {
+                        interactionMode = .drag
+                        startDragging(at: value.startLocation)
+                        updateDragging(to: value.location)
                     }
-                    .onEnded { value in
-                        if interactionMode == .drag {
-                            stopDragging()
-                        } else {
-                            // Click judgment: Execute selection based on the captured intent | クリック判定: キャプチャされた意図に基づいて選択を実行
-                            performSelection()
-                        }
-                        
-                        // Reset | リセット
-                        interactionMode = .undecided
-                    }
-            )
+                } else if interactionMode == .drag {
+                    updateDragging(to: value.location)
+                }
+            }
+            .onEnded { _ in
+                if interactionMode == .drag {
+                    stopDragging()
+                } else {
+                    // Click judgment: Execute selection based on the captured intent | クリック判定: キャプチャされた意図に基づいて選択を実行
+                    performSelection()
+                }
+
+                // Reset | リセット
+                interactionMode = .undecided
+            }
     }
     
     private func startDragging(at location: CGPoint) {
-        guard store.runtimeState.interactivity.nodesDraggable else { return }
+        guard store.runtimeState.interactivity.nodesDraggable, node.draggable else { return }
         let viewport = store.runtimeState.viewport.viewport
         let graphPointer = XYPosition(x: location.x, y: location.y).fromScreen(viewport: viewport)
         
@@ -580,9 +588,9 @@ internal struct GraphLayerStack<NodeData: Sendable, NodeContent: View>: View {
                 let screenPos = absolutePos.toScreen(viewport: viewport)
                 
                 let content = NodeMeasurementWrapper(id: node.id, content: self.nodeBuilder(node))
-                    .offset(x: screenPos.x, y: screenPos.y)
-                
+
                 nodeWrapper(node, AnyView(content))
+                    .offset(x: screenPos.x, y: screenPos.y)
             }
         }
     }
