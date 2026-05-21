@@ -244,58 +244,64 @@ public struct GraphView<NodeData: Sendable, NodeContent: View>: View {
 
     @ViewBuilder
     private var backgroundLayerPart: some View {
-        // Use a color that is not completely transparent to ensure hit testing | ヒットテストを確実にするため、完全に透明ではない色を使用
-        Color.black.opacity(0.0001)
-            .contentShape(Rectangle())
-            .accessibilityHidden(true)
-            .gesture(
-                DragGesture(minimumDistance: 0, coordinateSpace: .named("viewport_container"))
-                    .onChanged { value in
-                        if backgroundInteractionMode == .undecided {
-                            // Check the state of the Shift key at the start of operation to determine and lock the mode | 操作開始時に Shift キーの状態を見てモードを確定・ロックする
-                            if modifierKeys.isShiftPressed && store.runtimeState.interactivity.elementsSelectable {
-                                backgroundInteractionMode = .marquee
-                                store.startMarquee(at: value.startLocation)
-                            } else if store.runtimeState.interactivity.panOnDrag {
-                                // Lock to pan if movement exceeds a certain amount to distinguish from a simple tap | 単なるタップと区別するため、一定以上の移動で pan にロックする
-                                let translation = sqrt(pow(value.translation.width, 2) + pow(value.translation.height, 2))
-                                if translation > 5 {
-                                    backgroundInteractionMode = .pan
+        if store.runtimeState.interactivity.panOnDrag || store.runtimeState.interactivity.elementsSelectable {
+            // Use a color that is not completely transparent to ensure hit testing | ヒットテストを確実にするため、完全に透明ではない色を使用
+            Color.black.opacity(0.0001)
+                .contentShape(Rectangle())
+                .accessibilityHidden(true)
+                .gesture(
+                    DragGesture(minimumDistance: 0, coordinateSpace: .named("viewport_container"))
+                        .onChanged { value in
+                            if backgroundInteractionMode == .undecided {
+                                // Check the state of the Shift key at the start of operation to determine and lock the mode | 操作開始時に Shift キーの状態を見てモードを確定・ロックする
+                                if modifierKeys.isShiftPressed && store.runtimeState.interactivity.elementsSelectable {
+                                    backgroundInteractionMode = .marquee
+                                    store.startMarquee(at: value.startLocation)
+                                } else if store.runtimeState.interactivity.panOnDrag {
+                                    // Lock to pan if movement exceeds a certain amount to distinguish from a simple tap | 単なるタップと区別するため、一定以上の移動で pan にロックする
+                                    let translation = sqrt(pow(value.translation.width, 2) + pow(value.translation.height, 2))
+                                    if translation > 5 {
+                                        backgroundInteractionMode = .pan
+                                    }
                                 }
                             }
-                        }
-                        
-                        // Execute processing according to the locked mode | ロックされたモードに従って処理を実行
-                        switch backgroundInteractionMode {
-                        case .marquee:
-                            store.updateMarquee(to: value.location)
-                        case .pan:
-                            let deltaX = value.translation.width - lastPanTranslation.width
-                            let deltaY = value.translation.height - lastPanTranslation.height
-                            store.pan(by: XYPosition(x: deltaX, y: deltaY))
-                            lastPanTranslation = value.translation
-                        case .undecided:
-                            break
-                        }
-                    }
-                    .onEnded { value in
-                        switch backgroundInteractionMode {
-                        case .marquee:
-                            store.endMarquee(isShiftPressed: true)
-                        case .pan:
-                            break
-                        case .undecided:
-                            // Clear selection if no movement (tap) and element selection is allowed | 移動なし（タップ）かつ要素選択が許可されている場合、選択クリア
-                            if store.runtimeState.interactivity.elementsSelectable {
-                                store.clearSelection()
+                            
+                            // Execute processing according to the locked mode | ロックされたモードに従って処理を実行
+                            switch backgroundInteractionMode {
+                            case .marquee:
+                                store.updateMarquee(to: value.location)
+                            case .pan:
+                                let deltaX = value.translation.width - lastPanTranslation.width
+                                let deltaY = value.translation.height - lastPanTranslation.height
+                                store.pan(by: XYPosition(x: deltaX, y: deltaY))
+                                lastPanTranslation = value.translation
+                            case .undecided:
+                                break
                             }
                         }
-                        
-                        // Reset | リセット
-                        backgroundInteractionMode = .undecided
-                        lastPanTranslation = .zero
-                    }
-            )
+                        .onEnded { _ in
+                            switch backgroundInteractionMode {
+                            case .marquee:
+                                store.endMarquee(isShiftPressed: true)
+                            case .pan:
+                                break
+                            case .undecided:
+                                // Clear selection if no movement (tap) and element selection is allowed | 移動なし（タップ）かつ要素選択が許可されている場合、選択クリア
+                                if store.runtimeState.interactivity.elementsSelectable {
+                                    store.clearSelection()
+                                }
+                            }
+                            
+                            // Reset | リセット
+                            backgroundInteractionMode = .undecided
+                            lastPanTranslation = .zero
+                        }
+                )
+        } else {
+            Color.clear
+                .accessibilityHidden(true)
+                .allowsHitTesting(false)
+        }
     }
 
     @ViewBuilder
