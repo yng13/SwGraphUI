@@ -74,7 +74,8 @@ public enum ConnectionsAlgorithms {
         to edges: [GraphEdge<NodeData>]
     ) -> [GraphEdge<NodeData>] where NodeData: Sendable {
         guard let edgeOrConnection else { return edges }
-        guard !edgeOrConnection.source.isEmpty, !edgeOrConnection.target.isEmpty else { return edges }
+        guard isValidEndpoint(edgeOrConnection.sourceEndpoint),
+              isValidEndpoint(edgeOrConnection.targetEndpoint) else { return edges }
         guard !containsDuplicate(edgeOrConnection, in: edges) else { return edges }
         return edges + [edgeOrConnection]
     }
@@ -138,10 +139,17 @@ public enum ConnectionsAlgorithms {
         in edges: [GraphEdge<Data>]
     ) -> Bool where Data: Sendable {
         edges.contains {
-            $0.source == edge.source &&
-            $0.target == edge.target &&
-            $0.sourceHandle == edge.sourceHandle &&
-            $0.targetHandle == edge.targetHandle
+            $0.sourceEndpoint == edge.sourceEndpoint &&
+            $0.targetEndpoint == edge.targetEndpoint
+        }
+    }
+
+    private static func isValidEndpoint(_ endpoint: EdgeEndpoint) -> Bool {
+        switch endpoint {
+        case .node(let id, _):
+            return !id.isEmpty
+        case .point(let point):
+            return point.x.isFinite && point.y.isFinite
         }
     }
 }

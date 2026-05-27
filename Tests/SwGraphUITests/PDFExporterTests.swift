@@ -37,6 +37,31 @@ struct PDFExporterTests {
             #expect(header == "%PDF")
         }
     }
+
+    @Test
+    func exportGeneratesPDFForPointEndpointEdge() async throws {
+        let store = GraphStore<String>()
+        store.edges = [
+            BaseEdge<String>(
+                id: "point-to-point",
+                sourceEndpoint: .point(XYPosition(x: 0, y: 0)),
+                targetEndpoint: .point(XYPosition(x: 120, y: 80)),
+                kind: "straight",
+                markerEnd: EdgeMarker(type: .arrowClosed)
+            )
+        ]
+
+        let exporter = PDFExporter(store: store)
+        let data = exporter.export(settings: GraphExportSettings(scale: 1, margin: 16, includeBackground: false, isTransparent: true)) { node in
+            Text(node.data)
+        }
+
+        #expect(data != nil)
+        if let data {
+            #expect(data.count > 100)
+            #expect(String(data: data.prefix(4), encoding: .ascii) == "%PDF")
+        }
+    }
     
     @Test
     func exportWithEmptyGraphReturnsNil() async throws {

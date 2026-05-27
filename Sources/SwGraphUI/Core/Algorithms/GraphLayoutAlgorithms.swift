@@ -226,7 +226,7 @@ public enum GraphLayoutAlgorithms {
             nodeInDegrees[node.id] = 0
         }
 
-        for edge in edges {
+        for edge in edges where edge.sourceEndpoint.nodeID != nil && edge.targetEndpoint.nodeID != nil {
             nodeInDegrees[edge.target, default: 0] += 1
         }
 
@@ -235,7 +235,7 @@ public enum GraphLayoutAlgorithms {
             .map { ($0.id, 0) }
 
         var outEdgesMap: [String: [String]] = [:]
-        for edge in edges {
+        for edge in edges where edge.sourceEndpoint.nodeID != nil && edge.targetEndpoint.nodeID != nil {
             outEdgesMap[edge.source, default: []].append(edge.target)
         }
 

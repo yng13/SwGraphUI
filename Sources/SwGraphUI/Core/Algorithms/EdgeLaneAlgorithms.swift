@@ -143,13 +143,18 @@ public enum EdgeLaneAlgorithms {
     }
 
     private static func parallelLaneKey<NodeData: Sendable>(for edge: BaseEdge<NodeData>) -> String {
-        let source = endpointKey(nodeID: edge.source, handleID: edge.sourceHandle)
-        let target = endpointKey(nodeID: edge.target, handleID: edge.targetHandle)
+        let source = endpointKey(edge.sourceEndpoint)
+        let target = endpointKey(edge.targetEndpoint)
         return source <= target ? "\(source)\u{1F}#\(target)" : "\(target)\u{1F}#\(source)"
     }
 
-    private static func endpointKey(nodeID: String, handleID: String?) -> String {
-        "\(nodeID)\u{1E}#\(handleID ?? "")"
+    private static func endpointKey(_ endpoint: EdgeEndpoint) -> String {
+        switch endpoint {
+        case .node(let id, let handleID):
+            return "n\u{1E}#\(id)\u{1E}#\(handleID ?? "")"
+        case .point(let point):
+            return "p\u{1E}#\(point.x)\u{1E}#\(point.y)"
+        }
     }
 
     private static func laneSegments(

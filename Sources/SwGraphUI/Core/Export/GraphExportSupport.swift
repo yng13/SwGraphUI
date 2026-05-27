@@ -7,22 +7,20 @@ internal struct GraphExportSupport<NodeData: Sendable> {
     
     /// Calculates the logical boundary rectangle for export. | エクスポート対象の論理的な境界矩形を計算します。
     func calculateExportBounds() -> Rect? {
-        let nodes = store.nodes
-        guard !nodes.isEmpty else { return nil }
+        let nodes = store.nodes.filter { !$0.hidden }
 
         let nodeLookup = store.nodeLookup
-        var bounds = NodePositioningAlgorithms.getNodesBounds(nodes, nodeLookup: nodeLookup)
+        var bounds = nodes.isEmpty
+            ? nil
+            : NodePositioningAlgorithms.getNodesBounds(nodes, nodeLookup: nodeLookup)
 
         // Account for edge connection points, labels, markers, and path protrusions | エッジの接続点・ラベル・マーカー、および曲線パスの張り出しも考慮
-        for edge in store.edges {
-            let resolved = store.resolvedEdgePositions(for: edge)
-            let sourcePos = resolved.source
-            let targetPos = resolved.target
-            let sourceKey = HandleKey(nodeID: edge.source, handleID: edge.sourceHandle, type: .source, placement: sourcePos)
-            let targetKey = HandleKey(nodeID: edge.target, handleID: edge.targetHandle, type: .target, placement: targetPos)
-            
-            let sPos = store.resolvedHandlePosition(for: sourceKey)
-            let tPos = store.resolvedHandlePosition(for: targetKey)
+        for edge in store.edges where !edge.hidden {
+            guard let resolved = store.resolvedEdgeEndpoints(for: edge) else { continue }
+            let sourcePos = resolved.sourcePosition
+            let targetPos = resolved.targetPosition
+            let sPos = resolved.sourcePoint
+            let tPos = resolved.targetPoint
 
             bounds = union(bounds, pointRect(at: sPos))
             bounds = union(bounds, pointRect(at: tPos))
@@ -83,6 +81,8 @@ internal struct GraphExportSupport<NodeData: Sendable> {
                 bounds = union(bounds, markerRect(at: tPos, marker: marker))
             }
         }
+
+        guard let bounds else { return nil }
         
         // Apply a safety margin to the final Bounds to prevent minor cropping due to line width or shadows | 線幅やシャドウによる微細なはみ出しを防ぐため、最終 Bounds に安全マージンを適用
         return Rect(
@@ -200,5 +200,10 @@ internal struct GraphExportSupport<NodeData: Sendable> {
 
     func union(_ lhs: Rect, _ rhs: Rect) -> Rect {
         GeometryAlgorithms.union(of: [lhs, rhs]) ?? lhs
+    }
+
+    func union(_ lhs: Rect?, _ rhs: Rect) -> Rect {
+        guard let lhs else { return rhs }
+        return union(lhs, rhs)
     }
 }

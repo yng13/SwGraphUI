@@ -147,6 +147,76 @@ struct SVGExporterTests {
     }
 
     @Test
+    func pointEndpointEdgeSerializesToSVG() async throws {
+        let store = GraphStore<String>()
+        store.nodes = [
+            BaseNode(id: "n1", position: XYPosition(x: 0, y: 0), data: "A", measured: Dimensions(width: 80, height: 40))
+        ]
+        store.edges = [
+            BaseEdge<String>(
+                id: "floating",
+                sourceEndpoint: .node(id: "n1", handleID: nil),
+                targetEndpoint: .point(XYPosition(x: 40, y: 140)),
+                kind: "straight",
+                markerEnd: EdgeMarker(type: .arrowClosed),
+                label: "Next"
+            )
+        ]
+
+        let exporter = SVGExporter(store: store)
+        let svg = try #require(exporter.export(settings: GraphExportSettings(margin: 0, includeBackground: false, isTransparent: true)))
+
+        #expect(svg.contains(#"<g id="edge-floating">"#))
+        #expect(svg.contains(#"marker-end="url(#marker-floating-end)""#))
+        #expect(svg.contains(#">Next</text>"#))
+    }
+
+    @Test
+    func pointToPointEdgeSerializesWithoutNodes() async throws {
+        let store = GraphStore<String>()
+        store.edges = [
+            BaseEdge<String>(
+                id: "free",
+                sourceEndpoint: .point(XYPosition(x: -20, y: 10)),
+                targetEndpoint: .point(XYPosition(x: 140, y: 90)),
+                kind: "straight",
+                markerEnd: EdgeMarker(type: .arrowClosed)
+            )
+        ]
+
+        let exporter = SVGExporter(store: store)
+        let svg = try #require(exporter.export(settings: GraphExportSettings(margin: 12, includeBackground: false, isTransparent: true)))
+
+        #expect(svg.contains(#"<g id="edge-free">"#))
+        #expect(svg.contains(#"marker-end="url(#marker-free-end)""#))
+        #expect(!svg.contains(#"<g id="node-"#))
+    }
+
+    @Test
+    func hiddenPointEndpointEdgeDoesNotAffectExportBounds() async throws {
+        let store = GraphStore<String>()
+        store.nodes = [
+            BaseNode(id: "n1", position: XYPosition(x: 0, y: 0), data: "A", measured: Dimensions(width: 80, height: 40))
+        ]
+        store.edges = [
+            BaseEdge<String>(
+                id: "hidden",
+                sourceEndpoint: .node(id: "n1", handleID: nil),
+                targetEndpoint: .point(XYPosition(x: 20_000, y: 20_000)),
+                hidden: true
+            )
+        ]
+
+        let exporter = SVGExporter(store: store)
+        let bounds = try #require(exporter.calculateExportBounds())
+        let svg = try #require(exporter.export(settings: GraphExportSettings(margin: 0, includeBackground: false, isTransparent: true)))
+
+        #expect(bounds.x + bounds.width < 100)
+        #expect(bounds.y + bounds.height < 100)
+        #expect(!svg.contains(#"edge-hidden"#))
+    }
+
+    @Test
     func explicitEdgePositionsAffectPathEndpoints() async throws {
         let store = makeTwoNodeStore()
         let edge = BaseEdge<String>(

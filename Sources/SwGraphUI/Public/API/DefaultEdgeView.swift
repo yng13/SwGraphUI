@@ -36,7 +36,11 @@ public struct DefaultEdgeView<NodeData: Sendable>: View {
     }
 
     public var body: some View {
-        if let (sourcePos, targetPos, sourceHandlePos, targetHandlePos) = resolvePositions() {
+        if let resolvedEndpoints = resolvePositions() {
+            let sourcePos = resolvedEndpoints.sourcePosition
+            let targetPos = resolvedEndpoints.targetPosition
+            let sourceHandlePos = resolvedEndpoints.sourcePoint
+            let targetHandlePos = resolvedEndpoints.targetPoint
             let isReconnecting = {
                 if let active = store.runtimeState.connection.active,
                    case .reconnect(let id, _) = active.mode,
@@ -94,10 +98,8 @@ public struct DefaultEdgeView<NodeData: Sendable>: View {
                 isReconnecting: isReconnecting
             )
 
-            let sourceNode = store.node(id: edge.source)
-            let targetNode = store.node(id: edge.target)
-            let sourceLabel = sourceNode?.ariaLabel ?? sourceNode?.label ?? edge.source
-            let targetLabel = targetNode?.ariaLabel ?? targetNode?.label ?? edge.target
+            let sourceLabel = accessibilityLabel(for: edge.sourceEndpoint, fallback: "free point")
+            let targetLabel = accessibilityLabel(for: edge.targetEndpoint, fallback: "free point")
             let endpointSummary = endpointAccessibilitySummary()
             let edgeLabel = edge.ariaLabel ?? edge.label ?? "Connection from \(sourceLabel) to \(targetLabel)\(endpointSummary) | \(sourceLabel) から \(targetLabel) への接続\(endpointSummary)"
 
@@ -165,16 +167,18 @@ public struct DefaultEdgeView<NodeData: Sendable>: View {
         }
     }
 
-    private func resolvePositions() -> (Position, Position, XYPosition, XYPosition)? {
-        guard store.node(id: edge.source) != nil, store.node(id: edge.target) != nil else { return nil }
-        let resolved = store.resolvedEdgePositions(for: edge)
-        let sourcePos = resolved.source
-        let targetPos = resolved.target
-        
-        let sourceKey = HandleKey(nodeID: edge.source, handleID: edge.sourceHandle, type: .source, placement: sourcePos)
-        let targetKey = HandleKey(nodeID: edge.target, handleID: edge.targetHandle, type: .target, placement: targetPos)
-        
-        return (sourcePos, targetPos, store.resolvedHandlePosition(for: sourceKey), store.resolvedHandlePosition(for: targetKey))
+    private func resolvePositions() -> ResolvedEdgeEndpoints? {
+        store.resolvedEdgeEndpoints(for: edge)
+    }
+
+    private func accessibilityLabel(for endpoint: EdgeEndpoint, fallback: String) -> String {
+        switch endpoint {
+        case .node(let id, _):
+            let node = store.node(id: id)
+            return node?.ariaLabel ?? node?.label ?? id
+        case .point:
+            return fallback
+        }
     }
 
     private func resolveStroke(isReconnecting: Bool) -> (color: Color, width: CGFloat, dash: EdgeStrokeDash, shape: EdgeStrokeShape) {
@@ -230,14 +234,11 @@ public struct DefaultEdgeOverlayView<NodeData: Sendable>: View {
     @Environment(\.graphRenderingViewport) private var renderingViewport
 
     public var body: some View {
-        if store.node(id: edge.source) != nil, store.node(id: edge.target) != nil {
-            let resolved = store.resolvedEdgePositions(for: edge)
-            let sourcePos = resolved.source
-            let targetPos = resolved.target
-            let sourceKey = HandleKey(nodeID: edge.source, handleID: edge.sourceHandle, type: .source, placement: sourcePos)
-            let targetKey = HandleKey(nodeID: edge.target, handleID: edge.targetHandle, type: .target, placement: targetPos)
-            let sourceHandlePos = store.resolvedHandlePosition(for: sourceKey)
-            let targetHandlePos = store.resolvedHandlePosition(for: targetKey)
+        if let resolved = store.resolvedEdgeEndpoints(for: edge) {
+            let sourcePos = resolved.sourcePosition
+            let targetPos = resolved.targetPosition
+            let sourceHandlePos = resolved.sourcePoint
+            let targetHandlePos = resolved.targetPoint
             
             let baseResult = store.laneAdjustedPath(
                 for: edge,
@@ -264,12 +265,9 @@ public struct DefaultEdgeOverlayView<NodeData: Sendable>: View {
                 // 2. Reconnection handle (brought to the front of the label) | 2. 再接続ハンドル（ラベルより前面へ）
                 // Not displayed during export (onReconnect == nil) | エクスポート時（onReconnect == nil）は表示しない
                 if edge.selected, onReconnect != nil {
-                    let sourceKey = HandleKey(nodeID: edge.source, handleID: edge.sourceHandle, type: .source, placement: sourcePos)
-                    let targetKey = HandleKey(nodeID: edge.target, handleID: edge.targetHandle, type: .target, placement: targetPos)
-                    let sourceHandlePos = store.resolvedHandlePosition(for: sourceKey)
-                    let targetHandlePos = store.resolvedHandlePosition(for: targetKey)
-
-                    if edge.reconnectable == .source || edge.reconnectable == .both {
+                    if edge.sourceEndpoint.nodeID != nil,
+                       edge.targetEndpoint.nodeID != nil,
+                       edge.reconnectable == .source || edge.reconnectable == .both {
                         let screenPos = sourceHandlePos.toScreen(viewport: viewport)
                         ReconnectAnchor(
                             edge: edge,
@@ -280,7 +278,9 @@ public struct DefaultEdgeOverlayView<NodeData: Sendable>: View {
                         )
                         .zIndex(100)
                     }
-                    if edge.reconnectable == .target || edge.reconnectable == .both {
+                    if edge.targetEndpoint.nodeID != nil,
+                       edge.sourceEndpoint.nodeID != nil,
+                       edge.reconnectable == .target || edge.reconnectable == .both {
                         let screenPos = targetHandlePos.toScreen(viewport: viewport)
                         ReconnectAnchor(
                             edge: edge,
@@ -388,7 +388,9 @@ public struct DefaultEdgeOverlayView<NodeData: Sendable>: View {
         viewport: Viewport,
         tangentExtent: Double
     ) -> Int {
-        let nodeID = role == .source ? edge.source : edge.target
+        guard let nodeID = (role == .source ? edge.sourceEndpoint : edge.targetEndpoint).nodeID else {
+            return 0
+        }
         let id = endpointLabelCandidateID(edgeID: edge.id, role: role)
         var candidates = endpointLabelCollisionCandidates(
             nodeID: nodeID,
@@ -419,34 +421,22 @@ public struct DefaultEdgeOverlayView<NodeData: Sendable>: View {
         }
 
         return store.edges.flatMap { candidateEdge -> [EdgeEndpointLabelAlgorithms.CollisionCandidate] in
-            guard candidateEdge.source == nodeID || candidateEdge.target == nodeID else {
+            guard candidateEdge.sourceEndpoint.nodeID == nodeID || candidateEdge.targetEndpoint.nodeID == nodeID,
+                  let resolved = store.resolvedEdgeEndpoints(for: candidateEdge) else {
                 return []
             }
 
             var candidates: [EdgeEndpointLabelAlgorithms.CollisionCandidate] = []
-            let resolved = store.resolvedEdgePositions(for: candidateEdge)
-            let sourceKey = HandleKey(
-                nodeID: candidateEdge.source,
-                handleID: candidateEdge.sourceHandle,
-                type: .source,
-                placement: resolved.source
-            )
-            let targetKey = HandleKey(
-                nodeID: candidateEdge.target,
-                handleID: candidateEdge.targetHandle,
-                type: .target,
-                placement: resolved.target
-            )
-            let sourceHandlePoint = store.resolvedHandlePosition(for: sourceKey)
-            let targetHandlePoint = store.resolvedHandlePosition(for: targetKey)
+            let sourceHandlePoint = resolved.sourcePoint
+            let targetHandlePoint = resolved.targetPoint
             let laneOffset = store.edgeLaneOffsetVector(
                 for: candidateEdge,
                 source: sourceHandlePoint,
                 target: targetHandlePoint
             )
 
-            if candidateEdge.source == nodeID,
-               resolved.source == placement,
+            if candidateEdge.sourceEndpoint.nodeID == nodeID,
+               resolved.sourcePosition == placement,
                let label = candidateEdge.sourceEndpointLabel,
                shouldShow(label, edge: candidateEdge, viewport: viewport) {
                 let style = resolvedEndpointStyle(label)
@@ -457,8 +447,8 @@ public struct DefaultEdgeOverlayView<NodeData: Sendable>: View {
                 ))
             }
 
-            if candidateEdge.target == nodeID,
-               resolved.target == placement,
+            if candidateEdge.targetEndpoint.nodeID == nodeID,
+               resolved.targetPosition == placement,
                let label = candidateEdge.targetEndpointLabel,
                shouldShow(label, edge: candidateEdge, viewport: viewport) {
                 let style = resolvedEndpointStyle(label)
@@ -530,21 +520,9 @@ internal struct EdgeEndpointLabelCollisionCache {
         let hoveredEdgeID = store.runtimeState.hover.hoveredEdgeID
 
         for edge in edges ?? store.edges {
-            let resolved = store.resolvedEdgePositions(for: edge)
-            let sourceKey = HandleKey(
-                nodeID: edge.source,
-                handleID: edge.sourceHandle,
-                type: .source,
-                placement: resolved.source
-            )
-            let targetKey = HandleKey(
-                nodeID: edge.target,
-                handleID: edge.targetHandle,
-                type: .target,
-                placement: resolved.target
-            )
-            let sourceHandlePoint = store.resolvedHandlePosition(for: sourceKey)
-            let targetHandlePoint = store.resolvedHandlePosition(for: targetKey)
+            guard let resolved = store.resolvedEdgeEndpoints(for: edge) else { continue }
+            let sourceHandlePoint = resolved.sourcePoint
+            let targetHandlePoint = resolved.targetPoint
             let laneOffset = store.edgeLaneOffsetVector(
                 for: edge,
                 source: sourceHandlePoint,
@@ -560,13 +538,15 @@ internal struct EdgeEndpointLabelCollisionCache {
                 viewport: viewport
                ) {
                 let style = EdgeEndpointLabelCollisionSupport.resolvedStyle(label)
-                candidatesByKey[Key(nodeID: edge.source, placement: resolved.source), default: []].append(
+                if let sourceNodeID = edge.sourceEndpoint.nodeID {
+                    candidatesByKey[Key(nodeID: sourceNodeID, placement: resolved.sourcePosition), default: []].append(
                     EdgeEndpointLabelAlgorithms.CollisionCandidate(
                         id: EdgeEndpointLabelCollisionSupport.candidateID(edgeID: edge.id, role: .source),
                         center: sourceHandlePoint + laneOffset,
-                        extent: EdgeEndpointLabelCollisionSupport.metrics(label, style: style, placement: resolved.source).tangentExtent
+                        extent: EdgeEndpointLabelCollisionSupport.metrics(label, style: style, placement: resolved.sourcePosition).tangentExtent
                     )
-                )
+                    )
+                }
             }
 
             if let label = edge.targetEndpointLabel,
@@ -578,13 +558,15 @@ internal struct EdgeEndpointLabelCollisionCache {
                 viewport: viewport
                ) {
                 let style = EdgeEndpointLabelCollisionSupport.resolvedStyle(label)
-                candidatesByKey[Key(nodeID: edge.target, placement: resolved.target), default: []].append(
+                if let targetNodeID = edge.targetEndpoint.nodeID {
+                    candidatesByKey[Key(nodeID: targetNodeID, placement: resolved.targetPosition), default: []].append(
                     EdgeEndpointLabelAlgorithms.CollisionCandidate(
                         id: EdgeEndpointLabelCollisionSupport.candidateID(edgeID: edge.id, role: .target),
                         center: targetHandlePoint + laneOffset,
-                        extent: EdgeEndpointLabelCollisionSupport.metrics(label, style: style, placement: resolved.target).tangentExtent
+                        extent: EdgeEndpointLabelCollisionSupport.metrics(label, style: style, placement: resolved.targetPosition).tangentExtent
                     )
-                )
+                    )
+                }
             }
         }
 

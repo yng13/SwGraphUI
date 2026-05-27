@@ -126,6 +126,8 @@ Current capabilities include:
   規定の背景スタイルを持つエッジラベル
 - source / target endpoint labels for edge-side metadata
   エッジ始点 / 終点側のメタデータ表示用 endpoint label
+- floating / dangling edge endpoints backed by graph-space points
+  graph-space point を使った floating / dangling edge endpoint
 - deterministic parallel edge lanes for multi-link node pairs
   複数リンクを持つノードペア向けの決定論的な parallel edge lane
 - custom node views and custom edge bodies
@@ -348,6 +350,28 @@ BaseEdge(
 Endpoint labels are positioned from the same resolved handle points used by edge paths. They preserve midpoint `label` behavior, support optional hover tooltips, avoid common same-side collisions, and remain below reconnect anchors.
 
 endpoint label は、エッジパスと同じ resolved handle point から配置されます。中央の `label` とは独立して動作し、任意の hover tooltip と同一辺での一般的な衝突回避に対応し、再接続アンカーより背面に表示されます。
+
+For floating or dangling edges, use endpoint-based `BaseEdge` initialization:
+floating / dangling edge を表す場合は、endpoint ベースの `BaseEdge` 初期化を使います：
+
+```swift
+BaseEdge(
+    id: "starter-edge",
+    sourceEndpoint: .node(id: "starter", handleID: "flow-out"),
+    targetEndpoint: .point(XYPosition(x: 120, y: 240)),
+    kind: "smoothstep",
+    markerEnd: EdgeMarker(type: .arrowClosed),
+    selectable: false
+)
+```
+
+`EdgeEndpoint.node(id:handleID:)` preserves the existing handle / placement / automatic peer-side behavior. `EdgeEndpoint.point(_:)` uses the graph-space coordinate directly. Existing `BaseEdge(id:source:target:...)` initializers remain source-compatible and are treated internally as node endpoints.
+
+`EdgeEndpoint.node(id:handleID:)` は、従来の handle / placement / automatic peer-side の挙動を維持します。`EdgeEndpoint.point(_:)` は graph-space 座標をそのまま endpoint として使います。既存の `BaseEdge(id:source:target:...)` 初期化は互換性を保ち、内部的には node endpoint として扱われます。
+
+Point endpoints participate in default edge rendering, labels, endpoint labels, markers, hit testing, custom edge bodies, and PNG / PDF / SVG export. Missing node endpoints are skipped, while valid point-to-point edges can still be exported even when the graph has no nodes. Hidden nodes and hidden edges are excluded consistently from export bounds and rendered export output.
+
+point endpoint は、標準エッジ描画、ラベル、endpoint label、marker、hit testing、custom edge body、PNG / PDF / SVG export で利用できます。存在しない node endpoint は描画されませんが、有効な point-to-point edge はグラフにノードがない場合でも export できます。hidden node / hidden edge は export bounds と export 描画結果の両方から一貫して除外されます。
 
 For per-port or multi-interface diagrams, handles can request bounds-based placement:
 ポートや複数インターフェイスを持つ図では、handle に境界ベース配置を指定できます：

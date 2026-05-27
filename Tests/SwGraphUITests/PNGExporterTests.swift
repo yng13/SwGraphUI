@@ -52,6 +52,72 @@ import Foundation
     }
 
     @MainActor
+    @Test func exportBoundsIncludesPointEndpoint() async throws {
+        let store = GraphStore<String>()
+        store.nodes = [
+            BaseNode(id: "n1", position: XYPosition(x: 0, y: 0), data: "n1", measured: Dimensions(width: 50, height: 50))
+        ]
+        store.edges = [
+            BaseEdge<String>(
+                id: "floating",
+                sourceEndpoint: .node(id: "n1", handleID: nil),
+                targetEndpoint: .point(XYPosition(x: 40, y: 220)),
+                kind: "smoothstep",
+                markerEnd: EdgeMarker(type: .arrowClosed)
+            )
+        ]
+
+        let exporter = PNGExporter(store: store)
+        let bounds = try #require(exporter.calculateExportBounds())
+
+        #expect(bounds.y + bounds.height >= 232)
+    }
+
+    @MainActor
+    @Test func exportBoundsIgnoresHiddenPointEndpointEdge() async throws {
+        let store = GraphStore<String>()
+        store.nodes = [
+            BaseNode(id: "n1", position: XYPosition(x: 0, y: 0), data: "n1", measured: Dimensions(width: 50, height: 50))
+        ]
+        store.edges = [
+            BaseEdge<String>(
+                id: "hidden-floating",
+                sourceEndpoint: .node(id: "n1", handleID: nil),
+                targetEndpoint: .point(XYPosition(x: 10_000, y: 10_000)),
+                hidden: true
+            )
+        ]
+
+        let exporter = PNGExporter(store: store)
+        let bounds = try #require(exporter.calculateExportBounds())
+
+        #expect(bounds.x + bounds.width < 100)
+        #expect(bounds.y + bounds.height < 100)
+    }
+
+    @MainActor
+    @Test func exportGeneratesPNGForPointEndpointEdge() async throws {
+        let store = GraphStore<String>()
+        store.edges = [
+            BaseEdge<String>(
+                id: "point-to-point",
+                sourceEndpoint: .point(XYPosition(x: 0, y: 0)),
+                targetEndpoint: .point(XYPosition(x: 120, y: 80)),
+                kind: "straight",
+                markerEnd: EdgeMarker(type: .arrowClosed)
+            )
+        ]
+
+        let exporter = PNGExporter(store: store)
+        let data = exporter.export(settings: GraphExportSettings(scale: 1, margin: 16, includeBackground: false, isTransparent: true)) { node in
+            Text(node.data)
+        }
+
+        #expect(data != nil)
+        #expect((data?.count ?? 0) > 100)
+    }
+
+    @MainActor
     @Test func exportBoundsIncludesSmoothStepBends() async throws {
         let store = GraphStore<String>()
         let n1 = BaseNode(id: "n1", position: XYPosition(x: 0, y: 0), data: "n1")

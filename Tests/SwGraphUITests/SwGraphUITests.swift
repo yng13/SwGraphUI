@@ -35,6 +35,27 @@ import Testing
     #expect(result.count == 1)
 }
 
+@Test func pointEndpointEdgesCanBeConstructedAndDeduplicated() async throws {
+    let edge = GraphEdge<EmptyPayload>(
+        id: "floating",
+        sourceEndpoint: .node(id: "a", handleID: "out"),
+        targetEndpoint: .point(XYPosition(x: 120, y: 240))
+    )
+    let duplicate = GraphEdge<EmptyPayload>(
+        id: "floating-2",
+        sourceEndpoint: .node(id: "a", handleID: "out"),
+        targetEndpoint: .point(XYPosition(x: 120, y: 240))
+    )
+
+    let result = ConnectionsAlgorithms.addEdge(duplicate, to: [edge])
+
+    #expect(edge.source == "a")
+    #expect(edge.sourceHandle == "out")
+    #expect(edge.target.isEmpty)
+    #expect(result.count == 1)
+    #expect(GraphAlgorithms.isEdge(edge))
+}
+
 @Test func graphAlgorithmsFindNeighbors() async throws {
     let nodes = [
         GraphNode(id: "a", position: .init(x: 0, y: 0), data: EmptyPayload()),

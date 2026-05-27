@@ -1,6 +1,16 @@
 public enum GraphAlgorithms {
     public static func isEdge<NodeData>(_ value: GraphEdge<NodeData>) -> Bool where NodeData: Sendable {
-        !value.id.isEmpty && !value.source.isEmpty && !value.target.isEmpty
+        guard !value.id.isEmpty else { return false }
+        switch (value.sourceEndpoint, value.targetEndpoint) {
+        case (.node(let source, _), .node(let target, _)):
+            return !source.isEmpty && !target.isEmpty
+        case (.node(let source, _), .point(let point)):
+            return !source.isEmpty && point.x.isFinite && point.y.isFinite
+        case (.point(let point), .node(let target, _)):
+            return point.x.isFinite && point.y.isFinite && !target.isEmpty
+        case (.point(let source), .point(let target)):
+            return source.x.isFinite && source.y.isFinite && target.x.isFinite && target.y.isFinite
+        }
     }
 
     public static func isNode<NodeData>(_ value: GraphNode<NodeData>) -> Bool where NodeData: Sendable {

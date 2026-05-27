@@ -228,15 +228,125 @@ public struct EdgePosition: Sendable, Equatable {
     }
 }
 
+public enum EdgeEndpoint: Sendable, Equatable, Codable {
+    case node(id: String, handleID: String?)
+    case point(XYPosition)
+
+    public var nodeID: String? {
+        if case .node(let id, _) = self { return id }
+        return nil
+    }
+
+    public var handleID: String? {
+        if case .node(_, let handleID) = self { return handleID }
+        return nil
+    }
+}
+
+public struct ResolvedEdgeEndpoints: Sendable, Equatable {
+    public var sourcePosition: Position
+    public var targetPosition: Position
+    public var sourcePoint: XYPosition
+    public var targetPoint: XYPosition
+
+    public init(
+        sourcePosition: Position,
+        targetPosition: Position,
+        sourcePoint: XYPosition,
+        targetPoint: XYPosition
+    ) {
+        self.sourcePosition = sourcePosition
+        self.targetPosition = targetPosition
+        self.sourcePoint = sourcePoint
+        self.targetPoint = targetPoint
+    }
+}
+
 public struct BaseEdge<NodeData: Sendable>: Sendable, Identifiable {
     // MARK: - User-defined properties
     public var id: String
-    public var source: String
-    public var target: String
+    public var source: String {
+        didSet {
+            if case .node(_, let handleID) = sourceEndpoint {
+                let nextEndpoint = EdgeEndpoint.node(id: source, handleID: handleID)
+                if sourceEndpoint != nextEndpoint {
+                    sourceEndpoint = nextEndpoint
+                }
+            }
+        }
+    }
+    public var target: String {
+        didSet {
+            if case .node(_, let handleID) = targetEndpoint {
+                let nextEndpoint = EdgeEndpoint.node(id: target, handleID: handleID)
+                if targetEndpoint != nextEndpoint {
+                    targetEndpoint = nextEndpoint
+                }
+            }
+        }
+    }
     public var data: NodeData?
     public var kind: String?
-    public var sourceHandle: String?
-    public var targetHandle: String?
+    public var sourceHandle: String? {
+        didSet {
+            if case .node(let id, _) = sourceEndpoint {
+                let nextEndpoint = EdgeEndpoint.node(id: id, handleID: sourceHandle)
+                if sourceEndpoint != nextEndpoint {
+                    sourceEndpoint = nextEndpoint
+                }
+            }
+        }
+    }
+    public var targetHandle: String? {
+        didSet {
+            if case .node(let id, _) = targetEndpoint {
+                let nextEndpoint = EdgeEndpoint.node(id: id, handleID: targetHandle)
+                if targetEndpoint != nextEndpoint {
+                    targetEndpoint = nextEndpoint
+                }
+            }
+        }
+    }
+    public var sourceEndpoint: EdgeEndpoint {
+        didSet {
+            switch sourceEndpoint {
+            case .node(let id, let handleID):
+                if source != id {
+                    source = id
+                }
+                if sourceHandle != handleID {
+                    sourceHandle = handleID
+                }
+            case .point:
+                if !source.isEmpty {
+                    source = ""
+                }
+                if sourceHandle != nil {
+                    sourceHandle = nil
+                }
+            }
+        }
+    }
+    public var targetEndpoint: EdgeEndpoint {
+        didSet {
+            switch targetEndpoint {
+            case .node(let id, let handleID):
+                if target != id {
+                    target = id
+                }
+                if targetHandle != handleID {
+                    targetHandle = handleID
+                }
+            case .point:
+                if !target.isEmpty {
+                    target = ""
+                }
+                if targetHandle != nil {
+                    targetHandle = nil
+                }
+            }
+        }
+    }
     public var sourcePosition: Position?
     public var targetPosition: Position?
     public var animated: Bool
@@ -294,6 +404,64 @@ public struct BaseEdge<NodeData: Sendable>: Sendable, Identifiable {
         self.kind = kind
         self.sourceHandle = sourceHandle
         self.targetHandle = targetHandle
+        self.sourceEndpoint = .node(id: source, handleID: sourceHandle)
+        self.targetEndpoint = .node(id: target, handleID: targetHandle)
+        self.sourcePosition = sourcePosition
+        self.targetPosition = targetPosition
+        self.animated = animated
+        self.markerStart = markerStart
+        self.markerEnd = markerEnd
+        self.zIndex = zIndex
+        self.ariaLabel = ariaLabel
+        self.interactionWidth = interactionWidth
+        self.curvature = curvature
+        self.hidden = hidden
+        self.deletable = deletable
+        self.selectable = selectable
+        self.selected = selected
+        self.label = label
+        self.labelStyle = labelStyle
+        self.sourceEndpointLabel = sourceEndpointLabel
+        self.targetEndpointLabel = targetEndpointLabel
+        self.strokeStyle = strokeStyle
+        self.reconnectable = reconnectable
+    }
+
+    public init(
+        id: String,
+        sourceEndpoint: EdgeEndpoint,
+        targetEndpoint: EdgeEndpoint,
+        data: NodeData? = nil,
+        kind: String? = nil,
+        sourcePosition: Position? = nil,
+        targetPosition: Position? = nil,
+        animated: Bool = false,
+        markerStart: EdgeMarker? = nil,
+        markerEnd: EdgeMarker? = nil,
+        zIndex: Int? = nil,
+        ariaLabel: String? = nil,
+        interactionWidth: Double? = nil,
+        curvature: Double? = nil,
+        hidden: Bool = false,
+        deletable: Bool = true,
+        selectable: Bool = true,
+        selected: Bool = false,
+        label: String? = nil,
+        labelStyle: EdgeLabelStyle = .default,
+        sourceEndpointLabel: EdgeEndpointLabel? = nil,
+        targetEndpointLabel: EdgeEndpointLabel? = nil,
+        strokeStyle: EdgeStrokeStyle? = nil,
+        reconnectable: ReconnectMode = .none
+    ) {
+        self.id = id
+        self.source = sourceEndpoint.nodeID ?? ""
+        self.target = targetEndpoint.nodeID ?? ""
+        self.data = data
+        self.kind = kind
+        self.sourceHandle = sourceEndpoint.handleID
+        self.targetHandle = targetEndpoint.handleID
+        self.sourceEndpoint = sourceEndpoint
+        self.targetEndpoint = targetEndpoint
         self.sourcePosition = sourcePosition
         self.targetPosition = targetPosition
         self.animated = animated
@@ -360,6 +528,7 @@ public struct BaseEdge<NodeData: Sendable>: Sendable, Identifiable {
 extension BaseEdge: Codable where NodeData: Codable {
     enum CodingKeys: String, CodingKey {
         case id, source, target, data, kind
+        case sourceEndpoint, targetEndpoint
         case sourceHandle, targetHandle, sourcePosition, targetPosition
         case animated, markerStart, markerEnd, zIndex, ariaLabel
         case interactionWidth, curvature, label, labelStyle
@@ -376,6 +545,8 @@ extension BaseEdge: Codable where NodeData: Codable {
         self.kind = try container.decodeIfPresent(String.self, forKey: .kind)
         self.sourceHandle = try container.decodeIfPresent(String.self, forKey: .sourceHandle)
         self.targetHandle = try container.decodeIfPresent(String.self, forKey: .targetHandle)
+        self.sourceEndpoint = try container.decodeIfPresent(EdgeEndpoint.self, forKey: .sourceEndpoint) ?? .node(id: source, handleID: sourceHandle)
+        self.targetEndpoint = try container.decodeIfPresent(EdgeEndpoint.self, forKey: .targetEndpoint) ?? .node(id: target, handleID: targetHandle)
         self.sourcePosition = try container.decodeIfPresent(Position.self, forKey: .sourcePosition)
         self.targetPosition = try container.decodeIfPresent(Position.self, forKey: .targetPosition)
         self.animated = try container.decode(Bool.self, forKey: .animated)
@@ -408,6 +579,8 @@ extension BaseEdge: Codable where NodeData: Codable {
         try container.encodeIfPresent(kind, forKey: .kind)
         try container.encodeIfPresent(sourceHandle, forKey: .sourceHandle)
         try container.encodeIfPresent(targetHandle, forKey: .targetHandle)
+        try container.encode(sourceEndpoint, forKey: .sourceEndpoint)
+        try container.encode(targetEndpoint, forKey: .targetEndpoint)
         try container.encodeIfPresent(sourcePosition, forKey: .sourcePosition)
         try container.encodeIfPresent(targetPosition, forKey: .targetPosition)
         try container.encode(animated, forKey: .animated)
@@ -440,6 +613,8 @@ extension BaseEdge: Equatable where NodeData: Equatable {
         lhs.kind == rhs.kind &&
         lhs.sourceHandle == rhs.sourceHandle &&
         lhs.targetHandle == rhs.targetHandle &&
+        lhs.sourceEndpoint == rhs.sourceEndpoint &&
+        lhs.targetEndpoint == rhs.targetEndpoint &&
         lhs.sourcePosition == rhs.sourcePosition &&
         lhs.targetPosition == rhs.targetPosition &&
         lhs.animated == rhs.animated &&

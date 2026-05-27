@@ -216,14 +216,14 @@ public final class GraphStore<NodeData: Sendable>: Sendable {
                edge.source == nodeID,
                let handleID = edge.sourceHandle,
                isAutomaticHandle(nodeID: nodeID, handleID: handleID, type: type),
-               resolvedEdgePlacement(nodeID: nodeID, handleID: handleID, handleType: type, explicit: edge.sourcePosition, peerNodeID: edge.target) == placement {
+               resolvedEdgePlacement(nodeID: nodeID, handleID: handleID, handleType: type, explicit: edge.sourcePosition, peer: edge.targetEndpoint) == placement {
                 ids.insert(handleID)
             }
             if type == .target,
                edge.target == nodeID,
                let handleID = edge.targetHandle,
                isAutomaticHandle(nodeID: nodeID, handleID: handleID, type: type),
-               resolvedEdgePlacement(nodeID: nodeID, handleID: handleID, handleType: type, explicit: edge.targetPosition, peerNodeID: edge.source) == placement {
+               resolvedEdgePlacement(nodeID: nodeID, handleID: handleID, handleType: type, explicit: edge.targetPosition, peer: edge.sourceEndpoint) == placement {
                 ids.insert(handleID)
             }
         }
@@ -265,11 +265,11 @@ public final class GraphStore<NodeData: Sendable>: Sendable {
             return handle.placement
         }
 
-        let peerID = type == .source ? edge.target : edge.source
-        guard let peer = self.node(id: peerID) else {
+        let peer = type == .source ? edge.targetEndpoint : edge.sourceEndpoint
+        guard let placement = automaticEdgePlacement(from: node, to: peer) else {
             return handle.placement
         }
-        return automaticEdgePlacement(from: node, to: peer)
+        return placement
     }
 
     /// Resolves the effective source/target placements for an edge.
@@ -292,12 +292,93 @@ public final class GraphStore<NodeData: Sendable>: Sendable {
         return (source, target)
     }
 
+    public func resolvedEdgeEndpoints(for edge: BaseEdge<NodeData>) -> ResolvedEdgeEndpoints? {
+        let sourcePosition = resolvedEndpointPlacement(
+            edge.sourceEndpoint,
+            handleType: .source,
+            explicit: edge.sourcePosition,
+            peer: edge.targetEndpoint
+        )
+        let targetPosition = resolvedEndpointPlacement(
+            edge.targetEndpoint,
+            handleType: .target,
+            explicit: edge.targetPosition,
+            peer: edge.sourceEndpoint
+        )
+
+        guard let sourcePoint = resolvedEndpointPoint(edge.sourceEndpoint, handleType: .source, placement: sourcePosition),
+              let targetPoint = resolvedEndpointPoint(edge.targetEndpoint, handleType: .target, placement: targetPosition) else {
+            return nil
+        }
+
+        return ResolvedEdgeEndpoints(
+            sourcePosition: sourcePosition,
+            targetPosition: targetPosition,
+            sourcePoint: sourcePoint,
+            targetPoint: targetPoint
+        )
+    }
+
+    private func resolvedEndpointPoint(
+        _ endpoint: EdgeEndpoint,
+        handleType: HandleType,
+        placement: Position
+    ) -> XYPosition? {
+        switch endpoint {
+        case .node(let id, let handleID):
+            guard node(id: id) != nil else { return nil }
+            let key = HandleKey(nodeID: id, handleID: handleID, type: handleType, placement: placement)
+            return resolvedHandlePosition(for: key)
+        case .point(let point):
+            return point
+        }
+    }
+
+    private func resolvedEndpointPlacement(
+        _ endpoint: EdgeEndpoint,
+        handleType: HandleType,
+        explicit: Position?,
+        peer: EdgeEndpoint
+    ) -> Position {
+        switch endpoint {
+        case .node(let id, let handleID):
+            return resolvedEdgePlacement(
+                nodeID: id,
+                handleID: handleID,
+                handleType: handleType,
+                explicit: explicit,
+                peer: peer
+            )
+        case .point:
+            if let explicit {
+                return explicit
+            }
+            return handleType == .source ? .right : .left
+        }
+    }
+
     private func resolvedEdgePlacement(
         nodeID: String,
         handleID: String?,
         handleType: HandleType,
         explicit: Position?,
         peerNodeID: String
+    ) -> Position {
+        resolvedEdgePlacement(
+            nodeID: nodeID,
+            handleID: handleID,
+            handleType: handleType,
+            explicit: explicit,
+            peer: .node(id: peerNodeID, handleID: nil)
+        )
+    }
+
+    private func resolvedEdgePlacement(
+        nodeID: String,
+        handleID: String?,
+        handleType: HandleType,
+        explicit: Position?,
+        peer: EdgeEndpoint
     ) -> Position {
         if let explicit {
             return explicit
@@ -308,8 +389,8 @@ public final class GraphStore<NodeData: Sendable>: Sendable {
                let matched = node.handles.first(where: { $0.id == handleID && $0.type == handleType }) {
                 if matched.placementMode == .automaticPeerSide,
                    let currentNode = self.node(id: nodeID),
-                   let peer = self.node(id: peerNodeID) {
-                    return automaticEdgePlacement(from: currentNode, to: peer)
+                   let placement = automaticEdgePlacement(from: currentNode, to: peer) {
+                    return placement
                 }
                 return matched.placement
             }
@@ -320,11 +401,36 @@ public final class GraphStore<NodeData: Sendable>: Sendable {
             }
         }
 
-        guard let currentNode = node(id: nodeID), let peer = node(id: peerNodeID) else {
+        guard let currentNode = node(id: nodeID),
+              let placement = automaticEdgePlacement(from: currentNode, to: peer) else {
             return handleType == .source ? .right : .left
         }
 
-        return automaticEdgePlacement(from: currentNode, to: peer)
+        return placement
+    }
+
+    private func automaticEdgePlacement(from node: BaseNode<NodeData>, to peer: EdgeEndpoint) -> Position? {
+        switch peer {
+        case .node(let id, _):
+            guard let peerNode = self.node(id: id) else { return nil }
+            return automaticEdgePlacement(from: node, to: peerNode)
+        case .point(let point):
+            return automaticEdgePlacement(from: node, to: point)
+        }
+    }
+
+    private func automaticEdgePlacement(from node: BaseNode<NodeData>, to point: XYPosition) -> Position {
+        let origin = absolutePosition(for: node.id)
+        let dimensions = resolvedNodeDimensions(for: node)
+        let center = XYPosition(x: origin.x + dimensions.width / 2.0, y: origin.y + dimensions.height / 2.0)
+        let dx = point.x - center.x
+        let dy = point.y - center.y
+
+        if abs(dx) >= abs(dy) {
+            return dx >= 0 ? .right : .left
+        } else {
+            return dy >= 0 ? .bottom : .top
+        }
     }
 
     private func automaticEdgePlacement(from node: BaseNode<NodeData>, to peer: BaseNode<NodeData>) -> Position {

@@ -52,6 +52,30 @@ final class GraphStoreTests: XCTestCase {
         XCTAssertEqual(absPos.x, 170)
         XCTAssertEqual(absPos.y, 170)
     }
+
+    @MainActor
+    func testResolvedEdgeEndpointsSupportsNodeToPoint() {
+        let node = BaseNode(
+            id: "n1",
+            position: XYPosition(x: 20, y: 40),
+            data: "node",
+            measured: Dimensions(width: 80, height: 40)
+        )
+        let edge = BaseEdge<String>(
+            id: "floating",
+            sourceEndpoint: .node(id: "n1", handleID: nil),
+            targetEndpoint: .point(XYPosition(x: 60, y: 140)),
+            kind: "smoothstep"
+        )
+        let store = GraphStore(nodes: [node], edges: [edge])
+
+        let resolved = store.resolvedEdgeEndpoints(for: edge)
+
+        XCTAssertEqual(resolved?.sourcePosition, .bottom)
+        XCTAssertEqual(resolved?.sourcePoint, XYPosition(x: 60, y: 88))
+        XCTAssertEqual(resolved?.targetPosition, .left)
+        XCTAssertEqual(resolved?.targetPoint, XYPosition(x: 60, y: 140))
+    }
     
     @MainActor
     func testStateIntegrityDuringDrag() {

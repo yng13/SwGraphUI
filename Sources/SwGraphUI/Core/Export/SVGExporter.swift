@@ -87,27 +87,14 @@ public struct SVGExporter<NodeData: Sendable> {
         }
 
         for edge in store.edges where !edge.hidden {
-            let resolved = store.resolvedEdgePositions(for: edge)
-            let sourceKey = HandleKey(
-                nodeID: edge.source,
-                handleID: edge.sourceHandle,
-                type: .source,
-                placement: resolved.source
-            )
-            let targetKey = HandleKey(
-                nodeID: edge.target,
-                handleID: edge.targetHandle,
-                type: .target,
-                placement: resolved.target
-            )
-
-            let source = translate(store.resolvedHandlePosition(for: sourceKey), by: translation)
-            let target = translate(store.resolvedHandlePosition(for: targetKey), by: translation)
+            guard let resolved = store.resolvedEdgeEndpoints(for: edge) else { continue }
+            let source = translate(resolved.sourcePoint, by: translation)
+            let target = translate(resolved.targetPoint, by: translation)
             let basePath = EdgePathAlgorithms.calculatePath(
                 source: source,
                 target: target,
-                sourcePosition: resolved.source,
-                targetPosition: resolved.target,
+                sourcePosition: resolved.sourcePosition,
+                targetPosition: resolved.targetPosition,
                 kind: edge.kind,
                 curvature: edge.curvature ?? 0.25
             )
@@ -118,8 +105,8 @@ public struct SVGExporter<NodeData: Sendable> {
                 sourceNodeID: edge.source,
                 targetNodeID: edge.target,
                 assignment: store.edgeLaneAssignment(for: edge),
-                sourcePosition: resolved.source,
-                targetPosition: resolved.target
+                sourcePosition: resolved.sourcePosition,
+                targetPosition: resolved.targetPosition
             )
 
             let labelPoint = XYPosition(
@@ -129,8 +116,8 @@ public struct SVGExporter<NodeData: Sendable> {
             let context = SVGEdgeRenderContext(
                 edge: edge,
                 segments: path.segments,
-                sourcePosition: resolved.source,
-                targetPosition: resolved.target,
+                sourcePosition: resolved.sourcePosition,
+                targetPosition: resolved.targetPosition,
                 sourcePoint: source,
                 targetPoint: target,
                 labelPoint: labelPoint

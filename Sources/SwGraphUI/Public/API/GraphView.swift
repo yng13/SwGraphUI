@@ -473,10 +473,13 @@ internal struct GraphLayerStack<NodeData: Sendable, NodeContent: View>: View {
 
     private var visibleNodeIDs: [String] {
         let sortedIDs = store.runtimeState.sortedNodeIDs
-        guard shouldCullViewport else { return sortedIDs }
-
         let lookup = store.nodeLookup
-        return sortedIDs.filter { id in
+        let visibleIDs = sortedIDs.filter { id in
+            lookup[id]?.hidden == false
+        }
+        guard shouldCullViewport else { return visibleIDs }
+
+        return visibleIDs.filter { id in
             guard let node = lookup[id] else { return false }
             if node.selected { return true }
             return GraphViewportCulling.isNodeVisible(
@@ -490,9 +493,10 @@ internal struct GraphLayerStack<NodeData: Sendable, NodeContent: View>: View {
     }
 
     private var visibleEdges: [BaseEdge<NodeData>] {
-        guard shouldCullViewport else { return store.edges }
+        let visibleEdges = store.edges.filter { !$0.hidden }
+        guard shouldCullViewport else { return visibleEdges }
 
-        return store.edges.filter { edge in
+        return visibleEdges.filter { edge in
             if edge.selected { return true }
             guard let source = resolvedHandlePoint(for: edge, role: .source),
                   let target = resolvedHandlePoint(for: edge, role: .target) else {
@@ -636,15 +640,12 @@ internal struct GraphLayerStack<NodeData: Sendable, NodeContent: View>: View {
     }
 
     private func resolvedHandlePoint(for edge: BaseEdge<NodeData>, role: VisibleEdgeEndpointRole) -> XYPosition? {
-        guard store.node(id: edge.source) != nil, store.node(id: edge.target) != nil else { return nil }
-        let resolved = store.resolvedEdgePositions(for: edge)
+        guard let resolved = store.resolvedEdgeEndpoints(for: edge) else { return nil }
         switch role {
         case .source:
-            let key = HandleKey(nodeID: edge.source, handleID: edge.sourceHandle, type: .source, placement: resolved.source)
-            return store.resolvedHandlePosition(for: key)
+            return resolved.sourcePoint
         case .target:
-            let key = HandleKey(nodeID: edge.target, handleID: edge.targetHandle, type: .target, placement: resolved.target)
-            return store.resolvedHandlePosition(for: key)
+            return resolved.targetPoint
         }
     }
 }
