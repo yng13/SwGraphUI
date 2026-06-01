@@ -829,12 +829,35 @@ extension EdgePathAlgorithms {
         sourcePosition: Position,
         targetPosition: Position,
         kind: String?,
-        curvature: Double
+        curvature: Double,
+        routing: EdgeRouting? = nil
     ) -> EdgePathResult {
         switch kind {
         case "straight": return straightPath(sourceX: source.x, sourceY: source.y, targetX: target.x, targetY: target.y)
-        case "smoothstep": return smoothStepPath(sourceX: source.x, sourceY: source.y, sourcePosition: sourcePosition, targetX: target.x, targetY: target.y, targetPosition: targetPosition)
-        case "step": return stepPath(sourceX: source.x, sourceY: source.y, sourcePosition: sourcePosition, targetX: target.x, targetY: target.y, targetPosition: targetPosition)
+        case "smoothstep":
+            return smoothStepPath(
+                sourceX: source.x,
+                sourceY: source.y,
+                sourcePosition: sourcePosition,
+                targetX: target.x,
+                targetY: target.y,
+                targetPosition: targetPosition,
+                centerX: routing?.centerX,
+                centerY: routing?.centerY,
+                stepPosition: routing?.stepPosition ?? 0.5
+            )
+        case "step":
+            return stepPath(
+                sourceX: source.x,
+                sourceY: source.y,
+                sourcePosition: sourcePosition,
+                targetX: target.x,
+                targetY: target.y,
+                targetPosition: targetPosition,
+                centerX: routing?.centerX,
+                centerY: routing?.centerY,
+                stepPosition: routing?.stepPosition ?? 0.5
+            )
         default: return bezierPath(sourceX: source.x, sourceY: source.y, sourcePosition: sourcePosition, targetX: target.x, targetY: target.y, targetPosition: targetPosition, curvature: curvature)
         }
     }

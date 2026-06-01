@@ -96,7 +96,8 @@ public struct SVGExporter<NodeData: Sendable> {
                 sourcePosition: resolved.sourcePosition,
                 targetPosition: resolved.targetPosition,
                 kind: edge.kind,
-                curvature: edge.curvature ?? 0.25
+                curvature: edge.curvature ?? 0.25,
+                routing: edge.routing
             )
             let path = EdgeLaneAlgorithms.applyLane(
                 to: basePath,

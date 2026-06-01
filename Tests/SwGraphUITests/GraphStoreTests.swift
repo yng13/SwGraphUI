@@ -320,6 +320,45 @@ final class GraphStoreTests: XCTestCase {
     }
 
     @MainActor
+    func testEdgeRoutingControlsStepSplitPosition() {
+        let edge = BaseEdge<String>(
+            id: "e",
+            source: "s",
+            target: "t",
+            kind: "step",
+            routing: EdgeRouting(stepPosition: 0.25)
+        )
+        let store = GraphStore(nodes: [], edges: [edge])
+
+        let path = store.laneAdjustedPath(
+            for: edge,
+            source: XYPosition(x: 0, y: 0),
+            target: XYPosition(x: 100, y: 100),
+            sourcePosition: .bottom,
+            targetPosition: .top
+        )
+
+        XCTAssertTrue(path.path.contains("L0.0,35.0"))
+        XCTAssertTrue(path.path.contains("L100.0,35.0"))
+        XCTAssertEqual(path.labelY, 35, accuracy: 0.0001)
+    }
+
+    func testEdgeRoutingRoundTripsThroughCodable() throws {
+        let edge = BaseEdge<String>(
+            id: "e",
+            source: "s",
+            target: "t",
+            kind: "smoothstep",
+            routing: EdgeRouting(centerX: 42, centerY: 84, stepPosition: 0.25)
+        )
+
+        let data = try JSONEncoder().encode(edge)
+        let decoded = try JSONDecoder().decode(BaseEdge<String>.self, from: data)
+
+        XCTAssertEqual(decoded.routing, EdgeRouting(centerX: 42, centerY: 84, stepPosition: 0.25))
+    }
+
+    @MainActor
     func testResolvedEdgePositionsPreferHorizontalOnDiagonalTie() {
         let source = BaseNode(id: "s", position: XYPosition(x: 0, y: 0), data: "s", measured: Dimensions(width: 100, height: 100))
         let target = BaseNode(id: "t", position: XYPosition(x: 200, y: 200), data: "t", measured: Dimensions(width: 100, height: 100))

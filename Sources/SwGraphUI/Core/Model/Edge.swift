@@ -203,6 +203,25 @@ public struct EdgeStrokeStyle: Sendable, Equatable, Codable {
     }
 }
 
+public struct EdgeRouting: Sendable, Equatable, Codable {
+    /// Optional graph-space x coordinate for step and smooth-step route bends. | step / smooth-step の曲がり位置に使う任意の graph-space x 座標。
+    public var centerX: Double?
+    /// Optional graph-space y coordinate for step and smooth-step route bends. | step / smooth-step の曲がり位置に使う任意の graph-space y 座標。
+    public var centerY: Double?
+    /// Relative step split position used when centerX / centerY are not specified. | centerX / centerY 未指定時に使う相対的な分割位置。
+    public var stepPosition: Double?
+
+    public init(
+        centerX: Double? = nil,
+        centerY: Double? = nil,
+        stepPosition: Double? = nil
+    ) {
+        self.centerX = centerX
+        self.centerY = centerY
+        self.stepPosition = stepPosition
+    }
+}
+
 public struct EdgePosition: Sendable, Equatable {
     public var sourceX: Double
     public var sourceY: Double
@@ -361,6 +380,7 @@ public struct BaseEdge<NodeData: Sendable>: Sendable, Identifiable {
     public var sourceEndpointLabel: EdgeEndpointLabel?
     public var targetEndpointLabel: EdgeEndpointLabel?
     public var strokeStyle: EdgeStrokeStyle?
+    public var routing: EdgeRouting?
     public var reconnectable: ReconnectMode
 
     // MARK: - Library-managed/Interaction state
@@ -395,6 +415,7 @@ public struct BaseEdge<NodeData: Sendable>: Sendable, Identifiable {
         sourceEndpointLabel: EdgeEndpointLabel? = nil,
         targetEndpointLabel: EdgeEndpointLabel? = nil,
         strokeStyle: EdgeStrokeStyle? = nil,
+        routing: EdgeRouting? = nil,
         reconnectable: ReconnectMode = .none
     ) {
         self.id = id
@@ -424,6 +445,7 @@ public struct BaseEdge<NodeData: Sendable>: Sendable, Identifiable {
         self.sourceEndpointLabel = sourceEndpointLabel
         self.targetEndpointLabel = targetEndpointLabel
         self.strokeStyle = strokeStyle
+        self.routing = routing
         self.reconnectable = reconnectable
     }
 
@@ -451,6 +473,7 @@ public struct BaseEdge<NodeData: Sendable>: Sendable, Identifiable {
         sourceEndpointLabel: EdgeEndpointLabel? = nil,
         targetEndpointLabel: EdgeEndpointLabel? = nil,
         strokeStyle: EdgeStrokeStyle? = nil,
+        routing: EdgeRouting? = nil,
         reconnectable: ReconnectMode = .none
     ) {
         self.id = id
@@ -480,6 +503,7 @@ public struct BaseEdge<NodeData: Sendable>: Sendable, Identifiable {
         self.sourceEndpointLabel = sourceEndpointLabel
         self.targetEndpointLabel = targetEndpointLabel
         self.strokeStyle = strokeStyle
+        self.routing = routing
         self.reconnectable = reconnectable
     }
 
@@ -520,6 +544,7 @@ public struct BaseEdge<NodeData: Sendable>: Sendable, Identifiable {
             sourceEndpointLabel: nil,
             targetEndpointLabel: nil,
             strokeStyle: nil,
+            routing: nil,
             reconnectable: .none
         )
     }
@@ -532,7 +557,7 @@ extension BaseEdge: Codable where NodeData: Codable {
         case sourceHandle, targetHandle, sourcePosition, targetPosition
         case animated, markerStart, markerEnd, zIndex, ariaLabel
         case interactionWidth, curvature, label, labelStyle
-        case sourceEndpointLabel, targetEndpointLabel, strokeStyle, reconnectable
+        case sourceEndpointLabel, targetEndpointLabel, strokeStyle, routing, reconnectable
         case hidden, deletable, selectable
     }
 
@@ -561,6 +586,7 @@ extension BaseEdge: Codable where NodeData: Codable {
         self.sourceEndpointLabel = try container.decodeIfPresent(EdgeEndpointLabel.self, forKey: .sourceEndpointLabel)
         self.targetEndpointLabel = try container.decodeIfPresent(EdgeEndpointLabel.self, forKey: .targetEndpointLabel)
         self.strokeStyle = try container.decodeIfPresent(EdgeStrokeStyle.self, forKey: .strokeStyle)
+        self.routing = try container.decodeIfPresent(EdgeRouting.self, forKey: .routing)
         self.reconnectable = try container.decode(ReconnectMode.self, forKey: .reconnectable)
         self.hidden = try container.decode(Bool.self, forKey: .hidden)
         self.deletable = try container.decode(Bool.self, forKey: .deletable)
@@ -595,6 +621,7 @@ extension BaseEdge: Codable where NodeData: Codable {
         try container.encodeIfPresent(sourceEndpointLabel, forKey: .sourceEndpointLabel)
         try container.encodeIfPresent(targetEndpointLabel, forKey: .targetEndpointLabel)
         try container.encodeIfPresent(strokeStyle, forKey: .strokeStyle)
+        try container.encodeIfPresent(routing, forKey: .routing)
         try container.encode(reconnectable, forKey: .reconnectable)
         try container.encode(hidden, forKey: .hidden)
         try container.encode(deletable, forKey: .deletable)
@@ -629,6 +656,7 @@ extension BaseEdge: Equatable where NodeData: Equatable {
         lhs.sourceEndpointLabel == rhs.sourceEndpointLabel &&
         lhs.targetEndpointLabel == rhs.targetEndpointLabel &&
         lhs.strokeStyle == rhs.strokeStyle &&
+        lhs.routing == rhs.routing &&
         lhs.reconnectable == rhs.reconnectable &&
         lhs.hidden == rhs.hidden &&
         lhs.deletable == rhs.deletable &&

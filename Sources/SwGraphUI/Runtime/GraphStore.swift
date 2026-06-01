@@ -509,7 +509,8 @@ public final class GraphStore<NodeData: Sendable>: Sendable {
             sourcePosition: sourcePosition,
             targetPosition: targetPosition,
             kind: edge.kind,
-            curvature: edge.curvature ?? 0.25
+            curvature: edge.curvature ?? 0.25,
+            routing: edge.routing
         )
         return EdgeLaneAlgorithms.applyLane(
             to: base,
